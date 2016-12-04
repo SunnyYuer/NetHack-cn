@@ -1,0 +1,147 @@
+# NetHack 3.6	tower.des	$NHDT-Date: 1432512784 2015/05/25 00:13:04 $  $NHDT-Branch: master $:$NHDT-Revision: 1.9 $
+#	Copyright (c) 1989 by Jean-Christophe Collet
+# NetHack may be freely redistributed.  See license for details.
+#
+# Upper stage of Vlad's tower
+MAZE:"tower1",' '
+FLAGS: noteleport,hardfloor,solidify
+GEOMETRY:half-left,center
+MAP
+  --- --- ---  
+  |.| |.| |.|  
+---S---S---S---
+|.......+.+...|
+---+-----.-----
+  |...\.|.+.|  
+---+-----.-----
+|.......+.+...|
+---S---S---S---
+  |.| |.| |.|  
+  --- --- ---  
+ENDMAP
+$niches = { (03,01), (03,09), (07,01), (07,09), (11,01), (11,09) }
+SHUFFLE: $niches
+LADDER:(11,05),down
+# The lord and his court
+MONSTER:('V',"穿刺者弗拉德"),(06,05)
+MONSTER:'V',$niches[0]
+MONSTER:'V',$niches[1]
+MONSTER:'V',$niches[2]
+MONSTER:'V',$niches[3]
+MONSTER:'V',$niches[4]
+MONSTER:'V',$niches[5]
+# The doors
+DOOR:closed,(08,03)
+DOOR:closed,(10,03)
+DOOR:closed,(03,04)
+DOOR:locked,(10,05)
+DOOR:locked,(08,07)
+DOOR:locked,(10,07)
+DOOR:closed,(03,06)
+# treasures
+OBJECT:('(',"箱子"),(07,05)
+
+OBJECT:('(',"箱子"),$niches[0]
+OBJECT:('(',"箱子"),$niches[1]
+OBJECT:('(',"箱子"),$niches[2]
+OBJECT:('(',"箱子"),$niches[3]
+CONTAINER:('(',"箱子"),$niches[4] {
+  OBJECT:('(', "蜡状蜡烛"), quantity:4d2
+}
+CONTAINER:('(',"箱子"),$niches[5] {
+  OBJECT:('(', "牛油烛"), quantity:4d2
+}
+# We have to protect the tower against outside attacks
+NON_DIGGABLE:(00,00,14,10)
+
+
+# Intermediate stage of Vlad's tower
+MAZE:"tower2",' '
+FLAGS: noteleport,hardfloor,solidify
+GEOMETRY:half-left,center
+MAP
+  --- --- ---  
+  |.| |.| |.|  
+---S---S---S---
+|.S.........S.|
+---.------+----
+  |......|..|  
+--------.------
+|.S......+..S.|
+---S---S---S---
+  |.| |.| |.|  
+  --- --- ---  
+ENDMAP
+# Random places are the 10 niches
+$place = { (03,01),(07,01),(11,01),(01,03),(13,03),
+	   (01,07),(13,07),(03,09),(07,09),(11,09) }
+SHUFFLE: $place
+LADDER:(11,05),up
+LADDER:(03,07),down
+DOOR:locked,(10,04)
+DOOR:locked,(09,07)
+MONSTER:'&',$place[0]
+MONSTER:'&',$place[1]
+MONSTER:('d',"地狱小猎犬"),$place[2]
+MONSTER:('d',"地狱小猎犬"),$place[3]
+MONSTER:('d',"冬狼"),$place[4]
+CONTAINER:('(',"箱子"),$place[5] {
+  OBJECT:('"',"复活护身符")
+}
+CONTAINER:('(',"箱子"),$place[6] {
+  OBJECT:('"',"窒息护身符")
+}
+OBJECT:('[',"水上步靴"),$place[7]
+OBJECT:('[',"水晶板甲"),$place[8]
+OBJECT:('+',"隐身"),$place[9]
+# Walls in the tower are non diggable
+NON_DIGGABLE:(00,00,14,10)
+
+
+# Bottom most stage of Vlad's tower
+MAZE:"tower3",' '
+FLAGS: noteleport,hardfloor,solidify
+GEOMETRY:half-left,center
+MAP
+    --- --- ---  
+    |.| |.| |.|    
+  ---S---S---S---
+  |.S.........S.|  
+-----.........-----
+|...|.........+...|
+|.---.........---.|
+|.|.S.........S.|.|
+|.---S---S---S---.|
+|...|.|.|.|.|.|...|
+---.---.---.---.---
+  |.............|  
+  ---------------  
+ENDMAP
+# Random places are the 10 niches
+$place = { (05,01),(09,01),(13,01),(03,03),(15,03),
+	   (03,07),(15,07),(05,09),(09,09),(13,09) }
+SHUFFLE: $place
+BRANCH:(02,05,02,05),(00,00,00,00)
+LADDER:(05,07),up
+# Entry door is, of course, locked
+DOOR:locked,(14,05)
+# Let's put a dragon behind the door, just for the fun...
+MONSTER:'D',(13,05)
+MONSTER:random,(12,04)
+MONSTER:random,(12,06)
+MONSTER:random,random
+MONSTER:random,random
+MONSTER:random,random
+MONSTER:random,random
+MONSTER:random,random
+MONSTER:random,random
+OBJECT:(')',"长剑"),$place[0]
+TRAP:random,$place[0]
+OBJECT:('(',"开锁器"),$place[1]
+TRAP:random,$place[1]
+OBJECT:('[',"精灵斗篷"),$place[2]
+TRAP:random,$place[2]
+OBJECT:('(',"眼罩"),$place[3]
+TRAP:random,$place[3]
+# Walls in the tower are non diggable
+NON_DIGGABLE:(00,00,18,12)

@@ -1,0 +1,316 @@
+# NetHack 3.6	Caveman.des	$NHDT-Date: 1432512783 2015/05/25 00:13:03 $  $NHDT-Branch: master $:$NHDT-Revision: 1.8 $
+#	Copyright (c) 1989 by Jean-Christophe Collet
+#	Copyright (c) 1991 by M. Stephenson
+# NetHack may be freely redistributed.  See license for details.
+#
+#	The "start" level for the quest.
+#
+#	Here you meet your (besieged) class leader, Shaman Karnov
+#	and receive your quest assignment.
+#
+MAZE: "Cav-strt",' '
+FLAGS: noteleport,hardfloor
+GEOMETRY:center,center
+MAP
+                                                                            
+  ......     ..........................       ...        ....  ......       
+ ......       ..........................     ........       ....    .....   
+  ..BB      .............................    .........            ....  ..  
+     ..    ......................              .......      ..     ....  .. 
+     ..     ....................                     ..  .......    ..  ... 
+   ..              S   BB                .....     .......   ....      .... 
+    ..        ...  .   ..               ........  ..     ..   ..       ...  
+     ..      ......     ..             ............       ..          ...   
+       .      ....       ..             ........           ..  ...........  
+  ...   ..     ..        .............                  ................... 
+ .....   .....            ...............................      ...........  
+  .....B................            ...                               ...   
+  .....     .  ..........        .... .      ...  ..........           ...  
+   ...     ..          .............  ..    ...................        .... 
+          BB       ..   .........      BB    ...  ..........  ..   ...  ... 
+       ......    .....  B          ........         ..         .. ....  ... 
+     ..........  ..........         ..... ...      .....        ........    
+       ..  ...    .  .....         ....    ..       ...            ..       
+                                                                            
+ENDMAP
+# Dungeon Description
+REGION:(00,00,75,19),unlit,"ordinary"
+REGION:(13,01,40,05),lit,"temple",unfilled,irregular
+# The occupied rooms.
+REGION:(02,01,08,03),lit,"ordinary",unfilled,irregular
+REGION:(01,11,06,14),lit,"ordinary",unfilled,irregular
+REGION:(13,08,18,10),lit,"ordinary",unfilled,irregular
+REGION:(05,17,14,18),lit,"ordinary",unfilled,irregular
+REGION:(17,16,23,18),lit,"ordinary",unfilled,irregular
+REGION:(35,16,44,18),lit,"ordinary",unfilled,irregular
+# Stairs
+STAIR:(02,03),down
+# Portal arrival point
+BRANCH:(71,09,71,09),(0,0,0,0)
+# Doors
+DOOR:locked,(19,06)
+# The temple altar (this will force a priest(ess) to be created)
+ALTAR:(36,02),coaligned,shrine
+# Shaman Karnov
+MONSTER:('@',"萨满卡诺夫"),(35,02)
+# The treasure of Shaman Karnov
+OBJECT:('(',"箱子"),(34,02)
+# neanderthal guards for the audience chamber
+MONSTER:('@',"尼安德特人"),(20,03)
+MONSTER:('@',"尼安德特人"),(20,02)
+MONSTER:('@',"尼安德特人"),(20,01)
+MONSTER:('@',"尼安德特人"),(21,03)
+MONSTER:('@',"尼安德特人"),(21,02)
+MONSTER:('@',"尼安德特人"),(21,01)
+MONSTER:('@',"尼安德特人"),(22,01)
+MONSTER:('@',"尼安德特人"),(26,09)
+# Non diggable walls
+NON_DIGGABLE:(00,00,75,19)
+# Random traps
+TRAP:"pit",(47,11)
+TRAP:"pit",(57,10)
+TRAP:random,random
+TRAP:random,random
+TRAP:random,random
+TRAP:random,random
+# Monsters on siege duty (in the outer caves).
+MONSTER: ('h',"熊地精"),(47,02),hostile
+MONSTER: ('h',"熊地精"),(48,03),hostile
+MONSTER: ('h',"熊地精"),(49,04),hostile
+MONSTER: ('h',"熊地精"),(67,03),hostile
+MONSTER: ('h',"熊地精"),(69,04),hostile
+MONSTER: ('h',"熊地精"),(51,13),hostile
+MONSTER: ('h',"熊地精"),(53,14),hostile
+MONSTER: ('h',"熊地精"),(55,15),hostile
+MONSTER: ('h',"熊地精"),(63,10),hostile
+MONSTER: ('h',"熊地精"),(65,09),hostile
+MONSTER: ('h',"熊地精"),(67,10),hostile
+MONSTER: ('h',"熊地精"),(69,11),hostile
+WALLIFY
+
+#
+#	The "locate" level for the quest.
+#
+#	Here you have to find the lair of Tiamat to go
+#	further towards your assigned quest.
+#
+
+MAZE: "Cav-loca",' '
+FLAGS: hardfloor
+GEOMETRY:center,center
+MAP
+                                                                            
+    .............                     ...........                           
+   ...............                   .............                          
+    .............                  ...............        ..........        
+     ...........                    .............      ...............      
+        ...                                    ...   ..................     
+         ...                ..........          ... ..................      
+          ...              ............          BBB...................     
+           ...              ..........          ......................      
+            .....                 ..      .....B........................    
+  ....       ...............      .    ........B..........................  
+ ......     .. .............S..............         ..................      
+  ....     ..                ...........             ...............        
+     ..  ...                                    ....................        
+      ....                                      BB...................       
+         ..                 ..                 ..  ...............          
+          ..   .......     ....  .....  ....  ..     .......   S            
+           ............     ....... ..  .......       .....    ...  ....    
+               .......       .....   ......                      .......    
+                                                                            
+ENDMAP
+# Dungeon Description
+REGION:(00,00,75,19),unlit,"ordinary"
+REGION:(52,06,73,15),lit,"ordinary",unfilled,irregular
+# Doors
+DOOR:locked,(28,11)
+# Stairs
+STAIR:(04,03),up
+STAIR:(73,10),down
+# Non diggable walls
+NON_DIGGABLE:(00,00,75,19)
+# Objects
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+# Random traps
+TRAP:random,random
+TRAP:random,random
+TRAP:random,random
+TRAP:random,random
+TRAP:random,random
+TRAP:random,random
+# Random monsters.
+MONSTER:('h',"熊地精"),(02,10),hostile
+MONSTER:('h',"熊地精"),(03,11),hostile
+MONSTER:('h',"熊地精"),(04,12),hostile
+MONSTER:('h',"熊地精"),(02,11),hostile
+MONSTER:('h',"熊地精"),(16,16),hostile
+MONSTER:('h',"熊地精"),(17,17),hostile
+MONSTER:('h',"熊地精"),(18,18),hostile
+MONSTER:('h',"熊地精"),(19,16),hostile
+MONSTER:('h',"熊地精"),(30,06),hostile
+MONSTER:('h',"熊地精"),(31,07),hostile
+MONSTER:('h',"熊地精"),(32,08),hostile
+MONSTER:('h',"熊地精"),(33,06),hostile
+MONSTER:('h',"熊地精"),(34,07),hostile
+MONSTER:('h',"熊地精"),random,hostile
+MONSTER:('h',"熊地精"),random,hostile
+MONSTER:('h',"熊地精"),random,hostile
+MONSTER:('h',"熊地精"),random,hostile
+MONSTER:'h',random,hostile
+MONSTER:'H',random,hostile
+MONSTER:('H',"希尔巨人"),(03,12),hostile
+MONSTER:('H',"希尔巨人"),(20,17),hostile
+MONSTER:('H',"希尔巨人"),(35,08),hostile
+MONSTER:('H',"希尔巨人"),random,hostile
+MONSTER:('H',"希尔巨人"),random,hostile
+MONSTER:('H',"希尔巨人"),random,hostile
+MONSTER:('H',"希尔巨人"),random,hostile
+MONSTER:'H',random,hostile
+WALLIFY
+
+#
+#	The "goal" level for the quest.
+#
+#	Here you meet Tiamat your nemesis monster.  You have to
+#	defeat Tiamat in combat to gain the artifact you have
+#	been assigned to retrieve.
+#
+
+MAZE: "Cav-goal", ' '
+GEOMETRY:center,center
+MAP
+                                                                            
+                          .....................                             
+                         .......................                            
+                        .........................                           
+                       ...........................                          
+                      .............................                         
+                     ...............................                        
+                    .................................                       
+                   ...................................                      
+                  .....................................                     
+                 .......................................                    
+                  .....................................                     
+                   ...................................                      
+                    .................................                       
+                     ...............................                        
+                      .............................                         
+                       ...........................                          
+                        .........................                           
+                         .......................                            
+                                                                            
+ENDMAP
+# Dungeon Description
+REGION:(00,00,75,19),lit,"ordinary"
+# Stairs
+STAIR:random,up
+# Non diggable walls
+NON_DIGGABLE:(00,00,75,19)
+# Objects
+OBJECT:(')',"权杖"),(23,10),blessed,0,name:"力量权杖"
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+OBJECT:random,random
+# monsters.
+MONSTER:('D',"彩色龙"),(23,10),asleep
+MONSTER:('F',"尖叫蕈"),(26,13)
+MONSTER:('F',"尖叫蕈"),(25,8)
+MONSTER:('F',"尖叫蕈"),(45,11)
+WALLIFY
+
+#
+#	The "fill" levels for the quest.
+#
+#	These levels are used to fill out any levels not occupied by specific
+#	levels as defined above. "filla" is the upper filler, between the
+#	start and locate levels, and "fillb" the lower between the locate
+#	and goal levels.
+#
+
+MAZE: "Cav-fila" , ' '
+INIT_MAP: mines, '.' , ' ' , true , true , random , true
+NOMAP
+#
+STAIR: random, up
+STAIR: random, down
+#
+OBJECT: random, random
+OBJECT: random, random
+OBJECT: random, random
+OBJECT: random, random
+OBJECT: random, random
+OBJECT: random, random
+OBJECT: random, random
+#
+TRAP: random, random
+TRAP: random, random
+TRAP: random, random
+TRAP: random, random
+#
+MONSTER: ('h', "熊地精"), random, hostile
+MONSTER: ('h', "熊地精"), random, hostile
+MONSTER: ('h', "熊地精"), random, hostile
+MONSTER: ('h', "熊地精"), random, hostile
+MONSTER: ('h', "熊地精"), random, hostile
+MONSTER: 'h', random, hostile
+MONSTER: ('H', "希尔巨人"), random, hostile
+
+MAZE: "Cav-filb" , ' '
+INIT_MAP: mines, '.' , ' ' , true , true , random , true
+NOMAP
+#
+STAIR: random, up
+STAIR: random, down
+#
+OBJECT: random, random
+OBJECT: random, random
+OBJECT: random, random
+OBJECT: random, random
+OBJECT: random, random
+OBJECT: random, random
+OBJECT: random, random
+OBJECT: random, random
+OBJECT: random, random
+OBJECT: random, random
+OBJECT: random, random
+OBJECT: random, random
+#
+TRAP: random, random
+TRAP: random, random
+TRAP: random, random
+TRAP: random, random
+#
+MONSTER: ('h', "熊地精"), random, hostile
+MONSTER: ('h', "熊地精"), random, hostile
+MONSTER: ('h', "熊地精"), random, hostile
+MONSTER: ('h', "熊地精"), random, hostile
+MONSTER: 'h', random, hostile
+MONSTER: 'h', random, hostile
+MONSTER: ('H', "希尔巨人"), random, hostile
+MONSTER: ('H', "希尔巨人"), random, hostile

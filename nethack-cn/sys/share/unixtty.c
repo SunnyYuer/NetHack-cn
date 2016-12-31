@@ -450,7 +450,6 @@ init_linux_cons()
 }
 #endif /* __linux__ */
 
-
 #ifndef __begui__ /* the Be GUI will define its own error proc */
 /* fatal error */
 /*VARARGS1*/

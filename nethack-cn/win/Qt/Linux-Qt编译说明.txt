@@ -1,0 +1,17 @@
+1、目录/sys/unix中
+终端操作sh setup.sh hints/linux-Qt
+
+2、文件操作/include/unixconf.h
+注释掉下面两行
+/*#define index strchr*/
+/*#define rindex strrchr*/
+
+3、文件操作/src/Makefile
+修改WINQTLIB
+WINQTLIB = -L$(QTDIR)/lib -lqt-mt -lstdc++
+
+4、终端操作make all
+
+5、~/.nethackrc
+OPTIONS=name:player,number_pad,menustyle:partial,!time,showexp
+OPTIONS=hilite_pet,toptenwin,msghistory:200,windowtype:Qt

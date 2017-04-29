@@ -402,8 +402,8 @@ boolean verbose;
 {
     if (m_shot.i < m_shot.n) {
         if (verbose && !context.mon_moving) {
-            You("在%d%s %s之后停止了%s.",
-                m_shot.i, ordin(m_shot.i),
+            You("在第%d 次%s之后停止了%s.",
+                m_shot.i,
                 m_shot.s ? "射击" : "投掷",
                 m_shot.s ? "射击" : "投掷");
         }
@@ -1184,8 +1184,8 @@ boolean
             } else {
                 int dmg = rn2(2);
                 if (!dmg) {
-                    pline(Blind ? "%s到达%s你的%s."
-                                : "%s了你, 到达%s你的%s.",
+                    pline(Blind ? "%s到达你的%s%s."
+                                : "%s了你, 到达你的%s%s.",
                           Blind ? Something : Tobjnam(obj, "回到"),
                           makeplural(body_part(FOOT)),
                           Levitation ? "下" : "");

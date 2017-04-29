@@ -1443,7 +1443,7 @@ unsigned trflags;
                         trap->launch2.x, trap->launch2.y, style)) {
             deltrap(trap);
             newsym(u.ux, u.uy); /* get rid of trap symbol */
-            pline("你狠幸运, 没有巨石出来.");
+            pline("你很幸运, 没有巨石出来.");
         }
         break;
     }
@@ -2275,8 +2275,8 @@ register struct monst *mtmp;
         case FIRE_TRAP:
         mfiretrap:
             if (in_sight)
-                pline("%s从%s喷出在%s下面!", tower_of_flame,
-                      surface(mtmp->mx, mtmp->my), mon_nam(mtmp));
+                pline("%s从%s下面的%s喷出!", tower_of_flame,
+                      mon_nam(mtmp), surface(mtmp->mx, mtmp->my));
             else if (see_it) /* evidently `mtmp' is invisible */
                 You_see("%s从%s喷出!", tower_of_flame,
                         surface(mtmp->mx, mtmp->my));

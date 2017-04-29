@@ -1589,7 +1589,7 @@ int mode, final, attrindx;
         if (interesting_alimit) {
             Sprintf(eos(valubuf), "%s%s 极限:%s", paren_pfx,
                     /* more verbose if exceeding 'limit' due to magic bonus */
-                    (acurrent > alimit) ? "innate " : "",
+                    (acurrent > alimit) ? "天生" : "",
                     attrval(attrindx, alimit, valstring));
             /* paren_pfx = ", "; */
         }
@@ -1656,7 +1656,7 @@ int final;
         /* show active Wwalking here, potential Wwalking elsewhere */
         Sprintf(buf, "走在 %s上",
                 is_pool(u.ux, u.uy) ? "水面"
-                : is_lava(u.ux, u.uy) ? "岩浆"
+                : is_lava(u.ux, u.uy) ? "熔岩"
                   : surface(u.ux, u.uy)); /* catchall; shouldn't happen */
         you_are(buf, from_what(WWALKING));
     }
@@ -1890,9 +1890,9 @@ int final;
     putstr(en_win, 0, final ? "最终属性:" : "当前属性:");
 
     if (u.uevent.uhand_of_elbereth) {
-        static const char *const hofe_titles[3] = { "the Hand of Elbereth",
-                                                    "the Envoy of Balance",
-                                                    "the Glory of Arioch" };
+        static const char *const hofe_titles[3] = { "伊尔碧绿丝之手",
+                                                    "平衡使者",
+                                                    "亚略的荣耀" };
         you_are(hofe_titles[u.uevent.uhand_of_elbereth - 1], "");
     }
 

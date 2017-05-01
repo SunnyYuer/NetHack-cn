@@ -1,0 +1,19 @@
+准备
+Microsoft Visual Studio 2010版本以上
+
+
+编译
+1.将以下文件全部更换编码为ANSI
+src/*.*
+include/artilist.h
+dat/*.*
+win/win32/*.c
+
+2.双击sys/winnt/nhsetup.bat
+
+3.修改include/extern.h文件
+E void FDECL(terminate, (int)) NORETURN;
+修改为
+E void FDECL(terminate, (void)) NORETURN;
+
+4.到NetHack主目录，双击NetHack.sln打开Visual Studio，选择release并开始编译

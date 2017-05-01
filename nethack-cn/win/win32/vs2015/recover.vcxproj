@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -19,32 +19,32 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{93F10526-209E-41D7-BBEA-775787876895}</ProjectGuid>
+    <ProjectGuid>{2F35F228-6733-4FE5-9B46-B3AA10D4BC2E}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -83,18 +83,18 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
-      <TypeLibraryName>.\Debug/tilemap.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Debug/recover.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\include;..\sys\winnt\include;..\win\share;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\sys\winnt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_CONSOLE;WIN32CON;DLB;MSWIN_GRAPHICS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>.\Debug/tilemap.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Debug/recover.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\$(ConfigurationName)\$(ProjectName)\</AssemblerListingLocation>
       <ObjectFileName>.\$(ConfigurationName)\$(ProjectName)\</ObjectFileName>
       <ProgramDataBaseFileName>.\$(ConfigurationName)\$(ProjectName)\</ProgramDataBaseFileName>
@@ -121,31 +121,28 @@
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Debug/tilemap.bsc</OutputFile>
+      <OutputFile>.\Debug/recover.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Message>Generating src\tile.c</Message>
-      <Command>echo chdir ..\src
-chdir ..\src
-..\util\tilemap.exe
-echo chdir ..\build
-chdir ..\build
+      <Message>install exe</Message>
+      <Command>copy $(OutDir)recover.exe ..\binary
+if exist ..\doc\recover.txt copy ..\doc\recover.txt ..\binary\recover.txt
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
-      <TypeLibraryName>.\Debug/tilemap.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Debug/recover.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\include;..\sys\winnt\include;..\win\share;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\sys\winnt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_CONSOLE;WIN32CON;DLB;MSWIN_GRAPHICS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>.\Debug/tilemap.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Debug/recover.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\$(ConfigurationName)\$(ProjectName)\</AssemblerListingLocation>
       <ObjectFileName>.\$(ConfigurationName)\$(ProjectName)\</ObjectFileName>
       <ProgramDataBaseFileName>.\$(ConfigurationName)\$(ProjectName)\</ProgramDataBaseFileName>
@@ -171,33 +168,30 @@ chdir ..\build
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Debug/tilemap.bsc</OutputFile>
+      <OutputFile>.\Debug/recover.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Message>Generating src\tile.c</Message>
-      <Command>echo chdir ..\src
-chdir ..\src
-..\util\tilemap.exe
-echo chdir ..\build
-chdir ..\build
+      <Message>install exe</Message>
+      <Command>copy $(OutDir)recover.exe ..\binary
+if exist ..\doc\recover.txt copy ..\doc\recover.txt ..\binary\recover.txt
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
-      <TypeLibraryName>.\Release/tilemap.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Release/recover.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\include;..\sys\winnt\include;..\win\share;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\sys\winnt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;WIN32CON;DLB;MSWIN_GRAPHICS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeaderOutputFile>.\Release/tilemap.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Release/recover.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\$(ConfigurationName)\$(ProjectName)\</AssemblerListingLocation>
       <ObjectFileName>.\$(ConfigurationName)\$(ProjectName)\</ObjectFileName>
       <ProgramDataBaseFileName>.\$(ConfigurationName)\$(ProjectName)\</ProgramDataBaseFileName>
@@ -212,7 +206,7 @@ chdir ..\build
     </ResourceCompile>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <ProgramDatabaseFile>.\Release/tilemap.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>.\Release/recover.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -221,33 +215,29 @@ chdir ..\build
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release/tilemap.bsc</OutputFile>
+      <OutputFile>.\Release/recover.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Message>Generating src\tile.c</Message>
-      <Command>echo chdir ..\src
-chdir ..\src
-..\util\tilemap.exe
-echo chdir ..\build
-chdir ..\build
+      <Command>copy $(OutDir)recover.exe ..\binary
+if exist ..\doc\recover.txt copy ..\doc\recover.txt ..\binary\recover.txt
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
-      <TypeLibraryName>.\Release/tilemap.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Release/recover.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\include;..\sys\winnt\include;..\win\share;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\sys\winnt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;WIN32CON;DLB;MSWIN_GRAPHICS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeaderOutputFile>.\Release/tilemap.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Release/recover.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\$(ConfigurationName)\$(ProjectName)\</AssemblerListingLocation>
       <ObjectFileName>.\$(ConfigurationName)\$(ProjectName)\</ObjectFileName>
       <ProgramDataBaseFileName>.\$(ConfigurationName)\$(ProjectName)\</ProgramDataBaseFileName>
@@ -262,7 +252,7 @@ chdir ..\build
     </ResourceCompile>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <ProgramDatabaseFile>.\Release/tilemap.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>.\Release/recover.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -270,20 +260,16 @@ chdir ..\build
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release/tilemap.bsc</OutputFile>
+      <OutputFile>.\Release/recover.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Message>Generating src\tile.c</Message>
-      <Command>echo chdir ..\src
-chdir ..\src
-..\util\tilemap.exe
-echo chdir ..\build
-chdir ..\build
+      <Command>copy $(OutDir)recover.exe ..\binary
+if exist ..\doc\recover.txt copy ..\doc\recover.txt ..\binary\recover.txt
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\win\share\tilemap.c">
+    <ClCompile Include="..\util\recover.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -295,49 +281,24 @@ chdir ..\build
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\align.h" />
-    <ClInclude Include="..\include\attrib.h" />
-    <ClInclude Include="..\include\color.h" />
     <ClInclude Include="..\include\config.h" />
     <ClInclude Include="..\include\config1.h" />
-    <ClInclude Include="..\include\context.h" />
     <ClInclude Include="..\include\coord.h" />
-    <ClInclude Include="..\include\decl.h" />
-    <ClInclude Include="..\include\dgn_comp.h" />
-    <ClInclude Include="..\include\dgn_file.h" />
-    <ClInclude Include="..\include\display.h" />
-    <ClInclude Include="..\include\dungeon.h" />
-    <ClInclude Include="..\include\engrave.h" />
-    <ClInclude Include="..\include\flag.h" />
     <ClInclude Include="..\include\global.h" />
-    <ClInclude Include="..\include\mkroom.h" />
-    <ClInclude Include="..\include\monattk.h" />
-    <ClInclude Include="..\include\monst.h" />
-    <ClInclude Include="..\include\monsym.h" />
     <ClInclude Include="..\include\nhlan.h" />
     <ClInclude Include="..\include\ntconf.h" />
-    <ClInclude Include="..\include\obj.h" />
-    <ClInclude Include="..\include\objclass.h" />
-    <ClInclude Include="..\include\onames.h" />
-    <ClInclude Include="..\include\permonst.h" />
-    <ClInclude Include="..\include\pm.h" />
-    <ClInclude Include="..\include\prop.h" />
-    <ClInclude Include="..\include\quest.h" />
-    <ClInclude Include="..\include\rect.h" />
-    <ClInclude Include="..\include\region.h" />
-    <ClInclude Include="..\include\rm.h" />
-    <ClInclude Include="..\include\skills.h" />
-    <ClInclude Include="..\include\spell.h" />
-    <ClInclude Include="..\include\timeout.h" />
     <ClInclude Include="..\include\tradstdc.h" />
-    <ClInclude Include="..\include\trampoli.h" />
-    <ClInclude Include="..\include\trap.h" />
-    <ClInclude Include="..\include\vision.h" />
-    <ClInclude Include="..\include\winprocs.h" />
-    <ClInclude Include="..\include\wintty.h" />
-    <ClInclude Include="..\include\wintype.h" />
-    <ClInclude Include="..\include\you.h" />
-    <ClInclude Include="..\include\youprop.h" />
+    <ClInclude Include="..\sys\winnt\win32api.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="dlb_main.vcxproj">
+      <Project>{0303a585-3f83-4bb7-af6b-1e12c8fb54ac}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="makedefs.vcxproj">
+      <Project>{ba3dd34c-04b7-40d0-b373-9329aa9e8945}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

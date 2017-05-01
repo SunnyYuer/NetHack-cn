@@ -10,30 +10,8 @@ set BUILDPATH=..\..\build
 set BINPATH=..\..\binary
 set VCDir=
 
-:studiocheck
-@REM Set fallbacks here for 32-bit VS2010
-SET REGTREE=HKLM\Software\Microsoft\VCExpress\12.0\Setup\VC
-SET MSVCVERSION=2010
-
-@REM if we're in a 64-bit cmd prompt, gotta include Wow6432Node
-echo Checking for 64-bit environment...
-if "%ProgramFiles%" NEQ "%ProgramFiles(x86)%" SET REGTREE=HKLM\Software\Wow6432Node\Microsoft\VCExpress\12.0\Setup\VC
-
-@REM i can see your house from here... or at least your VC++ folder
-echo Checking version of VC++ installed...
-echo Checking for VC2013 Express...
-for /f "usebackq skip=2 tokens=1-2*" %%a IN (`reg query %REGTREE% /v ProductDir`) do @set VCDir="%%c"
-if not defined VCDir goto :othereditions
-if not exist %VCDir% goto :othereditions
-
-set MSVCVERSION=2013
-goto :fallback
-
-:othereditions
-@REM TODO: teach ourselves to detect full versions of Studio, which are under a different registry hive
-echo VC2013 Express not found; dropping back.
-
-:fallback
+:studiouse
+set MSVCVERSION=2015
 echo Using VS%MSVCVERSION%.
 set SRCPATH=%WIN32PATH%\vs%MSVCVERSION%
 

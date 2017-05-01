@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -19,32 +19,32 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{63F9B82B-F589-4082-ABE5-D4F0682050AB}</ProjectGuid>
+    <ProjectGuid>{BA3DD34C-04B7-40D0-B373-9329AA9E8945}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -74,27 +74,28 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\$(ConfigurationName)\$(ProjectName)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\..\util\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\..\util\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Debug\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\Debug\$(ProjectName)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\..\util\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\..\util\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
-      <TypeLibraryName>.\Release/uudecode.tlb</TypeLibraryName>
+      <TypeLibraryName>.\..\util/makedefs.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..\include;..\sys\winnt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;WIN32CON;DLB;MSWIN_GRAPHICS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeaderOutputFile>.\Release/uudecode.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Release/makedefs.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\$(ConfigurationName)\$(ProjectName)\</AssemblerListingLocation>
       <ObjectFileName>.\$(ConfigurationName)\$(ProjectName)\</ObjectFileName>
       <ProgramDataBaseFileName>.\$(ConfigurationName)\$(ProjectName)\</ProgramDataBaseFileName>
@@ -109,7 +110,7 @@
     </ResourceCompile>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <ProgramDatabaseFile>.\Release/uudecode.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>.\..\util/makedefs.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -118,45 +119,65 @@
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release/uudecode.bsc</OutputFile>
+      <OutputFile>.\..\util/makedefs.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>echo chdir ..\win\win32
-chdir ..\win\win32
-echo decoding icon (nhico.uu to NetHack.ico)
-..\..\util\uudecode.exe ../../sys/winnt/nhico.uu
-echo decoding mnsel (mnsel.uu to mnsel.bmp)
-..\..\util\uudecode.exe mnsel.uu
-echo decoding mnselcnt (mnselcnt.uu to mnselcnt.bmp)
-..\..\util\uudecode.exe mnselcnt.uu
-echo decoding mnunsel (mnunsel.uu to mnunsel.bmp)
-..\..\util\uudecode.exe mnunsel.uu
-echo decoding petmark (petmark.uu to petmark.bmp)
-..\..\util\uudecode.exe petmark.uu
-echo decoding pilemark (pilemark.uu to pilemark.bmp)
-..\..\util\uudecode.exe pilemark.uu
-echo decoding splash (splash.uu to splash.bmp)
-..\..\util\uudecode.exe splash.uu
-echo decoding tombstone (rip.uu to rip.bmp)
-..\..\util\uudecode.exe rip.uu
-chdir ..\..\binary
+      <Message>Running makedefs</Message>
+      <Command>echo chdir ..\util
+chdir ..\util
+chdir
+echo makedefs.exe -v
+makedefs.exe -v
+echo makedefs.exe -o
+makedefs.exe  -o
+echo makedefs.exe -p
+makedefs.exe -p
+echo makedefs.exe -m
+makedefs.exe -m
+echo makedefs.exe -z
+makedefs.exe -z
+echo chdir ..\dat
+chdir ..\dat
+chdir
+echo Generating NetHack database
+echo ..\util\makedefs.exe -d
+..\util\makedefs.exe -d
+echo Generating rumors
+echo ..\util\makedefs.exe -r
+..\util\makedefs.exe -r
+echo Generating quests
+echo ..\util\makedefs.exe -q
+..\util\makedefs.exe -q
+echo Generating oracles
+echo ..\util\makedefs.exe -h
+..\util\makedefs.exe -h
+echo Generating engrave epitaph bogusmon
+echo ..\util\makedefs.exe -s
+..\util\makedefs.exe -s
+echo Generating dungeon.pdf
+echo ..\util\makedefs.exe -e
+..\util\makedefs.exe -e
+echo chdir ..\build
+chdir ..\build
+copy ..\win\share\tilemap.c ..\win\share\tiletxt.c
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
-      <TypeLibraryName>.\Release/uudecode.tlb</TypeLibraryName>
+      <TypeLibraryName>.\..\util/makedefs.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..\include;..\sys\winnt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;WIN32CON;DLB;MSWIN_GRAPHICS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeaderOutputFile>.\Release/uudecode.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Release/makedefs.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\$(ConfigurationName)\$(ProjectName)\</AssemblerListingLocation>
       <ObjectFileName>.\$(ConfigurationName)\$(ProjectName)\</ObjectFileName>
       <ProgramDataBaseFileName>.\$(ConfigurationName)\$(ProjectName)\</ProgramDataBaseFileName>
@@ -171,7 +192,7 @@ chdir ..\..\binary
     </ResourceCompile>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <ProgramDatabaseFile>.\Release/uudecode.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>.\..\util/makedefs.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -179,44 +200,64 @@ chdir ..\..\binary
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release/uudecode.bsc</OutputFile>
+      <OutputFile>.\..\util/makedefs.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>echo chdir ..\win\win32
-chdir ..\win\win32
-echo decoding icon (nhico.uu to NetHack.ico)
-..\..\util\uudecode.exe ../../sys/winnt/nhico.uu
-echo decoding mnsel (mnsel.uu to mnsel.bmp)
-..\..\util\uudecode.exe mnsel.uu
-echo decoding mnselcnt (mnselcnt.uu to mnselcnt.bmp)
-..\..\util\uudecode.exe mnselcnt.uu
-echo decoding mnunsel (mnunsel.uu to mnunsel.bmp)
-..\..\util\uudecode.exe mnunsel.uu
-echo decoding petmark (petmark.uu to petmark.bmp)
-..\..\util\uudecode.exe petmark.uu
-echo decoding pilemark (pilemark.uu to pilemark.bmp)
-..\..\util\uudecode.exe pilemark.uu
-echo decoding splash (splash.uu to splash.bmp)
-..\..\util\uudecode.exe splash.uu
-echo decoding tombstone (rip.uu to rip.bmp)
-..\..\util\uudecode.exe rip.uu
-chdir ..\..\binary
+      <Message>Running makedefs</Message>
+      <Command>echo chdir ..\util
+chdir ..\util
+chdir
+echo makedefs.exe -v
+makedefs.exe -v
+echo makedefs.exe -o
+makedefs.exe  -o
+echo makedefs.exe -p
+makedefs.exe -p
+echo makedefs.exe -m
+makedefs.exe -m
+echo makedefs.exe -z
+makedefs.exe -z
+echo chdir ..\dat
+chdir ..\dat
+chdir
+echo Generating NetHack database
+echo ..\util\makedefs.exe -d
+..\util\makedefs.exe -d
+echo Generating rumors
+echo ..\util\makedefs.exe -r
+..\util\makedefs.exe -r
+echo Generating quests
+echo ..\util\makedefs.exe -q
+..\util\makedefs.exe -q
+echo Generating oracles
+echo ..\util\makedefs.exe -h
+..\util\makedefs.exe -h
+echo Generating engrave epitaph bogusmon
+echo ..\util\makedefs.exe -s
+..\util\makedefs.exe -s
+echo Generating dungeon.pdf
+echo ..\util\makedefs.exe -e
+..\util\makedefs.exe -e
+echo chdir ..\build
+chdir ..\build
+copy ..\win\share\tilemap.c ..\win\share\tiletxt.c
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
-      <TypeLibraryName>.\Debug/uudecode.tlb</TypeLibraryName>
+      <TypeLibraryName>.\..\util/makedefs.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..\include;..\sys\winnt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;WIN32;_CONSOLE;WIN32CON;DLB;MSWIN_GRAPHICS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>.\Debug/uudecode.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Debug/makedefs.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\$(ConfigurationName)\$(ProjectName)\</AssemblerListingLocation>
       <ObjectFileName>.\$(ConfigurationName)\$(ProjectName)\</ObjectFileName>
       <ProgramDataBaseFileName>.\$(ConfigurationName)\$(ProjectName)\</ProgramDataBaseFileName>
@@ -243,43 +284,60 @@ chdir ..\..\binary
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Debug/uudecode.bsc</OutputFile>
+      <OutputFile>.\..\util/makedefs.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>echo chdir ..\win\win32
-chdir ..\win\win32
-echo decoding icon (nhico.uu to NetHack.ico)
-..\..\util\uudecode.exe ../../sys/winnt/nhico.uu
-echo decoding mnsel (mnsel.uu to mnsel.bmp)
-..\..\util\uudecode.exe mnsel.uu
-echo decoding mnselcnt (mnselcnt.uu to mnselcnt.bmp)
-..\..\util\uudecode.exe mnselcnt.uu
-echo decoding mnunsel (mnunsel.uu to mnunsel.bmp)
-..\..\util\uudecode.exe mnunsel.uu
-echo decoding petmark (petmark.uu to petmark.bmp)
-..\..\util\uudecode.exe petmark.uu
-echo decoding pilemark (pilemark.uu to pilemark.bmp)
-..\..\util\uudecode.exe pilemark.uu
-echo decoding splash (splash.uu to splash.bmp)
-..\..\util\uudecode.exe splash.uu
-echo decoding tombstone (rip.uu to rip.bmp)
-..\..\util\uudecode.exe rip.uu
-chdir ..\..\binary
+      <Message>Running makedefs</Message>
+      <Command>echo chdir ..\util
+chdir ..\util
+chdir
+echo makedefs.exe -v
+makedefs.exe -v
+echo makedefs.exe -o
+makedefs.exe  -o
+echo makedefs.exe -p
+makedefs.exe -p
+echo makedefs.exe -m
+makedefs.exe -m
+echo makedefs.exe -z
+makedefs.exe -z
+echo chdir ..\dat
+chdir ..\dat
+chdir
+echo Generating NetHack database
+echo ..\util\makedefs.exe -d
+..\util\makedefs.exe -d
+echo Generating rumors
+echo ..\util\makedefs.exe -r
+..\util\makedefs.exe -r
+echo Generating quests
+echo ..\util\makedefs.exe -q
+..\util\makedefs.exe -q
+echo Generating oracles
+echo ..\util\makedefs.exe -h
+..\util\makedefs.exe -h
+echo Generating dungeon.pdf
+echo ..\util\makedefs.exe -e
+..\util\makedefs.exe -e
+echo chdir ..\build
+chdir ..\build
+copy ..\win\share\tilemap.c ..\win\share\tiletxt.c
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
-      <TypeLibraryName>.\Debug/uudecode.tlb</TypeLibraryName>
+      <TypeLibraryName>.\..\util/makedefs.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..\include;..\sys\winnt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;WIN32;_CONSOLE;WIN32CON;DLB;MSWIN_GRAPHICS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>.\Debug/uudecode.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Debug/makedefs.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\$(ConfigurationName)\$(ProjectName)\</AssemblerListingLocation>
       <ObjectFileName>.\$(ConfigurationName)\$(ProjectName)\</ObjectFileName>
       <ProgramDataBaseFileName>.\$(ConfigurationName)\$(ProjectName)\</ProgramDataBaseFileName>
@@ -305,38 +363,94 @@ chdir ..\..\binary
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Debug/uudecode.bsc</OutputFile>
+      <OutputFile>.\..\util/makedefs.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>echo chdir ..\win\win32
-chdir ..\win\win32
-echo decoding icon (nhico.uu to NetHack.ico)
-..\..\util\uudecode.exe ../../sys/winnt/nhico.uu
-echo decoding mnsel (mnsel.uu to mnsel.bmp)
-..\..\util\uudecode.exe mnsel.uu
-echo decoding mnselcnt (mnselcnt.uu to mnselcnt.bmp)
-..\..\util\uudecode.exe mnselcnt.uu
-echo decoding mnunsel (mnunsel.uu to mnunsel.bmp)
-..\..\util\uudecode.exe mnunsel.uu
-echo decoding petmark (petmark.uu to petmark.bmp)
-..\..\util\uudecode.exe petmark.uu
-echo decoding pilemark (pilemark.uu to pilemark.bmp)
-..\..\util\uudecode.exe pilemark.uu
-echo decoding splash (splash.uu to splash.bmp)
-..\..\util\uudecode.exe splash.uu
-echo decoding tombstone (rip.uu to rip.bmp)
-..\..\util\uudecode.exe rip.uu
-chdir ..\..\binary
+      <Message>Running makedefs</Message>
+      <Command>echo chdir ..\util
+chdir ..\util
+chdir
+echo makedefs.exe -v
+makedefs.exe -v
+echo makedefs.exe -o
+makedefs.exe  -o
+echo makedefs.exe -p
+makedefs.exe -p
+echo makedefs.exe -m
+makedefs.exe -m
+echo makedefs.exe -z
+makedefs.exe -z
+echo chdir ..\dat
+chdir ..\dat
+chdir
+echo Generating NetHack database
+echo ..\util\makedefs.exe -d
+..\util\makedefs.exe -d
+echo Generating rumors
+echo ..\util\makedefs.exe -r
+..\util\makedefs.exe -r
+echo Generating quests
+echo ..\util\makedefs.exe -q
+..\util\makedefs.exe -q
+echo Generating oracles
+echo ..\util\makedefs.exe -h
+..\util\makedefs.exe -h
+echo Generating dungeon.pdf
+echo ..\util\makedefs.exe -e
+..\util\makedefs.exe -e
+echo chdir ..\build
+chdir ..\build
+copy ..\win\share\tilemap.c ..\win\share\tiletxt.c
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\sys\share\uudecode.c">
+    <ClCompile Include="..\util\makedefs.c">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="..\src\monst.c">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="..\src\objects.c">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\config.h" />
+    <ClInclude Include="..\include\config1.h" />
+    <ClInclude Include="..\include\context.h" />
+    <ClInclude Include="..\include\coord.h" />
+    <ClInclude Include="..\include\global.h" />
+    <ClInclude Include="..\include\monattk.h" />
+    <ClInclude Include="..\include\monflag.h" />
+    <ClInclude Include="..\include\monsym.h" />
+    <ClInclude Include="..\include\nhlan.h" />
+    <ClInclude Include="..\include\ntconf.h" />
+    <ClInclude Include="..\include\objclass.h" />
+    <ClInclude Include="..\include\patchlevel.h" />
+    <ClInclude Include="..\include\qtext.h" />
+    <ClInclude Include="..\include\tradstdc.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

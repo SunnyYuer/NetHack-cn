@@ -1,14 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|Win32">
-      <Configuration>Debug</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug|x64">
-      <Configuration>Debug</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
@@ -17,52 +9,62 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{CEC5D360-8804-454F-8591-002184C23499}</ProjectGuid>
-    <RootNamespace>NetHackW</RootNamespace>
+    <ProjectGuid>{609BC774-C6F8-4B2B-AA7D-5B3D0EA95751}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>NetHack</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC60.props" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC60.props" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC60.props" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC60.props" />
   </ImportGroup>
@@ -83,27 +85,23 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Midl>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MkTypLibCompatible>true</MkTypLibCompatible>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Release/NetHackW.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
-    </Midl>
     <ClCompile>
       <AdditionalOptions>/Gs /Oi-  /FS %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <WarningLevel>Level3</WarningLevel>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <PreprocessorDefinitions>TILES;MSWIN_GRAPHICS;WIN32;WIN32CON;DLB;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\win\win32;..\include;..\sys\winnt;..\sys\share;..\win\share;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>TILES;MSWIN_GRAPHICS;WIN32CONNDEBUG;WIN32;_WINDOWS;DLB;MSWIN_GRAPHICS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeaderOutputFile>.\Release/NetHackW.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Release/NetHack.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\$(ConfigurationName)\$(ProjectName)\</AssemblerListingLocation>
       <ObjectFileName>.\$(ConfigurationName)\$(ProjectName)\</ObjectFileName>
       <ProgramDataBaseFileName>.\$(ConfigurationName)\$(ProjectName)\</ProgramDataBaseFileName>
@@ -111,61 +109,58 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
     </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x0409</Culture>
-    </ResourceCompile>
     <Link>
-      <AdditionalOptions>/MAPINFO:EXPORTS %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>comctl32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;winmm.lib;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\Release/NetHackW.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>.\Release/NetHack.pdb</ProgramDatabaseFile>
       <GenerateMapFile>true</GenerateMapFile>
-      <MapFileName>.\Release/NetHackW.map</MapFileName>
-      <SubSystem>Windows</SubSystem>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <MapFileName>.\Release/NetHack.map</MapFileName>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
+      <MapExports>true</MapExports>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release/NetHackW.bsc</OutputFile>
+      <OutputFile>.\Release/NetHack.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
       <Message>Install exe</Message>
-      <Command>copy $(OutDir)NetHackW.exe ..\binary
-copy ..\dat\nhdat ..\binary
-copy ..\dat\license ..\binary
-if NOT exist ..\binary\sysconf copy ..\sys\winnt\sysconf ..\binary\sysconf
-if exist ..\doc\Guidebook.txt copy ..\doc\Guidebook.txt ..\binary\Guidebook.txt
-if exist ..\doc\nethack.txt copy ..\doc\nethack.txt ..\binary\NetHack.txt
-copy ..\sys\winnt\defaults.nh ..\binary\defaults.nh
-</Command>
+      <Command>
+        copy $(OutDir)NetHack.exe ..\binary
+        copy ..\dat\nhdat ..\binary
+        copy ..\dat\license ..\binary
+        if exist tiles.bmp copy tiles.bmp ..\binary
+        if NOT exist ..\binary\sysconf copy ..\sys\winnt\sysconf ..\binary\sysconf
+        if exist ..\doc\Guidebook.txt copy ..\doc\Guidebook.txt ..\binary\Guidebook.txt
+        if exist ..\doc\nethack.txt copy ..\doc\nethack.txt ..\binary\NetHack.txt
+        copy ..\sys\winnt\defaults.nh ..\binary\defaults.nh
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Midl>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MkTypLibCompatible>true</MkTypLibCompatible>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TypeLibraryName>.\Release/NetHackW.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
-    </Midl>
     <ClCompile>
       <AdditionalOptions>/Gs /Oi-  /FS %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <WarningLevel>Level3</WarningLevel>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <PreprocessorDefinitions>TILES;MSWIN_GRAPHICS;WIN32;WIN32CON;DLB;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\win\win32;..\include;..\sys\winnt;..\sys\share;..\win\share;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>TILES;MSWIN_GRAPHICS;WIN32CONNDEBUG;WIN32;_WINDOWS;DLB;MSWIN_GRAPHICS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeaderOutputFile>.\Release/NetHackW.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Release/NetHack.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\$(ConfigurationName)\$(ProjectName)\</AssemblerListingLocation>
       <ObjectFileName>.\$(ConfigurationName)\$(ProjectName)\</ObjectFileName>
       <ProgramDataBaseFileName>.\$(ConfigurationName)\$(ProjectName)\</ProgramDataBaseFileName>
@@ -173,156 +168,136 @@ copy ..\sys\winnt\defaults.nh ..\binary\defaults.nh
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
     </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x0409</Culture>
-    </ResourceCompile>
     <Link>
-      <AdditionalOptions>/MAPINFO:EXPORTS %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>comctl32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\Release/NetHackW.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>.\Release/NetHack.pdb</ProgramDatabaseFile>
       <GenerateMapFile>true</GenerateMapFile>
-      <MapFileName>.\Release/NetHackW.map</MapFileName>
-      <SubSystem>Windows</SubSystem>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <MapFileName>.\Release/NetHack.map</MapFileName>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release/NetHackW.bsc</OutputFile>
+      <OutputFile>.\Release/NetHack.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
       <Message>Install exe</Message>
-      <Command>copy $(OutDir)NetHackW.exe ..\binary
-copy ..\dat\nhdat ..\binary
-copy ..\dat\license ..\binary
-if NOT exist ..\binary\sysconf copy ..\sys\winnt\sysconf ..\binary\sysconf
-if exist ..\doc\Guidebook.txt copy ..\doc\Guidebook.txt ..\binary\Guidebook.txt
-if exist ..\doc\nethack.txt copy ..\doc\nethack.txt ..\binary\NetHack.txt
-copy ..\sys\winnt\defaults.nh ..\binary\defaults.nh
-</Command>
+      <Command>
+          copy $(OutDir)NetHack.exe ..\binary
+          copy ..\dat\nhdat ..\binary
+          copy ..\dat\license ..\binary
+          if exist tiles.bmp copy tiles.bmp ..\binary
+          if NOT exist ..\binary\sysconf copy ..\sys\winnt\sysconf ..\binary\sysconf
+          if exist ..\doc\Guidebook.txt copy ..\doc\Guidebook.txt ..\binary\Guidebook.txt
+          if exist ..\doc\nethack.txt copy ..\doc\nethack.txt ..\binary\NetHack.txt
+          copy ..\sys\winnt\defaults.nh ..\binary\defaults.nh
+        </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Midl>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MkTypLibCompatible>true</MkTypLibCompatible>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Debug/NetHackW.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
-    </Midl>
     <ClCompile>
+      <AdditionalOptions>/Gs /Oi-  /FS %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
       <AdditionalIncludeDirectories>..\win\win32;..\include;..\sys\winnt;..\sys\share;..\win\share;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>TILES;MSWIN_GRAPHICS;WIN32CON_DEBUG;WIN32;_WINDOWS;DLB;MSWIN_GRAPHICS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>true</MinimalRebuild>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <PreprocessorDefinitions>TILES;MSWIN_GRAPHICS;NDEBUG;WIN32;WIN32CON;DLB;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>.\Debug/NetHackW.pch</PrecompiledHeaderOutputFile>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeaderOutputFile>.\Debug/NetHack.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\$(ConfigurationName)\$(ProjectName)\</AssemblerListingLocation>
       <ObjectFileName>.\$(ConfigurationName)\$(ProjectName)\</ObjectFileName>
       <ProgramDataBaseFileName>.\$(ConfigurationName)\$(ProjectName)\</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <AdditionalOptions>/Gs /Oi-  /FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x0409</Culture>
-    </ResourceCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <ProgramDatabaseFile>.\Release/NetHack.pdb</ProgramDatabaseFile>
+      <GenerateMapFile>true</GenerateMapFile>
+      <MapFileName>.\Release/NetHack.map</MapFileName>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\$(ConfigurationName)\$(ProjectName)\</ProgramDatabaseFile>
-      <SubSystem>Windows</SubSystem>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <DataExecutionPrevention>
-      </DataExecutionPrevention>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalOptions>/SAFESEH:NO %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Debug/NetHackW.bsc</OutputFile>
+      <OutputFile>.\Debug/NetHack.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
       <Message>Install exe</Message>
-      <Command>if NOT exist ..\binary\*.* mkdir ..\binary
-copy $(OutDir)NetHackW.exe ..\binary
-copy ..\dat\nhdat ..\binary
-copy ..\dat\license ..\binary
-copy ..\dat\symbols ..\binary
-if NOT exist ..\binary\sysconf copy ..\sys\winnt\sysconf ..\binary\sysconf
-if exist ..\doc\Guidebook.txt copy ..\doc\Guidebook.txt ..\binary\Guidebook.txt
-if exist ..\doc\nethack.txt copy ..\doc\nethack.txt ..\binary\NetHack.txt
-copy ..\sys\winnt\defaults.nh ..\binary\defaults.nh
-</Command>
+      <Command>
+          if NOT exist ..\binary\*.* mkdir ..\binary
+          copy $(OutDir)NetHack.exe ..\binary
+          copy ..\dat\nhdat ..\binary
+          copy ..\dat\license ..\binary
+          copy ..\dat\symbols ..\binary
+          if exist tiles.bmp copy tiles.bmp ..\binary
+          if NOT exist ..\binary\sysconf copy ..\sys\winnt\sysconf ..\binary\sysconf
+          if exist ..\doc\Guidebook.txt copy ..\doc\Guidebook.txt ..\binary\Guidebook.txt
+          if exist ..\doc\nethack.txt copy ..\doc\nethack.txt ..\binary\NetHack.txt
+          copy ..\sys\winnt\defaults.nh ..\binary\defaults.nh
+        </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Midl>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MkTypLibCompatible>true</MkTypLibCompatible>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TypeLibraryName>.\Debug/NetHackW.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
-    </Midl>
     <ClCompile>
+      <AdditionalOptions>/Gs /Oi-  /FS %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
       <AdditionalIncludeDirectories>..\win\win32;..\include;..\sys\winnt;..\sys\share;..\win\share;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>TILES;MSWIN_GRAPHICS;WIN32CON_DEBUG;WIN32;_WINDOWS;DLB;MSWIN_GRAPHICS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <PreprocessorDefinitions>TILES;MSWIN_GRAPHICS;WIN32;WIN32CON;DLB;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>.\Debug/NetHackW.pch</PrecompiledHeaderOutputFile>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeaderOutputFile>.\Debug/NetHack.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\$(ConfigurationName)\$(ProjectName)\</AssemblerListingLocation>
       <ObjectFileName>.\$(ConfigurationName)\$(ProjectName)\</ObjectFileName>
       <ProgramDataBaseFileName>.\$(ConfigurationName)\$(ProjectName)\</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <AdditionalOptions>/Gs /Oi-  /FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x0409</Culture>
-    </ResourceCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <ProgramDatabaseFile>.\Release/NetHack.pdb</ProgramDatabaseFile>
+      <GenerateMapFile>true</GenerateMapFile>
+      <MapFileName>.\Release/NetHack.map</MapFileName>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\$(ConfigurationName)\$(ProjectName)\</ProgramDatabaseFile>
-      <SubSystem>Windows</SubSystem>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <DataExecutionPrevention>
-      </DataExecutionPrevention>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;winmm.lib;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/SAFESEH:NO %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Debug/NetHackW.bsc</OutputFile>
+      <OutputFile>.\Debug/NetHack.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
       <Message>Install exe</Message>
-      <Command>if NOT exist ..\binary\*.* mkdir ..\binary
-copy $(OutDir)NetHackW.exe ..\binary
-copy ..\dat\nhdat ..\binary
-copy ..\dat\license ..\binary
-copy ..\dat\symbols ..\binary
-if NOT exist ..\binary\sysconf copy ..\sys\winnt\sysconf ..\binary\sysconf
-if exist ..\doc\Guidebook.txt copy ..\doc\Guidebook.txt ..\binary\Guidebook.txt
-if exist ..\doc\nethack.txt copy ..\doc\nethack.txt ..\binary\NetHack.txt
-copy ..\sys\winnt\defaults.nh ..\binary\defaults.nh
-</Command>
+      <Command>
+          if NOT exist ..\binary\*.* mkdir ..\binary
+          copy $(OutDir)NetHack.exe ..\binary
+          copy ..\dat\nhdat ..\binary
+          copy ..\dat\license ..\binary
+          copy ..\dat\symbols ..\binary
+          if exist tiles.bmp copy tiles.bmp ..\binary
+          if NOT exist ..\binary\sysconf copy ..\sys\winnt\sysconf ..\binary\sysconf
+          if exist ..\doc\Guidebook.txt copy ..\doc\Guidebook.txt ..\binary\Guidebook.txt
+          if exist ..\doc\nethack.txt copy ..\doc\nethack.txt ..\binary\NetHack.txt
+          copy ..\sys\winnt\defaults.nh ..\binary\defaults.nh
+        </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -426,7 +401,6 @@ copy ..\sys\winnt\defaults.nh ..\binary\defaults.nh
     <ClCompile Include="..\src\vault.c" />
     <ClCompile Include="..\src\version.c" />
     <ClCompile Include="..\src\vision.c" />
-    <ClCompile Include="..\src\vis_tab.c" />
     <ClCompile Include="..\src\weapon.c" />
     <ClCompile Include="..\src\were.c" />
     <ClCompile Include="..\src\wield.c" />
@@ -443,64 +417,74 @@ copy ..\sys\winnt\defaults.nh ..\binary\defaults.nh
     <ClCompile Include="..\sys\share\pcunix.c" />
     <ClCompile Include="..\sys\share\random.c" />
     <ClCompile Include="..\sys\winnt\ntsound.c" />
+    <ClCompile Include="..\sys\winnt\nttty.c" />
     <ClCompile Include="..\sys\winnt\stubs.c">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">TTYSTUB; _DEBUG;WIN32;_WINDOWS;DLB;MSWIN_GRAPHICS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">TTYSTUB;NDEBUG;WIN32;_WINDOWS;DLB;MSWIN_GRAPHICS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TTYSTUB; _DEBUG;WIN32;_WINDOWS;DLB;MSWIN_GRAPHICS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TTYSTUB;NDEBUG;WIN32;_WINDOWS;DLB;MSWIN_GRAPHICS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">GUISTUB;NDEBUG;WIN32;WIN32CON;DLB;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">GUISTUB;WIN32;WIN32CON;DLB;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GUISTUB;WIN32;WIN32CON;DLB;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GUISTUB;WIN32;WIN32CON;DLB;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ClCompile Include="..\sys\winnt\winnt.c" />
-    <ClCompile Include="..\win\win32\mhaskyn.c" />
-    <ClCompile Include="..\win\win32\mhdlg.c" />
-    <ClCompile Include="..\win\win32\mhfont.c" />
-    <ClCompile Include="..\win\win32\mhinput.c" />
-    <ClCompile Include="..\win\win32\mhmain.c" />
-    <ClCompile Include="..\win\win32\mhmap.c" />
-    <ClCompile Include="..\win\win32\mhmenu.c" />
-    <ClCompile Include="..\win\win32\mhmsgwnd.c" />
-    <ClCompile Include="..\win\win32\mhrip.c" />
-    <ClCompile Include="..\win\win32\mhsplash.c" />
-    <ClCompile Include="..\win\win32\mhstatus.c" />
-    <ClCompile Include="..\win\win32\mhtext.c" />
-    <ClCompile Include="..\win\win32\mswproc.c" />
-    <ClCompile Include="..\win\win32\winhack.c" />
+    <ClCompile Include="..\win\tty\getline.c" />
+    <ClCompile Include="..\win\tty\topl.c" />
+    <ClCompile Include="..\win\tty\wintty.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="dgncomp.vcxproj">
-      <Project>{8a3f81c7-2968-49a8-86bf-2669412ad7de}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="dlb_main.vcxproj">
-      <Project>{0303a585-3f83-4bb7-af6b-1e12c8fb54ac}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="levcomp.vcxproj">
-      <Project>{9dd9c52e-e8c9-4533-bd22-83c055c0aaba}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="makedefs.vcxproj">
-      <Project>{ba3dd34c-04b7-40d0-b373-9329aa9e8945}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="tilemap.vcxproj">
-      <Project>{93f10526-209e-41d7-bbea-775787876895}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="tiles.vcxproj">
-      <Project>{55946465-fc65-47b3-bb48-742c7694c0d6}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>true</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
-    <ProjectReference Include="uudecode.vcxproj">
-      <Project>{63f9b82b-f589-4082-abe5-d4f0682050ab}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\win\win32\winhack.rc" />
+    <ClInclude Include="..\include\align.h" />
+    <ClInclude Include="..\include\artifact.h" />
+    <ClInclude Include="..\include\artilist.h" />
+    <ClInclude Include="..\include\attrib.h" />
+    <ClInclude Include="..\include\botl.h" />
+    <ClInclude Include="..\include\color.h" />
+    <ClInclude Include="..\include\config.h" />
+    <ClInclude Include="..\include\config1.h" />
+    <ClInclude Include="..\include\context.h" />
+    <ClInclude Include="..\include\coord.h" />
+    <ClInclude Include="..\include\date.h" />
+    <ClInclude Include="..\include\decl.h" />
+    <ClInclude Include="..\include\display.h" />
+    <ClInclude Include="..\include\dlb.h" />
+    <ClInclude Include="..\include\dungeon.h" />
+    <ClInclude Include="..\include\engrave.h" />
+    <ClInclude Include="..\include\extern.h" />
+    <ClInclude Include="..\include\flag.h" />
+    <ClInclude Include="..\include\func_tab.h" />
+    <ClInclude Include="..\include\global.h" />
+    <ClInclude Include="..\include\hack.h" />
+    <ClInclude Include="..\include\lev.h" />
+    <ClInclude Include="..\include\mextra.h" />
+    <ClInclude Include="..\include\mfndpos.h" />
+    <ClInclude Include="..\include\mkroom.h" />
+    <ClInclude Include="..\include\monattk.h" />
+    <ClInclude Include="..\include\mondata.h" />
+    <ClInclude Include="..\include\monflag.h" />
+    <ClInclude Include="..\include\monst.h" />
+    <ClInclude Include="..\include\monsym.h" />
+    <ClInclude Include="..\include\ntconf.h" />
+    <ClInclude Include="..\include\obj.h" />
+    <ClInclude Include="..\include\objclass.h" />
+    <ClInclude Include="..\include\onames.h" />
+    <ClInclude Include="..\include\patchlevel.h" />
+    <ClInclude Include="..\include\permonst.h" />
+    <ClInclude Include="..\include\pm.h" />
+    <ClInclude Include="..\include\prop.h" />
+    <ClInclude Include="..\include\qtext.h" />
+    <ClInclude Include="..\include\quest.h" />
+    <ClInclude Include="..\include\rect.h" />
+    <ClInclude Include="..\include\region.h" />
+    <ClInclude Include="..\include\rm.h" />
+    <ClInclude Include="..\include\skills.h" />
+    <ClInclude Include="..\include\spell.h" />
+    <ClInclude Include="..\include\sp_lev.h" />
+    <ClInclude Include="..\include\timeout.h" />
+    <ClInclude Include="..\include\tradstdc.h" />
+    <ClInclude Include="..\include\trap.h" />
+    <ClInclude Include="..\include\vision.h" />
+    <ClInclude Include="..\include\winprocs.h" />
+    <ClInclude Include="..\include\wintty.h" />
+    <ClInclude Include="..\include\wintype.h" />
+    <ClInclude Include="..\include\you.h" />
+    <ClInclude Include="..\include\youprop.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

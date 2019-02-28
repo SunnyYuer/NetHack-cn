@@ -330,11 +330,11 @@ doextcmd(VOID_ARGS)
 
         func = extcmdlist[idx].ef_funct;
         if (!wizard && (extcmdlist[idx].flags & WIZMODECMD)) {
-            You("can't do that.");
+            You("不能做那个.");
             return 0;
         }
         if (iflags.menu_requested && !accept_menu_prefix(func)) {
-            pline("'%s' prefix has no effect for the %s command.",
+            pline("'%s' 前缀对%s 命令没作用.",
                   visctrl(Cmd.spkeys[NHKF_REQMENU]),
                   extcmdlist[idx].ef_txt);
             iflags.menu_requested = FALSE;
@@ -356,10 +356,10 @@ doextlist(VOID_ARGS)
 
     datawin = create_nhwindow(NHW_TEXT);
     putstr(datawin, 0, "");
-    putstr(datawin, 0, "            Extended Commands List");
+    putstr(datawin, 0, "                        扩展命令列表");
     putstr(datawin, 0, "");
     if (ch) {
-        Sprintf(buf, "    Press '%s', then type:",
+        Sprintf(buf, "    按'%s', 然后输入:",
                 visctrl(ch));
         putstr(datawin, 0, buf);
         putstr(datawin, 0, "");
@@ -375,7 +375,7 @@ doextlist(VOID_ARGS)
         putstr(datawin, 0, buf);
     }
     putstr(datawin, 0, "");
-    putstr(datawin, 0, "    Commands marked with a * will be autocompleted.");
+    putstr(datawin, 0, "    标有* 的命令将自动完成.");
     display_nhwindow(datawin, FALSE);
     destroy_nhwindow(datawin);
     return 0;
@@ -551,22 +551,22 @@ domonability(VOID_ARGS)
             if (split_mon(&youmonst, (struct monst *) 0))
                 dryup(u.ux, u.uy, TRUE);
         } else
-            There("is no fountain here.");
+            There("没有喷泉.");
     } else if (is_unicorn(youmonst.data)) {
         use_unicorn_horn((struct obj *) 0);
         return 1;
     } else if (youmonst.data->msound == MS_SHRIEK) {
-        You("shriek.");
+        You("尖叫.");
         if (u.uburied)
-            pline("Unfortunately sound does not carry well through rock.");
+            pline("不幸的是声音没有很好地通过岩石.");
         else
             aggravate();
     } else if (youmonst.data->mlet == S_VAMPIRE)
         return dopoly();
     else if (Upolyd)
-        pline("Any special ability you may have is purely reflexive.");
+        pline("你可能有的特殊能力顶多是纯粹的倒挂.");
     else
-        You("don't have a special ability in your normal form!");
+        You("在正常的外貌中没有特殊的能力!");
     return 0;
 }
 
@@ -574,9 +574,9 @@ int
 enter_explore_mode(VOID_ARGS)
 {
     if (wizard) {
-        You("are in debug mode.");
+        You("在向导模式中.");
     } else if (discover) {
-        You("are already in explore mode.");
+        You("已经是在探索模式中.");
     } else {
 #ifdef SYSCF
 #if defined(UNIX)
@@ -588,15 +588,15 @@ enter_explore_mode(VOID_ARGS)
 #endif
 #endif
         pline(
-        "Beware!  From explore mode there will be no return to normal game.");
+        "注意!  进入探索模式后就不能回到正常游戏.");
         if (paranoid_query(ParanoidQuit,
-                           "Do you want to enter explore mode?")) {
+                           "你想进入探索模式吗?")) {
             clear_nhwindow(WIN_MESSAGE);
-            You("are now in non-scoring explore mode.");
+            You("现在是无分数探索模式.");
             discover = TRUE;
         } else {
             clear_nhwindow(WIN_MESSAGE);
-            pline("Resuming normal game.");
+            pline("回到正常游戏.");
         }
     }
     return 0;
@@ -614,7 +614,7 @@ wiz_wish(VOID_ARGS) /* Unlimited wishes for debug mode by Paul Polderman */
         flags.verbose = save_verbose;
         (void) encumber_msg();
     } else
-        pline("Unavailable command '%s'.",
+        pline("不可用的命令 '%s'.",
               visctrl((int) cmd_from_func(wiz_wish)));
     return 0;
 }
@@ -629,7 +629,7 @@ wiz_identify(VOID_ARGS)
             identify_pack(0, FALSE);
         iflags.override_ID = 0;
     } else
-        pline("Unavailable command '%s'.",
+        pline("不可用的命令 '%s'.",
               visctrl((int) cmd_from_func(wiz_identify)));
     return 0;
 }
@@ -684,7 +684,7 @@ wiz_map(VOID_ARGS)
         HConfusion = save_Hconf;
         HHallucination = save_Hhallu;
     } else
-        pline("Unavailable command '%s'.",
+        pline("不可用的命令 '%s'.",
               visctrl((int) cmd_from_func(wiz_map)));
     return 0;
 }
@@ -696,7 +696,7 @@ wiz_genesis(VOID_ARGS)
     if (wizard)
         (void) create_particular();
     else
-        pline("Unavailable command '%s'.",
+        pline("不可用的命令 '%s'.",
               visctrl((int) cmd_from_func(wiz_genesis)));
     return 0;
 }
@@ -708,7 +708,7 @@ wiz_where(VOID_ARGS)
     if (wizard)
         (void) print_dungeon(FALSE, (schar *) 0, (xchar *) 0);
     else
-        pline("Unavailable command '%s'.",
+        pline("不可用的命令 '%s'.",
               visctrl((int) cmd_from_func(wiz_where)));
     return 0;
 }
@@ -720,7 +720,7 @@ wiz_detect(VOID_ARGS)
     if (wizard)
         (void) findit();
     else
-        pline("Unavailable command '%s'.",
+        pline("不可用的命令 '%s'.",
               visctrl((int) cmd_from_func(wiz_detect)));
     return 0;
 }
@@ -732,7 +732,7 @@ wiz_level_tele(VOID_ARGS)
     if (wizard)
         level_tele();
     else
-        pline("Unavailable command '%s'.",
+        pline("不可用的命令 '%s'.",
               visctrl((int) cmd_from_func(wiz_level_tele)));
     return 0;
 }
@@ -742,8 +742,8 @@ STATIC_PTR int
 wiz_mon_polycontrol(VOID_ARGS)
 {
     iflags.mon_polycontrol = !iflags.mon_polycontrol;
-    pline("Monster polymorph control is %s.",
-          iflags.mon_polycontrol ? "on" : "off");
+    pline("怪物变形控制%s.",
+          iflags.mon_polycontrol ? "开" : "关");
     return 0;
 }
 
@@ -755,7 +755,7 @@ wiz_level_change(VOID_ARGS)
     int newlevel;
     int ret;
 
-    getlin("To what experience level do you want to be set?", buf);
+    getlin("你想设置为多少等级?", buf);
     (void) mungspaces(buf);
     if (buf[0] == '\033' || buf[0] == '\0')
         ret = 0;
@@ -767,19 +767,19 @@ wiz_level_change(VOID_ARGS)
         return 0;
     }
     if (newlevel == u.ulevel) {
-        You("are already that experienced.");
+        You("已经是那个等级了.");
     } else if (newlevel < u.ulevel) {
         if (u.ulevel == 1) {
-            You("are already as inexperienced as you can get.");
+            You("已经达到最低等级.");
             return 0;
         }
         if (newlevel < 1)
             newlevel = 1;
         while (u.ulevel > newlevel)
-            losexp("#levelchange");
+            losexp("# 改变等级");
     } else {
         if (u.ulevel >= MAXULEV) {
-            You("are already as experienced as you can get.");
+            You("你已经达到最高等级.");
             return 0;
         }
         if (newlevel > MAXULEV)
@@ -1319,20 +1319,20 @@ doterrain(VOID_ARGS)
     any = zeroany;
     any.a_int = 1;
     add_menu(men, NO_GLYPH, &any, 0, 0, ATR_NONE,
-             "known map without monsters, objects, and traps",
+             "没有怪物, 物品, 和陷阱的已知地图",
              MENU_SELECTED);
     any.a_int = 2;
     add_menu(men, NO_GLYPH, &any, 0, 0, ATR_NONE,
-             "known map without monsters and objects",
+             "没有怪物和物品的已知地图",
              MENU_UNSELECTED);
     any.a_int = 3;
     add_menu(men, NO_GLYPH, &any, 0, 0, ATR_NONE,
-             "known map without monsters",
+             "没有怪物的已知地图",
              MENU_UNSELECTED);
     if (discover || wizard) {
         any.a_int = 4;
         add_menu(men, NO_GLYPH, &any, 0, 0, ATR_NONE,
-                 "full map without monsters, objects, and traps",
+                 "没有怪物, 物品, 和陷阱的全地图",
                  MENU_UNSELECTED);
         if (wizard) {
             any.a_int = 5;
@@ -1345,7 +1345,7 @@ doterrain(VOID_ARGS)
                      MENU_UNSELECTED);
         }
     }
-    end_menu(men, "View which?");
+    end_menu(men, "观看哪个?");
 
     n = select_menu(men, PICK_ONE, &sel);
     destroy_nhwindow(men);
@@ -1388,16 +1388,16 @@ doterrain(VOID_ARGS)
 
 /* -enlightenment and conduct- */
 static winid en_win = WIN_ERR;
-static const char You_[] = "You ", are[] = "are ", were[] = "were ",
-                  have[] = "have ", had[] = "had ", can[] = "can ",
-                  could[] = "could ";
-static const char have_been[] = "have been ", have_never[] = "have never ",
-                  never[] = "never ";
+static const char You_[] = "你", are[] = "是", were[] = "是",
+                  have[] = "有", had[] = "有", can[] = "能",
+                  could[] = "能";
+static const char have_been[] = "一直是", have_never[] = "从来没有",
+                  never[] = "没有";
 
 #define enl_msg(prefix, present, past, suffix, ps) \
     enlght_line(prefix, final ? past : present, suffix, ps)
-#define you_are(attr, ps) enl_msg(You_, are, were, attr, ps)
-#define you_have(attr, ps) enl_msg(You_, have, had, attr, ps)
+#define you_are(attr, ps) enl_msg("", "", "", attr, ps)
+#define you_have(attr, ps) enl_msg(You_, "", "", attr, ps)
 #define you_can(attr, ps) enl_msg(You_, can, could, attr, ps)
 #define you_have_been(goodthing) enl_msg(You_, have_been, were, goodthing, "")
 #define you_have_never(badthing) \
@@ -1430,24 +1430,24 @@ char *outbuf;
     /* Protection amount is typically larger than damage or to-hit;
        reduce magnitude by a third in order to stretch modifier ranges
        (small:1..5, moderate:6..10, large:11..19, huge:20+) */
-    if (!strcmp(inctyp, "defense"))
+    if (!strcmp(inctyp, "防御"))
         absamt = (absamt * 2) / 3;
 
     if (absamt <= 3)
-        modif = "small";
+        modif = "很少的";
     else if (absamt <= 6)
-        modif = "moderate";
+        modif = "较少的";
     else if (absamt <= 12)
-        modif = "large";
+        modif = "较多的";
     else
-        modif = "huge";
+        modif = "很多的";
 
-    modif = !incamt ? "no" : an(modif); /* ("no" case shouldn't happen) */
-    bonus = (incamt >= 0) ? "bonus" : "penalty";
+    modif = !incamt ? "no" : modif; /* ("no" case shouldn't happen) */
+    bonus = (incamt >= 0) ? "加成" : "处罚";
     /* "bonus <foo>" (to hit) vs "<bar> bonus" (damage, defense) */
-    invrt = strcmp(inctyp, "to hit") ? TRUE : FALSE;
+    invrt = TRUE;
 
-    Sprintf(outbuf, "%s %s %s", modif, invrt ? inctyp : bonus,
+    Sprintf(outbuf, "有%s %s %s", modif, invrt ? inctyp : bonus,
             invrt ? bonus : inctyp);
     if (final || wizard)
         Sprintf(eos(outbuf), " (%s%d)", (incamt > 0) ? "+" : "", incamt);
@@ -1466,18 +1466,18 @@ int final;
 
     switch (category) {
     case HALF_PHDAM:
-        category_name = "physical";
+        category_name = "物理";
         break;
     case HALF_SPDAM:
-        category_name = "spell";
+        category_name = "魔法";
         break;
     default:
-        category_name = "unknown";
+        category_name = "未知";
         break;
     }
-    Sprintf(buf, " %s %s damage", (final || wizard) ? "half" : "reduced",
+    Sprintf(buf, " %s %s 伤害", (final || wizard) ? "一半的" : "减少的",
             category_name);
-    enl_msg(You_, "take", "took", buf, from_what(category));
+    enl_msg(You_, "受到", "受到", buf, from_what(category));
 }
 
 /* is hero actively using water walking capability on water (or lava)? */
@@ -1538,7 +1538,7 @@ int final; /* ENL_GAMEINPROGRESS:0, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD */
     *tmpbuf = highc(*tmpbuf); /* same adjustment as bottom line */
     /* as in background_enlightenment, when poly'd we need to use the saved
        gender in u.mfemale rather than the current you-as-monster gender */
-    Sprintf(buf, "%s the %s's attributes:", tmpbuf,
+    Sprintf(buf, "%s  %s的属性:", tmpbuf,
             ((Upolyd ? u.mfemale : flags.female) && urole.name.f)
                 ? urole.name.f
                 : urole.name.m);
@@ -1588,7 +1588,7 @@ int final;
     rank_titl = rank_of(u.ulevel, Role_switch, innategend);
 
     putstr(en_win, 0, ""); /* separator after title */
-    putstr(en_win, 0, "Background:");
+    putstr(en_win, 0, "背景:");
 
     /* if polymorphed, report current shape before underlying role;
        will be repeated as first status: "you are transformed" and also
@@ -1603,7 +1603,7 @@ int final;
         /* here we always use current gender, not saved role gender */
         if (!is_male(uasmon) && !is_female(uasmon) && !is_neuter(uasmon))
             Sprintf(tmpbuf, "%s ", genders[flags.female ? 1 : 0].adj);
-        Sprintf(buf, "%sin %s%s form", !final ? "currently " : "", tmpbuf,
+        Sprintf(buf, "你%s是 %s%s 的外貌", !final ? "当前 " : "", tmpbuf,
                 uasmon->mname);
         you_are(buf, "");
     }
@@ -1615,14 +1615,15 @@ int final;
             || innategend != flags.initgend))
         Sprintf(tmpbuf, "%s ", genders[innategend].adj);
     buf[0] = '\0';
+    Strcpy(buf,"你");
     if (Upolyd)
-        Strcpy(buf, "actually "); /* "You are actually a ..." */
+        Strcat(buf, "实际上 "); /* "You are actually a ..." */
     if (!strcmpi(rank_titl, role_titl)) {
         /* omit role when rank title matches it */
-        Sprintf(eos(buf), "%s, level %d %s%s", an(rank_titl), u.ulevel,
+        Sprintf(eos(buf), "%s, 等级%d %s%s", rank_titl, u.ulevel,
                 tmpbuf, urace.noun);
     } else {
-        Sprintf(eos(buf), "%s, a level %d %s%s %s", an(rank_titl), u.ulevel,
+        Sprintf(eos(buf), "是一位%s, 等级%d  %s%s %s", rank_titl, u.ulevel,
                 tmpbuf, urace.adj, role_titl);
     }
     you_are(buf, "");
@@ -1630,23 +1631,23 @@ int final;
     /* report alignment (bypass you_are() in order to omit ending period);
        adverb is used to distinguish between temporary change (helm of opp.
        alignment), permanent change (one-time conversion), and original */
-    Sprintf(buf, " %s%s%s, %son a mission for %s",
+    Sprintf(buf, " %s%s%s阵营, %s肩负着%s 的使命",
             You_, !final ? are : were,
             align_str(u.ualign.type),
             /* helm of opposite alignment (might hide conversion) */
             (u.ualign.type != u.ualignbase[A_CURRENT])
                /* what's the past tense of "currently"? if we used "formerly"
                   it would sound like a reference to the original alignment */
-               ? (!final ? "currently " : "temporarily ")
+               ? (!final ? "当前" : "临时")
                /* permanent conversion */
                : (u.ualign.type != u.ualignbase[A_ORIGINAL])
                   /* and what's the past tense of "now"? certainly not "then"
                      in a context like this...; "belatedly" == weren't that
                      way sooner (in other words, didn't start that way) */
-                  ? (!final ? "now " : "belatedly ")
+                  ? (!final ? "现在" : "最近才")
                   /* atheist (ignored in very early game) */
                   : (!u.uconduct.gnostic && moves > 1000L)
-                     ? "nominally "
+                     ? "名义上"
                      /* lastly, normal case */
                      : "",
             u_gname());
@@ -1654,16 +1655,16 @@ int final;
     /* show the rest of this game's pantheon (finishes previous sentence)
        [appending "also Moloch" at the end would allow for straightforward
        trailing "and" on all three aligned entries but looks too verbose] */
-    Sprintf(buf, " who %s opposed by", !final ? "is" : "was");
+    Sprintf(buf, " %s敌对的是", !final ? "" : "");
     if (u.ualign.type != A_LAWFUL)
-        Sprintf(eos(buf), " %s (%s) and", align_gname(A_LAWFUL),
+        Sprintf(eos(buf), " %s( %s) 和", align_gname(A_LAWFUL),
                 align_str(A_LAWFUL));
     if (u.ualign.type != A_NEUTRAL)
-        Sprintf(eos(buf), " %s (%s)%s", align_gname(A_NEUTRAL),
+        Sprintf(eos(buf), " %s( %s)%s", align_gname(A_NEUTRAL),
                 align_str(A_NEUTRAL),
-                (u.ualign.type != A_CHAOTIC) ? " and" : "");
+                (u.ualign.type != A_CHAOTIC) ? " 和" : "");
     if (u.ualign.type != A_CHAOTIC)
-        Sprintf(eos(buf), " %s (%s)", align_gname(A_CHAOTIC),
+        Sprintf(eos(buf), " %s( %s)", align_gname(A_CHAOTIC),
                 align_str(A_CHAOTIC));
     Strcat(buf, "."); /* terminate sentence */
     putstr(en_win, 0, buf);
@@ -1677,14 +1678,14 @@ int final;
                + ((u.ualignbase[A_CURRENT] != u.ualignbase[A_ORIGINAL])
                   ? 2 : 0));
     if (difalgn & 1) { /* have temporary alignment so report permanent one */
-        Sprintf(buf, "actually %s", align_str(u.ualignbase[A_CURRENT]));
+        Sprintf(buf, "你实际上是 %s阵营", align_str(u.ualignbase[A_CURRENT]));
         you_are(buf, "");
         difalgn &= ~1; /* suppress helm from "started out <foo>" message */
     }
     if (difgend || difalgn) { /* sex change or perm align change or both */
-        Sprintf(buf, " You started out %s%s%s.",
+        Sprintf(buf, " 你最开始是 %s%s%s.",
                 difgend ? genders[flags.initgend].adj : "",
-                (difgend && difalgn) ? " and " : "",
+                (difgend && difalgn) ? " 和 " : "",
                 difalgn ? align_str(u.ualignbase[A_ORIGINAL]) : "");
         putstr(en_win, 0, buf);
     }
@@ -1705,52 +1706,52 @@ int final;
 
     putstr(en_win, 0, ""); /* separator after background */
     putstr(en_win, 0,
-           final ? "Final Characteristics:" : "Current Characteristics:");
+           final ? "最终属性:" : "当前属性:");
 
     if (hp < 0)
         hp = 0;
-    Sprintf(buf, "%d hit points (max:%d)", hp, hpmax);
+    Sprintf(buf, "有%d 生命值( 最大:%d)", hp, hpmax);
     you_have(buf, "");
 
-    Sprintf(buf, "%d magic power (max:%d)", u.uen, u.uenmax);
+    Sprintf(buf, "有%d 魔力( 最大:%d)", u.uen, u.uenmax);
     you_have(buf, "");
 
     Sprintf(buf, "%d", u.uac);
-    enl_msg("Your armor class ", "is ", "was ", buf, "");
+    enl_msg("你的ac", "是", "是", buf, "");
 
     if (Upolyd) {
         switch (mons[u.umonnum].mlevel) {
         case 0:
             /* status line currently being explained shows "HD:0" */
-            Strcpy(buf, "0 hit dice (actually 1/2)");
+            Strcpy(buf, "有0 生命骰 ( 实际1/2)");
             break;
         case 1:
-            Strcpy(buf, "1 hit die");
+            Strcpy(buf, "有1 生命骰");
             break;
         default:
-            Sprintf(buf, "%d hit dice", mons[u.umonnum].mlevel);
+            Sprintf(buf, "有%d 生命骰", mons[u.umonnum].mlevel);
             break;
         }
     } else {
         /* flags.showexp does not matter */
         /* experience level is already shown in the Background section */
-        Sprintf(buf, "%-1ld experience point%s",
-                u.uexp, plur(u.uexp));
+        Sprintf(buf, "有%-1ld 经验点",
+                u.uexp);
     }
     you_have(buf, "");
 
     /* this is shown even if the 'time' option is off */
-    Sprintf(buf, "the dungeon %ld turn%s ago", moves, plur(moves));
+    Sprintf(buf, "%ld 回之前进入的地牢", moves);
     /* same phrasing at end of game:  "entered" is unconditional */
-    enlght_line(You_, "entered ", buf, "");
+    enlght_line(You_, "是", buf, "");
 
 #ifdef SCORE_ON_BOTL
     if (flags.showscore) {
         /* describes what's shown on status line, which is an approximation;
            only show it here if player has the 'showscore' option enabled */
-        Sprintf(buf, "%ld%s", botl_score(),
-                !final ? "" : " before end-of-game adjustments");
-        enl_msg("Your score ", "is ", "was ", buf, "");
+        Sprintf(buf, "%ld %s", botl_score(),
+                !final ? "" : "在游戏结束调整前");
+        enl_msg("你的分数", "是", "是", buf, "");
     }
 #endif
 
@@ -1817,7 +1818,7 @@ int mode, final, attrindx;
 
     acurrent = ACURR(attrindx);
     (void) attrval(attrindx, acurrent, valubuf); /* Sprintf(valubuf,"%d",) */
-    Sprintf(subjbuf, "Your %s ", attrname[attrindx]);
+    Sprintf(subjbuf, "你的%s ", attrname[attrindx]);
 
     if (!hide_innate_value) {
         /* show abase, amax, and/or attrmax if acurr doesn't match abase
@@ -1834,28 +1835,28 @@ int mode, final, attrindx;
         interesting_alimit =
             final ? TRUE /* was originally `(abase != alimit)' */
                   : (alimit != (attrindx != A_STR ? 18 : STR18(100)));
-        paren_pfx = final ? " (" : " (current; ";
+        paren_pfx = final ? " (" : " ( 当前; ";
         if (acurrent != abase) {
-            Sprintf(eos(valubuf), "%sbase:%s", paren_pfx,
+            Sprintf(eos(valubuf), "%s 基础:%s", paren_pfx,
                     attrval(attrindx, abase, valstring));
             paren_pfx = ", ";
         }
         if (abase != apeak) {
-            Sprintf(eos(valubuf), "%speak:%s", paren_pfx,
+            Sprintf(eos(valubuf), "%s 最高:%s", paren_pfx,
                     attrval(attrindx, apeak, valstring));
             paren_pfx = ", ";
         }
         if (interesting_alimit) {
-            Sprintf(eos(valubuf), "%s%slimit:%s", paren_pfx,
+            Sprintf(eos(valubuf), "%s%s 极限:%s", paren_pfx,
                     /* more verbose if exceeding 'limit' due to magic bonus */
-                    (acurrent > alimit) ? "innate " : "",
+                    (acurrent > alimit) ? "天生" : "",
                     attrval(attrindx, alimit, valstring));
             /* paren_pfx = ", "; */
         }
         if (acurrent != abase || abase != apeak || interesting_alimit)
             Strcat(valubuf, ")");
     }
-    enl_msg(subjbuf, "is ", "was ", valubuf, "");
+    enl_msg(subjbuf, "为 ", "为 ", valubuf, "");
 }
 
 /* status: selected obvious capabilities, assorted troubles */
@@ -1871,7 +1872,7 @@ int final;
                       /* if hero dies while dismounting, u.usteed will still
                          be set; we want to ignore steed in that situation */
                       && !(final == ENL_GAMEOVERDEAD
-                           && !strcmp(killer.name, "riding accident")));
+                           && !strcmp(killer.name, "乘骑事故")));
     const char *steedname = (!Riding ? (char *) 0
                       : x_monnam(u.usteed,
                                  u.usteed->mtame ? ARTICLE_YOUR : ARTICLE_THE,
@@ -1884,43 +1885,43 @@ int final;
      *     should be discernible to the hero hence to the player)
     \*/
     putstr(en_win, 0, ""); /* separator after title or characteristics */
-    putstr(en_win, 0, final ? "Final Status:" : "Current Status:");
+    putstr(en_win, 0, final ? "最终状态:" : "当前状态:");
 
     Strcpy(youtoo, You_);
     /* not a traditional status but inherently obvious to player; more
        detail given below (attributes section) for magic enlightenment */
     if (Upolyd) {
-        Strcpy(buf, "transformed");
+        Strcpy(buf, "变形");
         if (ugenocided())
-            Sprintf(eos(buf), " and %s %s inside",
-                    final ? "felt" : "feel", udeadinside());
+            Sprintf(eos(buf), "且%s内心%s",
+                    final ? "感觉" : "感觉", udeadinside());
         you_are(buf, "");
     }
     /* not a trouble, but we want to display riding status before maybe
        reporting steed as trapped or hero stuck to cursed saddle */
     if (Riding) {
-        Sprintf(buf, "riding %s", steedname);
+        Sprintf(buf, "骑着 %s", steedname);
         you_are(buf, "");
-        Sprintf(eos(youtoo), "and %s ", steedname);
+        Sprintf(eos(youtoo), "和 %s ", steedname);
     }
     /* other movement situations that hero should always know */
     if (Levitation) {
         if (Lev_at_will && magic)
-            you_are("levitating, at will", "");
+            you_are("飘浮着,  随意", "");
         else
-            enl_msg(youtoo, are, were, "levitating", from_what(LEVITATION));
+            enl_msg(youtoo, "", "", "飘浮着", from_what(LEVITATION));
     } else if (Flying) { /* can only fly when not levitating */
-        enl_msg(youtoo, are, were, "flying", from_what(FLYING));
+        enl_msg(youtoo, are, were, "飞着", from_what(FLYING));
     }
     if (Underwater) {
-        you_are("underwater", "");
+        you_are("在水下", "");
     } else if (u.uinwater) {
-        you_are(Swimming ? "swimming" : "in water", from_what(SWIMMING));
+        you_are(Swimming ? "游泳" : "在水中", from_what(SWIMMING));
     } else if (walking_on_water()) {
         /* show active Wwalking here, potential Wwalking elsewhere */
-        Sprintf(buf, "walking on %s",
-                is_pool(u.ux, u.uy) ? "water"
-                : is_lava(u.ux, u.uy) ? "lava"
+        Sprintf(buf, "走在 %s上",
+                is_pool(u.ux, u.uy) ? "水面"
+                : is_lava(u.ux, u.uy) ? "熔岩"
                   : surface(u.ux, u.uy)); /* catchall; shouldn't happen */
         you_are(buf, from_what(WWALKING));
     }
@@ -1929,14 +1930,14 @@ int final;
 
     /* internal troubles, mostly in the order that prayer ranks them */
     if (Stoned)
-        you_are("turning to stone", "");
+        you_are("正在石化", "");
     if (Slimed)
-        you_are("turning into slime", "");
+        you_are("正在污秽化", "");
     if (Strangled) {
         if (u.uburied) {
-            you_are("buried", "");
+            you_are("被埋葬", "");
         } else {
-            Strcpy(buf, "being strangled");
+            Strcpy(buf, "窒息");
             if (wizard)
                 Sprintf(eos(buf), " (%ld)", (Strangled & TIMEOUT));
             you_are(buf, from_what(STRANGLED));
@@ -1945,27 +1946,27 @@ int final;
     if (Sick) {
         /* prayer lumps these together; botl puts Ill before FoodPois */
         if (u.usick_type & SICK_NONVOMITABLE)
-            you_are("terminally sick from illness", "");
+            you_are("疾病晚期", "");
         if (u.usick_type & SICK_VOMITABLE)
-            you_are("terminally sick from food poisoning", "");
+            you_are("食物中毒晚期", "");
     }
     if (Vomiting)
-        you_are("nauseated", "");
+        you_are("作呕", "");
     if (Stunned)
-        you_are("stunned", "");
+        you_are("眩晕", "");
     if (Confusion)
-        you_are("confused", "");
+        you_are("混乱", "");
     if (Hallucination)
-        you_are("hallucinating", "");
+        you_are("幻觉", "");
     if (Blind) {
         /* from_what() (currently wizard-mode only) checks !haseyes()
            before u.uroleplay.blind, so we should too */
-        Sprintf(buf, "%s blind",
-                !haseyes(youmonst.data) ? "innately"
-                : u.uroleplay.blind ? "permanently"
+        Sprintf(buf, "%s 失明",
+                !haseyes(youmonst.data) ? "天生"
+                : u.uroleplay.blind ? "永久"
                   /* better phrasing desperately wanted... */
-                  : Blindfolded_only ? "deliberately"
-                    : "temporarily");
+                  : Blindfolded_only ? "故意"
+                    : "暂时");
         if (wizard && (Blinded & TIMEOUT) != 0L
             && !u.uroleplay.blind && haseyes(youmonst.data))
             Sprintf(eos(buf), " (%ld)", (Blinded & TIMEOUT));
@@ -1973,12 +1974,12 @@ int final;
         you_are(buf, !haseyes(youmonst.data) ? "" : from_what(BLINDED));
     }
     if (Deaf)
-        you_are("deaf", from_what(DEAF));
+        you_are("聋的", from_what(DEAF));
 
     /* external troubles, more or less */
     if (Punished) {
         if (uball) {
-            Sprintf(buf, "chained to %s", ansimpleoname(uball));
+            Sprintf(buf, "被拴着 %s", simpleonames(uball));
         } else {
             impossible("Punished without uball?");
             Strcpy(buf, "punished");
@@ -1991,31 +1992,31 @@ int final;
         boolean anchored = (u.utraptype == TT_BURIEDBALL);
 
         if (anchored) {
-            Strcpy(predicament, "tethered to something buried");
+            Strcpy(predicament, "拴着埋葬的什么东西");
         } else if (u.utraptype == TT_INFLOOR || u.utraptype == TT_LAVA) {
-            Sprintf(predicament, "stuck in %s", the(surface(u.ux, u.uy)));
+            Sprintf(predicament, "陷在 %s", the(surface(u.ux, u.uy)));
         } else {
-            Strcpy(predicament, "trapped");
+            Strcpy(predicament, "被困");
             if ((t = t_at(u.ux, u.uy)) != 0)
-                Sprintf(eos(predicament), " in %s",
-                        an(defsyms[trap_to_defsym(t->ttyp)].explanation));
+                Sprintf(eos(predicament), "在%s",
+                        defsyms[trap_to_defsym(t->ttyp)].explanation);
         }
         if (u.usteed) { /* not `Riding' here */
-            Sprintf(buf, "%s%s ", anchored ? "you and " : "", steedname);
+            Sprintf(buf, "%s%s ", anchored ? "你和 " : "", steedname);
             *buf = highc(*buf);
-            enl_msg(buf, (anchored ? "are " : "is "),
-                    (anchored ? "were " : "was "), predicament, "");
+            enl_msg(buf, (anchored ? "是 " : "是 "),
+                    (anchored ? "是 " : "是 "), predicament, "");
         } else
             you_are(predicament, "");
     } /* (u.utrap) */
     if (u.uswallow) {
-        Sprintf(buf, "swallowed by %s", a_monnam(u.ustuck));
+        Sprintf(buf, "被%s 吞食了", a_monnam(u.ustuck));
         if (wizard)
             Sprintf(eos(buf), " (%u)", u.uswldtim);
         you_are(buf, "");
     } else if (u.ustuck) {
         Sprintf(buf, "%s %s",
-                (Upolyd && sticks(youmonst.data)) ? "holding" : "held by",
+                (Upolyd && sticks(youmonst.data)) ? "牵制着" : "受牵制于",
                 a_monnam(u.ustuck));
         you_are(buf, "");
     }
@@ -2023,7 +2024,7 @@ int final;
         struct obj *saddle = which_armor(u.usteed, W_SADDLE);
 
         if (saddle && saddle->cursed) {
-            Sprintf(buf, "stuck to %s %s", s_suffix(steedname),
+            Sprintf(buf, "被粘在 %s %s", s_suffix(steedname),
                     simpleonames(saddle));
             you_are(buf, "");
         }
@@ -2035,43 +2036,43 @@ int final;
             if (wizard && steedname) {
                 Strcpy(buf, steedname);
                 *buf = highc(*buf);
-                enl_msg(buf, " has", " had", " wounded legs", "");
+                enl_msg(buf, " 有", " 有", " 受伤的腿", "");
             }
         } else {
-            Sprintf(buf, "wounded %s", makeplural(body_part(LEG)));
+            Sprintf(buf, "有受伤的 %s", makeplural(body_part(LEG)));
             you_have(buf, "");
         }
     }
     if (Glib) {
-        Sprintf(buf, "slippery %s", makeplural(body_part(FINGER)));
+        Sprintf(buf, "有光滑的 %s", makeplural(body_part(FINGER)));
         you_have(buf, "");
     }
     if (Fumbling) {
         if (magic || cause_known(FUMBLING))
-            enl_msg(You_, "fumble", "fumbled", "", from_what(FUMBLING));
+            enl_msg(You_, "笨拙", "笨拙", "", from_what(FUMBLING));
     }
     if (Sleepy) {
         if (magic || cause_known(SLEEPY)) {
             Strcpy(buf, from_what(SLEEPY));
             if (wizard)
                 Sprintf(eos(buf), " (%ld)", (HSleepy & TIMEOUT));
-            enl_msg("You ", "fall", "fell", " asleep uncontrollably", buf);
+            enl_msg("你失控地 ", "陷入", "陷入", " 沉睡", buf);
         }
     }
     /* hunger/nutrition */
     if (Hunger) {
         if (magic || cause_known(HUNGER))
-            enl_msg(You_, "hunger", "hungered", " rapidly",
+            enl_msg(You_, "饥饿", "饥饿", " 得很迅速",
                     from_what(HUNGER));
     }
     Strcpy(buf, hu_stat[u.uhs]); /* hunger status; omitted if "normal" */
     mungspaces(buf);             /* strip trailing spaces */
     if (*buf) {
         *buf = lowc(*buf); /* override capitalization */
-        if (!strcmp(buf, "weak"))
-            Strcat(buf, " from severe hunger");
-        else if (!strncmp(buf, "faint", 5)) /* fainting, fainted */
-            Strcat(buf, " due to starvation");
+        if (!strcmp(buf, "虚弱"))
+            Strcat(buf, " 因严重饥饿");
+        else if (!cnstrcmp(buf, "昏厥") || !cnstrcmp(buf, "晕厥")) /* fainting, fainted */
+            Strcat(buf, " 因过度饥饿");
         you_are(buf, "");
     }
     /* encumbrance */
@@ -2082,62 +2083,57 @@ int final;
         *buf = lowc(*buf);
         switch (cap) {
         case SLT_ENCUMBER:
-            adj = "slightly";
+            adj = "轻微";
             break; /* burdened */
         case MOD_ENCUMBER:
-            adj = "moderately";
+            adj = "有些";
             break; /* stressed */
         case HVY_ENCUMBER:
-            adj = "very";
+            adj = "非常";
             break; /* strained */
         case EXT_ENCUMBER:
-            adj = "extremely";
+            adj = "极其";
             break; /* overtaxed */
         case OVERLOADED:
             adj = "not possible";
             break;
         }
-        Sprintf(eos(buf), "; movement %s %s%s", !final ? "is" : "was", adj,
-                (cap < OVERLOADED) ? " slowed" : "");
+        Sprintf(eos(buf), "; 移动速度 %s%s",  adj,
+                (cap < OVERLOADED) ? " 慢" : "");
         you_are(buf, "");
     } else {
         /* last resort entry, guarantees Status section is non-empty
            (no longer needed for that purpose since weapon status added;
            still useful though) */
-        you_are("unencumbered", "");
+        you_are("无负担", "");
     }
     /* report being weaponless; distinguish whether gloves are worn */
     if (!uwep) {
-        you_are(uarmg ? "empty handed" /* gloves imply hands */
+        you_are(uarmg ? "空手" /* gloves imply hands */
                       : humanoid(youmonst.data)
                          /* hands but no weapon and no gloves */
-                         ? "bare handed"
+                         ? "光着手"
                          /* alternate phrasing for paws or lack of hands */
-                         : "not wielding anything",
+                         : "没有拿着任何东西",
                 "");
     /* two-weaponing implies a weapon (not other odd stuff) in each hand */
     } else if (u.twoweap) {
-        you_are("wielding two weapons at once", "");
+        you_are("同时使用两把武器", "");
     /* report most weapons by their skill class (so a katana will be
        described as a long sword, for instance; mattock and hook are
        exceptions), or wielded non-weapon item by its object class */
     } else {
         const char *what = weapon_descr(uwep);
 
-        if (!strcmpi(what, "armor") || !strcmpi(what, "food")
-            || !strcmpi(what, "venom"))
-            Sprintf(buf, "wielding some %s", what);
-        else
-            Sprintf(buf, "wielding %s",
-                    (uwep->quan == 1L) ? an(what) : makeplural(what));
+        Sprintf(buf, "拿着 %s", what);
         you_are(buf, "");
     }
     /* report 'nudity' */
     if (!uarm && !uarmu && !uarmc && !uarmg && !uarmf && !uarmh) {
         if (u.uroleplay.nudist)
-            enl_msg(You_, "do", "did", " not wear any armor", "");
+            enl_msg(You_, "", "", " 没有穿任何防具", "");
         else
-            you_are("not wearing any armor", "");
+            you_are("没有穿任何防具", "");
     }
 }
 
@@ -2148,7 +2144,7 @@ int unused_mode UNUSED;
 int final;
 {
     static NEARDATA const char if_surroundings_permitted[] =
-        " if surroundings permitted";
+        "如果环境允许的话";
     int ltmp, armpro;
     char buf[BUFSZ];
 
@@ -2156,16 +2152,16 @@ int final;
      *  Attributes
     \*/
     putstr(en_win, 0, "");
-    putstr(en_win, 0, final ? "Final Attributes:" : "Current Attributes:");
+    putstr(en_win, 0, final ? "最终属性:" : "当前属性:");
 
     if (u.uevent.uhand_of_elbereth) {
-        static const char *const hofe_titles[3] = { "the Hand of Elbereth",
-                                                    "the Envoy of Balance",
-                                                    "the Glory of Arioch" };
+        static const char *const hofe_titles[3] = { "伊尔碧绿丝之手",
+                                                    "平衡使者",
+                                                    "亚略的荣耀" };
         you_are(hofe_titles[u.uevent.uhand_of_elbereth - 1], "");
     }
 
-    Sprintf(buf, "%s", piousness(TRUE, "aligned"));
+    Sprintf(buf, "%s", piousness(TRUE, "信仰"));
     if (u.ualign.record >= 0)
         you_are(buf, "");
     else
@@ -2173,101 +2169,101 @@ int final;
 
     if (wizard) {
         Sprintf(buf, " %d", u.ualign.record);
-        enl_msg("Your alignment ", "is", "was", buf, "");
+        enl_msg("你的阵营信仰值 ", "为", "为", buf, "");
     }
 
     /*** Resistances to troubles ***/
     if (Invulnerable)
-        you_are("invulnerable", from_what(INVULNERABLE));
+        you_are("绝对防御", from_what(INVULNERABLE));
     if (Antimagic)
-        you_are("magic-protected", from_what(ANTIMAGIC));
+        you_are("受魔法的保护", from_what(ANTIMAGIC));
     if (Fire_resistance)
-        you_are("fire resistant", from_what(FIRE_RES));
+        you_are("火焰抵抗", from_what(FIRE_RES));
     if (Cold_resistance)
-        you_are("cold resistant", from_what(COLD_RES));
+        you_are("冰霜抵抗", from_what(COLD_RES));
     if (Sleep_resistance)
-        you_are("sleep resistant", from_what(SLEEP_RES));
+        you_are("沉睡抵抗", from_what(SLEEP_RES));
     if (Disint_resistance)
-        you_are("disintegration-resistant", from_what(DISINT_RES));
+        you_are("分解抵抗", from_what(DISINT_RES));
     if (Shock_resistance)
-        you_are("shock resistant", from_what(SHOCK_RES));
+        you_are("电击抵抗", from_what(SHOCK_RES));
     if (Poison_resistance)
-        you_are("poison resistant", from_what(POISON_RES));
+        you_are("毒性抵抗", from_what(POISON_RES));
     if (Acid_resistance)
-        you_are("acid resistant", from_what(ACID_RES));
+        you_are("酸性抵抗", from_what(ACID_RES));
     if (Drain_resistance)
-        you_are("level-drain resistant", from_what(DRAIN_RES));
+        you_are("降级抵抗", from_what(DRAIN_RES));
     if (Sick_resistance)
-        you_are("immune to sickness", from_what(SICK_RES));
+        you_are("免疫疾病", from_what(SICK_RES));
     if (Stone_resistance)
-        you_are("petrification resistant", from_what(STONE_RES));
+        you_are("石化抵抗", from_what(STONE_RES));
     if (Halluc_resistance)
-        enl_msg(You_, "resist", "resisted", " hallucinations",
+        enl_msg(You_, "抵抗", "抵抗", " 幻觉",
                 from_what(HALLUC_RES));
     if (u.uedibility)
-        you_can("recognize detrimental food", "");
+        you_can("识别出有害的食物", "");
 
     /*** Vision and senses ***/
     if (!Blind && (Blinded || !haseyes(youmonst.data)))
-        you_can("see", from_what(-BLINDED)); /* Eyes of the Overworld */
+        you_can("看见", from_what(-BLINDED)); /* Eyes of the Overworld */
     if (See_invisible) {
         if (!Blind)
-            enl_msg(You_, "see", "saw", " invisible", from_what(SEE_INVIS));
+            enl_msg(You_, "能看见", "能看见", " 隐形的怪物", from_what(SEE_INVIS));
         else
-            enl_msg(You_, "will see", "would have seen",
-                    " invisible when not blind", from_what(SEE_INVIS));
+            enl_msg(You_, "将看见", "将看见",
+                    " 隐形的怪物当没有失明的时候", from_what(SEE_INVIS));
     }
     if (Blind_telepat)
-        you_are("telepathic", from_what(TELEPAT));
+        you_are("能感知怪物", from_what(TELEPAT));
     if (Warning)
-        you_are("warned", from_what(WARNING));
+        you_are("会警报怪物", from_what(WARNING));
     if (Warn_of_mon && context.warntype.obj) {
-        Sprintf(buf, "aware of the presence of %s",
-                (context.warntype.obj & M2_ORC) ? "orcs"
-                : (context.warntype.obj & M2_ELF) ? "elves"
-                : (context.warntype.obj & M2_DEMON) ? "demons" : something);
+        Sprintf(buf, "能察觉到%s 的存在",
+                (context.warntype.obj & M2_ORC) ? "兽人"
+                : (context.warntype.obj & M2_ELF) ? "精灵"
+                : (context.warntype.obj & M2_DEMON) ? "恶魔" : something);
         you_are(buf, from_what(WARN_OF_MON));
     }
     if (Warn_of_mon && context.warntype.polyd) {
-        Sprintf(buf, "aware of the presence of %s",
+        Sprintf(buf, "能察觉到%s 的存在",
                 ((context.warntype.polyd & (M2_HUMAN | M2_ELF))
                  == (M2_HUMAN | M2_ELF))
-                    ? "humans and elves"
+                    ? "人类和精灵"
                     : (context.warntype.polyd & M2_HUMAN)
-                          ? "humans"
+                          ? "人类"
                           : (context.warntype.polyd & M2_ELF)
-                                ? "elves"
+                                ? "精灵"
                                 : (context.warntype.polyd & M2_ORC)
-                                      ? "orcs"
+                                      ? "兽人"
                                       : (context.warntype.polyd & M2_DEMON)
-                                            ? "demons"
-                                            : "certain monsters");
+                                            ? "恶魔"
+                                            : "某些怪物");
         you_are(buf, "");
     }
     if (Warn_of_mon && context.warntype.speciesidx >= LOW_PM) {
-        Sprintf(buf, "aware of the presence of %s",
+        Sprintf(buf, "能察觉到%s 的存在",
                 makeplural(mons[context.warntype.speciesidx].mname));
         you_are(buf, from_what(WARN_OF_MON));
     }
     if (Undead_warning)
-        you_are("warned of undead", from_what(WARN_UNDEAD));
+        you_are("会警报亡灵", from_what(WARN_UNDEAD));
     if (Searching)
-        you_have("automatic searching", from_what(SEARCHING));
+        you_have("会自动搜索", from_what(SEARCHING));
     if (Clairvoyant)
-        you_are("clairvoyant", from_what(CLAIRVOYANT));
+        you_are("千里眼", from_what(CLAIRVOYANT));
     else if ((HClairvoyant || EClairvoyant) && BClairvoyant) {
         Strcpy(buf, from_what(-CLAIRVOYANT));
-        if (!strncmp(buf, " because of ", 12))
+        if (!cnstrcmp(buf, "是因为"))
             /* overwrite substring; strncpy doesn't add terminator */
-            (void) strncpy(buf, " if not for ", 12);
-        enl_msg(You_, "could be", "could have been", " clairvoyant", buf);
+            (void) strncpy(buf, "要不是", strlen("要不是"));
+        enl_msg(You_, "可以有", "可以有", " 千里眼", buf);
     }
     if (Infravision)
-        you_have("infravision", from_what(INFRAVISION));
+        you_have("有夜视能力", from_what(INFRAVISION));
     if (Detect_monsters)
-        you_are("sensing the presence of monsters", "");
+        you_are("察觉到怪物的存在", "");
     if (u.umconf)
-        you_are("going to confuse monsters", "");
+        you_are("会混乱怪物", "");
 
     /*** Appearance and behavior ***/
     if (Adornment) {
@@ -2280,42 +2276,42 @@ int final;
         /* the sum might be 0 (+0 ring or two which negate each other);
            that yields "you are charismatic" (which isn't pointless
            because it potentially impacts seduction attacks) */
-        Sprintf(buf, "%scharismatic",
-                (adorn > 0) ? "more " : (adorn < 0) ? "less " : "");
+        Sprintf(buf, "你具有%s魅力",
+                (adorn > 0) ? "更多的 " : (adorn < 0) ? "更少的 " : "");
         you_are(buf, from_what(ADORNED));
     }
     if (Invisible)
-        you_are("invisible", from_what(INVIS));
+        you_are("隐形的", from_what(INVIS));
     else if (Invis)
-        you_are("invisible to others", from_what(INVIS));
+        you_are("对别人来说是隐形的", from_what(INVIS));
     /* ordinarily "visible" is redundant; this is a special case for
        the situation when invisibility would be an expected attribute */
     else if ((HInvis || EInvis) && BInvis)
-        you_are("visible", from_what(-INVIS));
+        you_are("可见的", from_what(-INVIS));
     if (Displaced)
-        you_are("displaced", from_what(DISPLACED));
+        you_are("位移", from_what(DISPLACED));
     if (Stealth)
-        you_are("stealthy", from_what(STEALTH));
+        you_are("潜行", from_what(STEALTH));
     if (Aggravate_monster)
-        enl_msg("You aggravate", "", "d", " monsters",
+        enl_msg("你会触怒", "", "", " 怪物",
                 from_what(AGGRAVATE_MONSTER));
     if (Conflict)
-        enl_msg("You cause", "", "d", " conflict", from_what(CONFLICT));
+        enl_msg("你会引起", "", "", " 冲突", from_what(CONFLICT));
 
     /*** Transportation ***/
     if (Jumping)
-        you_can("jump", from_what(JUMPING));
+        you_can("跳", from_what(JUMPING));
     if (Teleportation)
-        you_can("teleport", from_what(TELEPORT));
+        you_can("传送", from_what(TELEPORT));
     if (Teleport_control)
-        you_have("teleport control", from_what(TELEPORT_CONTROL));
+        you_have("有传送控制", from_what(TELEPORT_CONTROL));
     /* actively levitating handled earlier as a status condition */
     if (BLevitation) { /* levitation is blocked */
         long save_BLev = BLevitation;
 
         BLevitation = 0L;
         if (Levitation)
-            enl_msg(You_, "would levitate", "would have levitated",
+            enl_msg(You_, "快飘起来", "快飘起来",
                     if_surroundings_permitted, "");
         BLevitation = save_BLev;
     }
@@ -2325,38 +2321,38 @@ int final;
 
         BFlying = 0L;
         if (Flying)
-            enl_msg(You_, "would fly", "would have flown",
+            enl_msg(You_, "会飞起来", "会飞起来",
                     Levitation
-                       ? "if you weren't levitating"
+                       ? "如果你没有飘浮着"
                        : (save_BFly == FROMOUTSIDE)
                           ? if_surroundings_permitted
                           /* both surroundings and [latent] levitation */
-                          : " if circumstances permitted",
+                          : " 如果情况允许的话",
                     "");
         BFlying = save_BFly;
     }
     /* actively walking on water handled earlier as a status condition */
     if (Wwalking && !walking_on_water())
-        you_can("walk on water", from_what(WWALKING));
+        you_can("在水面上走", from_what(WWALKING));
     /* actively swimming (in water but not under it) handled earlier */
     if (Swimming && (Underwater || !u.uinwater))
-        you_can("swim", from_what(SWIMMING));
+        you_can("游泳", from_what(SWIMMING));
     if (Breathless)
-        you_can("survive without air", from_what(MAGICAL_BREATHING));
+        you_can("不用呼吸", from_what(MAGICAL_BREATHING));
     else if (Amphibious)
-        you_can("breathe water", from_what(MAGICAL_BREATHING));
+        you_can("在水里呼吸", from_what(MAGICAL_BREATHING));
     if (Passes_walls)
-        you_can("walk through walls", from_what(PASSES_WALLS));
+        you_can("穿墙", from_what(PASSES_WALLS));
 
     /*** Physical attributes ***/
     if (Regeneration)
-        enl_msg("You regenerate", "", "d", "", from_what(REGENERATION));
+        enl_msg("你有再生的能力", "", "", "", from_what(REGENERATION));
     if (Slow_digestion)
-        you_have("slower digestion", from_what(SLOW_DIGESTION));
+        you_have("慢消化", from_what(SLOW_DIGESTION));
     if (u.uhitinc)
-        you_have(enlght_combatinc("to hit", u.uhitinc, final, buf), "");
+        you_have(enlght_combatinc("来攻击", u.uhitinc, final, buf), "");
     if (u.udaminc)
-        you_have(enlght_combatinc("damage", u.udaminc, final, buf), "");
+        you_have(enlght_combatinc("伤害", u.udaminc, final, buf), "");
     if (u.uspellprot || Protection) {
         int prot = 0;
 
@@ -2368,12 +2364,12 @@ int final;
             prot += u.ublessed;
         prot += u.uspellprot;
         if (prot)
-            you_have(enlght_combatinc("defense", prot, final, buf), "");
+            you_have(enlght_combatinc("防御", prot, final, buf), "");
     }
     if ((armpro = magic_negation(&youmonst)) > 0) {
         /* magic cancellation factor, conferred by worn armor */
         static const char *const mc_types[] = {
-            "" /*ordinary*/, "warded", "guarded", "protected",
+            "" /*ordinary*/, "受防护", "受保卫", "受保护",
         };
         /* sanity check */
         if (armpro >= SIZE(mc_types))
@@ -2386,94 +2382,94 @@ int final;
         enlght_halfdmg(HALF_SPDAM, final);
     /* polymorph and other shape change */
     if (Protection_from_shape_changers)
-        you_are("protected from shape changers",
+        you_are("变形保护",
                 from_what(PROT_FROM_SHAPE_CHANGERS));
     if (Unchanging) {
         const char *what = 0;
 
         if (!Upolyd) /* Upolyd handled below after current form */
-            you_can("not change from your current form",
+            you_have("不能改变你当前的外貌",
                     from_what(UNCHANGING));
         /* blocked shape changes */
         if (Polymorph)
-            what = !final ? "polymorph" : "have polymorphed";
+            what = !final ? "变形" : "变形";
         else if (u.ulycn >= LOW_PM)
-            what = !final ? "change shape" : "have changed shape";
+            what = !final ? "改变外形" : "改变外形";
         if (what) {
-            Sprintf(buf, "would %s periodically", what);
+            Sprintf(buf, "将周期性地%s", what);
             /* omit from_what(UNCHANGING); too verbose */
-            enl_msg(You_, buf, buf, " if not locked into your current form",
+            enl_msg(You_, buf, buf, " 如果你没有被锁在当前的外貌",
                     "");
         }
     } else if (Polymorph) {
-        you_are("polymorphing periodically", from_what(POLYMORPH));
+        you_are("周期性地变形", from_what(POLYMORPH));
     }
     if (Polymorph_control)
-        you_have("polymorph control", from_what(POLYMORPH_CONTROL));
+        you_have("有变形控制", from_what(POLYMORPH_CONTROL));
     if (Upolyd && u.umonnum != u.ulycn) {
         /* foreign shape (except were-form which is handled below) */
-        Sprintf(buf, "polymorphed into %s", an(youmonst.data->mname));
+        Sprintf(buf, "已变形为 %s", youmonst.data->mname);
         if (wizard)
             Sprintf(eos(buf), " (%d)", u.mtimedone);
         you_are(buf, "");
     }
     if (lays_eggs(youmonst.data) && flags.female) /* Upolyd */
-        you_can("lay eggs", "");
+        you_can("下蛋", "");
     if (u.ulycn >= LOW_PM) {
         /* "you are a werecreature [in beast form]" */
-        Strcpy(buf, an(mons[u.ulycn].mname));
+        Strcpy(buf, mons[u.ulycn].mname);
         if (u.umonnum == u.ulycn) {
-            Strcat(buf, " in beast form");
+            Strcat(buf, " 野兽形态");
             if (wizard)
                 Sprintf(eos(buf), " (%d)", u.mtimedone);
         }
         you_are(buf, "");
     }
     if (Unchanging && Upolyd) /* !Upolyd handled above */
-        you_can("not change from your current form", from_what(UNCHANGING));
+        you_have("不能改变你当前的外貌", from_what(UNCHANGING));
     if (Hate_silver)
-        you_are("harmed by silver", "");
+        you_are("会受到银制品的伤害", "");
     /* movement and non-armor-based protection */
     if (Fast)
-        you_are(Very_fast ? "very fast" : "fast", from_what(FAST));
+        you_are(Very_fast ? "速度非常快" : "速度快", from_what(FAST));
     if (Reflecting)
-        you_have("reflection", from_what(REFLECTING));
+        you_have("有反射的能力", from_what(REFLECTING));
     if (Free_action)
-        you_have("free action", from_what(FREE_ACTION));
+        you_have("有自由行动的能力", from_what(FREE_ACTION));
     if (Fixed_abil)
-        you_have("fixed abilities", from_what(FIXED_ABIL));
+        you_have("能固定能力", from_what(FIXED_ABIL));
     if (Lifesaved)
-        enl_msg("Your life ", "will be", "would have been", " saved", "");
+        enl_msg("你 ", "能", "能", " 复活", "");
 
     /*** Miscellany ***/
     if (Luck) {
         ltmp = abs((int) Luck);
-        Sprintf(buf, "%s%slucky",
-                ltmp >= 10 ? "extremely " : ltmp >= 5 ? "very " : "",
-                Luck < 0 ? "un" : "");
+        Sprintf(buf, "%s%s幸运",
+                ltmp >= 10 ? "极其 " : ltmp >= 5 ? "非常 " : "",
+                Luck < 0 ? "不" : "");
         if (wizard)
             Sprintf(eos(buf), " (%d)", Luck);
         you_are(buf, "");
     } else if (wizard)
-        enl_msg("Your luck ", "is", "was", " zero", "");
+        enl_msg("你的幸运值 ", "为", "为", " 0", "");
     if (u.moreluck > 0)
-        you_have("extra luck", "");
+        you_have("有额外的幸运", "");
     else if (u.moreluck < 0)
-        you_have("reduced luck", "");
+        you_have("被减少了幸运", "");
     if (carrying(LUCKSTONE) || stone_luck(TRUE)) {
         ltmp = stone_luck(0);
         if (ltmp <= 0)
-            enl_msg("Bad luck ", "does", "did", " not time out for you", "");
+            enl_msg("坏运气 ", "不会", "不会", " 消失", "");
         if (ltmp >= 0)
-            enl_msg("Good luck ", "does", "did", " not time out for you", "");
+            enl_msg("好运气 ", "不会", "不会", " 消失", "");
     }
 
     if (u.ugangr) {
-        Sprintf(buf, " %sangry with you",
-                u.ugangr > 6 ? "extremely " : u.ugangr > 3 ? "very " : "");
+        Sprintf(buf, "对你%s生气",
+                u.ugangr > 6 ? "极其 " : u.ugangr > 3 ? "非常 " : "");
         if (wizard)
             Sprintf(eos(buf), " (%d)", u.ugangr);
-        enl_msg(u_gname(), " is", " was", buf, "");
+        enl_msg(u_gname(), " ", " ", buf, "");
     } else {
         /*
          * We need to suppress this when the game is over, because death
@@ -2483,14 +2479,14 @@ int final;
         if (!final) {
 #if 0
             /* "can [not] safely pray" vs "could [not] have safely prayed" */
-            Sprintf(buf, "%s%ssafely pray%s", can_pray(FALSE) ? "" : "not ",
-                    final ? "have " : "", final ? "ed" : "");
+            Sprintf(buf, "%s能%s平安地祈祷%s", can_pray(FALSE) ? "" : "不 ",
+                    final ? " " : "", final ? "" : "");
 #else
-            Sprintf(buf, "%ssafely pray", can_pray(FALSE) ? "" : "not ");
+            Sprintf(buf, "%s能平安地祈祷", can_pray(FALSE) ? "" : "不 ");
 #endif
             if (wizard)
                 Sprintf(eos(buf), " (%d)", u.ublesscnt);
-            you_can(buf, "");
+            you_have(buf, "");
         }
     }
 
@@ -2508,9 +2504,9 @@ int final;
             Sprintf(buf, "Fruit #%d ", f->fid);
             enl_msg(buf, "is ", "was ", f->fname, "");
         }
-        enl_msg("The current fruit ", "is ", "was ", pl_fruit, "");
+        enl_msg("当前的水果 ", "是 ", "是 ", pl_fruit, "");
         Sprintf(buf, "%d", flags.made_fruit);
-        enl_msg("The made fruit flag ", "is ", "was ", buf, "");
+        enl_msg("制作水果标志 ", "是 ", "是 ", buf, "");
     }
 #endif
 
@@ -2519,39 +2515,29 @@ int final;
 
         buf[0] = '\0';
         if (final < 2) { /* still in progress, or quit/escaped/ascended */
-            p = "survived after being killed ";
+            p = "活着之前被杀死了 ";
             switch (u.umortality) {
             case 0:
-                p = !final ? (char *) 0 : "survived";
-                break;
-            case 1:
-                Strcpy(buf, "once");
-                break;
-            case 2:
-                Strcpy(buf, "twice");
-                break;
-            case 3:
-                Strcpy(buf, "thrice");
+                p = !final ? (char *) 0 : "活着";
                 break;
             default:
-                Sprintf(buf, "%d times", u.umortality);
+                Sprintf(buf, "%d 次", u.umortality);
                 break;
             }
         } else { /* game ended in character's death */
-            p = "are dead";
+            p = "死了";
             switch (u.umortality) {
             case 0:
                 impossible("dead without dying?");
             case 1:
                 break; /* just "are dead" */
             default:
-                Sprintf(buf, " (%d%s time!)", u.umortality,
-                        ordin(u.umortality));
+                Sprintf(buf, " ( 第%d 次!)", u.umortality);
                 break;
             }
         }
         if (p)
-            enl_msg(You_, "have been killed ", p, buf, "");
+            enl_msg(You_, "被杀死了", p, buf, "");
     }
 }
 
@@ -2689,18 +2675,18 @@ int msgflag;          /* for variant message phrasing */
 {
     char *bp, buf[BUFSZ];
 
-    Strcpy(buf, "hiding");
+    Strcpy(buf, "隐藏");
     if (youmonst.m_ap_type != M_AP_NOTHING) {
         /* mimic; hero is only able to mimic a strange object or gold
            or hallucinatory alternative to gold, so we skip the details
            for the hypothetical furniture and monster cases */
-        bp = eos(strcpy(buf, "mimicking"));
+        bp = eos(strcpy(buf, "模仿"));
         if (youmonst.m_ap_type == M_AP_OBJECT) {
-            Sprintf(bp, " %s", an(simple_typename(youmonst.mappearance)));
+            Sprintf(bp, "%s", simple_typename(youmonst.mappearance));
         } else if (youmonst.m_ap_type == M_AP_FURNITURE) {
-            Strcpy(bp, " something");
+            Strcpy(bp, "什么东西");
         } else if (youmonst.m_ap_type == M_AP_MONSTER) {
-            Strcpy(bp, " someone");
+            Strcpy(bp, "某人");
         } else {
             ; /* something unexpected; leave 'buf' as-is */
         }
@@ -2708,24 +2694,24 @@ int msgflag;          /* for variant message phrasing */
         bp = eos(buf); /* points past "hiding" */
         if (youmonst.data->mlet == S_EEL) {
             if (is_pool(u.ux, u.uy))
-                Sprintf(bp, " in the %s", waterbody_name(u.ux, u.uy));
+                Sprintf(bp, "在%s里", waterbody_name(u.ux, u.uy));
         } else if (hides_under(youmonst.data)) {
             struct obj *o = level.objects[u.ux][u.uy];
 
             if (o)
-                Sprintf(bp, " underneath %s", ansimpleoname(o));
+                Sprintf(bp, "在%s下面", ansimpleoname(o));
         } else if (is_clinger(youmonst.data) || Flying) {
             /* Flying: 'lurker above' hides on ceiling but doesn't cling */
-            Sprintf(bp, " on the %s", ceiling(u.ux, u.uy));
+            Sprintf(bp, "在%s上", ceiling(u.ux, u.uy));
         } else {
             /* on floor; is_hider() but otherwise not special: 'trapper' */
             if (u.utrap && u.utraptype == TT_PIT) {
                 struct trap *t = t_at(u.ux, u.uy);
 
-                Sprintf(bp, " in a %spit",
-                        (t && t->ttyp == SPIKED_PIT) ? "spiked " : "");
+                Sprintf(bp, "在一个%s坑里",
+                        (t && t->ttyp == SPIKED_PIT) ? "有钉子的 " : "");
             } else
-                Sprintf(bp, " on the %s", surface(u.ux, u.uy));
+                Sprintf(bp, "在%s上", surface(u.ux, u.uy));
         }
     } else {
         ; /* shouldn't happen; will result in generic "you are hiding" */
@@ -2737,7 +2723,7 @@ int msgflag;          /* for variant message phrasing */
         you_are(buf, "");
     } else {
         /* for dohide(), when player uses '#monster' command */
-        You("are %s %s.", msgflag ? "already" : "now", buf);
+        You("%s %s.", msgflag ? "已经" : "现在", buf);
     }
 }
 
@@ -2760,72 +2746,66 @@ int final;
 
     /* Create the conduct window */
     en_win = create_nhwindow(NHW_MENU);
-    putstr(en_win, 0, "Voluntary challenges:");
+    putstr(en_win, 0, "自愿挑战:");
 
     if (u.uroleplay.blind)
-        you_have_been("blind from birth");
+        you_have("自生来就失明", "");
     if (u.uroleplay.nudist)
-        you_have_been("faithfully nudist");
+        you_have_been("忠实的裸体主义者");
 
     if (!u.uconduct.food)
-        enl_msg(You_, "have gone", "went", " without food", "");
+        enl_msg(You_, "没有", "没有", "吃过食物", "");
         /* but beverages are okay */
     else if (!u.uconduct.unvegan)
-        you_have_X("followed a strict vegan diet");
+        you_have_X("遵循严格的纯素饮食");
     else if (!u.uconduct.unvegetarian)
-        you_have_been("vegetarian");
+        you_have_been("素食者");
 
     if (!u.uconduct.gnostic)
-        you_have_been("an atheist");
+        you_have_been("一个无神论者");
 
     if (!u.uconduct.weaphit) {
-        you_have_never("hit with a wielded weapon");
+        you_have_never("用武器攻击");
     } else if (wizard) {
-        Sprintf(buf, "used a wielded weapon %ld time%s", u.uconduct.weaphit,
-                plur(u.uconduct.weaphit));
+        Sprintf(buf, "用武器%ld 次", u.uconduct.weaphit);
         you_have_X(buf);
     }
     if (!u.uconduct.killer)
-        you_have_been("a pacifist");
+        you_have_been("和平主义者");
 
     if (!u.uconduct.literate) {
-        you_have_been("illiterate");
+        you_have_been("文盲");
     } else if (wizard) {
-        Sprintf(buf, "read items or engraved %ld time%s", u.uconduct.literate,
-                plur(u.uconduct.literate));
+        Sprintf(buf, "阅读物品或雕刻%ld 次", u.uconduct.literate);
         you_have_X(buf);
     }
 
     ngenocided = num_genocides();
     if (ngenocided == 0) {
-        you_have_never("genocided any monsters");
+        you_have_never("灭绝任何怪物");
     } else {
-        Sprintf(buf, "genocided %d type%s of monster%s", ngenocided,
-                plur(ngenocided), plur(ngenocided));
+        Sprintf(buf, "灭绝%d 种怪", ngenocided);
         you_have_X(buf);
     }
 
     if (!u.uconduct.polypiles) {
-        you_have_never("polymorphed an object");
+        you_have_never("给一个对象变形");
     } else if (wizard) {
-        Sprintf(buf, "polymorphed %ld item%s", u.uconduct.polypiles,
-                plur(u.uconduct.polypiles));
+        Sprintf(buf, "给别人变形%ld 项", u.uconduct.polypiles);
         you_have_X(buf);
     }
 
     if (!u.uconduct.polyselfs) {
-        you_have_never("changed form");
+        you_have_never("改变过外貌");
     } else if (wizard) {
-        Sprintf(buf, "changed form %ld time%s", u.uconduct.polyselfs,
-                plur(u.uconduct.polyselfs));
+        Sprintf(buf, "改变外貌%ld 次", u.uconduct.polyselfs);
         you_have_X(buf);
     }
 
     if (!u.uconduct.wishes) {
-        you_have_X("used no wishes");
+        you_have("未许愿过", "");
     } else {
-        Sprintf(buf, "used %ld wish%s", u.uconduct.wishes,
-                (u.uconduct.wishes > 1L) ? "es" : "");
+        Sprintf(buf, "用过%ld 次许愿", u.uconduct.wishes);
         if (u.uconduct.wisharti) {
             /* if wisharti == wishes
              *  1 wish (for an artifact)
@@ -2836,21 +2816,21 @@ int final;
              *  N wishes (M for artifacts)
              */
             if (u.uconduct.wisharti == u.uconduct.wishes)
-                Sprintf(eos(buf), " (%s",
-                        (u.uconduct.wisharti > 2L) ? "all "
-                          : (u.uconduct.wisharti == 2L) ? "both " : "");
+                Sprintf(eos(buf), " ( %s",
+                        (u.uconduct.wisharti > 2L) ? "全是"
+                          : (u.uconduct.wisharti == 2L) ? "都是" : "");
             else
                 Sprintf(eos(buf), " (%ld ", u.uconduct.wisharti);
 
-            Sprintf(eos(buf), "for %s)",
-                    (u.uconduct.wisharti == 1L) ? "an artifact"
-                                                : "artifacts");
+            Sprintf(eos(buf), "%s)",
+                    (u.uconduct.wisharti == 1L) ? "1 神器"
+                                                : "神器");
         }
         you_have_X(buf);
 
         if (!u.uconduct.wisharti)
-            enl_msg(You_, "have not wished", "did not wish",
-                    " for any artifacts", "");
+            enl_msg(You_, "未许愿", "未许愿",
+                    " 任何神器", "");
     }
 
     /* Pop up the window and wait for a key */
@@ -2877,201 +2857,201 @@ int final;
 
 /* ordered by command name */
 struct ext_func_tab extcmdlist[] = {
-    { '#', "#", "perform an extended command",
+    { '#', "#", "#", "执行扩展命令",
             doextcmd, IFBURIED | GENERALCMD },
-    { M('?'), "?", "list all extended commands",
+    { M('?'), "?", "?", "列出所有扩展命令",
             doextlist, IFBURIED | AUTOCOMPLETE | GENERALCMD },
-    { M('a'), "adjust", "adjust inventory letters",
+    { M('a'), "adjust", "调整", "调整背包排列字母",
             doorganize, IFBURIED | AUTOCOMPLETE },
-    { M('A'), "annotate", "name current level",
+    { M('A'), "annotate", "备注", "给这一层备注",
             donamelevel, IFBURIED | AUTOCOMPLETE },
-    { 'a', "apply", "apply (use) a tool (pick-axe, key, lamp...)",
+    { 'a', "apply", "使用", "使用工具( 十字镐, 钥匙, 灯...)",
             doapply },
-    { C('x'), "attributes", "show your attributes",
+    { C('x'), "attributes", "属性", "显示你的属性",
             doattributes, IFBURIED },
-    { '@', "autopickup", "toggle the pickup option on/off",
+    { '@', "autopickup", "自动拾取", "自动拾取开关",
             dotogglepickup, IFBURIED },
-    { 'C', "call", "call (name) something", docallcmd, IFBURIED },
-    { 'Z', "cast", "zap (cast) a spell", docast, IFBURIED },
-    { M('c'), "chat", "talk to someone", dotalk, IFBURIED | AUTOCOMPLETE },
-    { 'c', "close", "close a door", doclose },
-    { M('C'), "conduct", "list voluntary challenges you have maintained",
+    { 'C', "call", "称作", "称呼什么东西", docallcmd, IFBURIED },
+    { 'Z', "cast", "施法", "施展魔法", docast, IFBURIED },
+    { M('c'), "chat", "交谈", "和某人交谈", dotalk, IFBURIED | AUTOCOMPLETE },
+    { 'c', "close", "关门", "关门", doclose },
+    { M('C'), "conduct", "行为", "列出你保持的自愿挑战",
             doconduct, IFBURIED | AUTOCOMPLETE },
-    { M('d'), "dip", "dip an object into something", dodip, AUTOCOMPLETE },
-    { '>', "down", "go down a staircase", dodown },
-    { 'd', "drop", "drop an item", dodrop },
-    { 'D', "droptype", "drop specific item types", doddrop },
-    { 'e', "eat", "eat something", doeat },
-    { 'E', "engrave", "engrave writing on the floor", doengrave },
-    { M('e'), "enhance", "advance or check weapon and spell skills",
+    { M('d'), "dip", "浸", "把物品浸到某物", dodip, AUTOCOMPLETE },
+    { '>', "down", "下楼", "下楼梯", dodown },
+    { 'd', "drop", "扔掉", "扔掉某物", dodrop },
+    { 'D', "droptype", "扔掉一类", "扔掉明确的一类物品", doddrop },
+    { 'e', "eat", "吃", "吃东西", doeat },
+    { 'E', "engrave", "刻写", "在地上写字", doengrave },
+    { M('e'), "enhance", "提升能力", "提高或检查武器和魔法技能",
             enhance_weapon_skill, IFBURIED | AUTOCOMPLETE },
-    { '\0', "exploremode", "enter explore (discovery) mode",
+    { '\0', "exploremode", "探索模式", "进入探索( 发现) 模式",
             enter_explore_mode, IFBURIED },
-    { 'f', "fire", "fire ammunition from quiver", dofire },
-    { M('f'), "force", "force a lock", doforce, AUTOCOMPLETE },
-    { ';', "glance", "show what type of thing a map symbol corresponds to",
+    { 'f', "fire", "发射", "从箭袋里发射", dofire },
+    { M('f'), "force", "开锁", "强行开锁", doforce, AUTOCOMPLETE },
+    { ';', "glance", "扫视", "显示地图符号对应的类型",
             doquickwhatis, IFBURIED | GENERALCMD },
-    { '?', "help", "give a help message", dohelp, IFBURIED | GENERALCMD },
-    { '\0', "herecmdmenu", "show menu of commands you can do here",
+    { '?', "help", "帮助", "给出帮助信息", dohelp, IFBURIED | GENERALCMD },
+    { '\0', "herecmdmenu", "这里可执行", "显示可在此处执行的命令菜单",
             doherecmdmenu, IFBURIED },
-    { 'V', "history", "show long version and game history",
+    { 'V', "history", "历史", "显示游戏长版本历史",
             dohistory, IFBURIED | GENERALCMD },
-    { 'i', "inventory", "show your inventory", ddoinv, IFBURIED },
-    { 'I', "inventtype", "inventory specific item types",
+    { 'i', "inventory", "背包", "显示你的背包", ddoinv, IFBURIED },
+    { 'I', "inventtype", "背包一类", "背包里明确的一类物品",
             dotypeinv, IFBURIED },
-    { M('i'), "invoke", "invoke an object's special powers",
+    { M('i'), "invoke", "激活", "激活物品的特殊能力",
             doinvoke, IFBURIED | AUTOCOMPLETE },
-    { M('j'), "jump", "jump to another location", dojump, AUTOCOMPLETE },
-    { C('d'), "kick", "kick something", dokick },
-    { '\\', "known", "show what object types have been discovered",
+    { M('j'), "jump", "跳", "跳到另一个位置", dojump, AUTOCOMPLETE },
+    { C('d'), "kick", "踢", "踢什么东西", dokick },
+    { '\\', "known", "已知", "显示已发现的物品类型",
             dodiscovered, IFBURIED | GENERALCMD },
-    { '`', "knownclass", "show discovered types for one class of objects",
+    { '`', "knownclass", "已知一类", "显示已发现类型里的一类物品",
             doclassdisco, IFBURIED | GENERALCMD },
-    { '\0', "levelchange", "change experience level",
+    { '\0', "levelchange", "levelchange", "改变等级",
             wiz_level_change, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { '\0', "lightsources", "show mobile light sources",
+    { '\0', "lightsources", "lightsources", "show mobile light sources",
             wiz_light_sources, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { ':', "look", "look at what is here", dolook, IFBURIED },
-    { M('l'), "loot", "loot a box on the floor", doloot, AUTOCOMPLETE },
+    { ':', "look", "查看", "查看这里有什么", dolook, IFBURIED },
+    { M('l'), "loot", "搜刮", "搜刮地上的箱子", doloot, AUTOCOMPLETE },
 #ifdef DEBUG_MIGRATING_MONS
-    { '\0', "migratemons", "migrate N random monsters",
+    { '\0', "migratemons", "migratemons", "migrate N random monsters",
             wiz_migrate_mons, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
 #endif
-    { '\0', "monpolycontrol", "control monster polymorphs",
+    { '\0', "monpolycontrol", "monpolycontrol", "控制怪物变形",
             wiz_mon_polycontrol, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { M('m'), "monster", "use monster's special ability",
+    { M('m'), "monster", "怪物能力", "使用怪物的特殊能力",
             domonability, IFBURIED | AUTOCOMPLETE },
-    { 'N', "name", "name a monster or an object",
+    { 'N', "name", "命名", "给怪物或物品命名",
             docallcmd, IFBURIED | AUTOCOMPLETE },
-    { M('o'), "offer", "offer a sacrifice to the gods",
+    { M('o'), "offer", "献祭", "给神献祭",
             dosacrifice, AUTOCOMPLETE },
-    { 'o', "open", "open a door", doopen },
-    { 'O', "options", "show option settings, possibly change them",
+    { 'o', "open", "开门", "开门", doopen },
+    { 'O', "options", "选项", "显示选项设置, 并改变它们",
             doset, IFBURIED | GENERALCMD },
-    { C('o'), "overview", "show a summary of the explored dungeon",
+    { C('o'), "overview", "概述", "显示已探索地牢的摘要",
             dooverview, IFBURIED | AUTOCOMPLETE },
-    { '\0', "panic", "test panic routine (fatal to game)",
+    { '\0', "panic", "panic", "test panic routine (fatal to game)",
             wiz_panic, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { 'p', "pay", "pay your shopping bill", dopay },
-    { ',', "pickup", "pick up things at the current location", dopickup },
-    { '\0', "polyself", "polymorph self",
+    { 'p', "pay", "付钱", "为你的购物清单付钱", dopay },
+    { ',', "pickup", "拾取", "在当前位置拾取东西", dopickup },
+    { '\0', "polyself", "polyself", "自我变形",
             wiz_polyself, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
 #ifdef PORT_DEBUG
-    { '\0', "portdebug", "wizard port debug command",
+    { '\0', "portdebug", "portdebug", "wizard port debug command",
             wiz_port_debug, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
 #endif
-    { M('p'), "pray", "pray to the gods for help",
+    { M('p'), "pray", "祈祷", "向神祈祷帮助",
             dopray, IFBURIED | AUTOCOMPLETE },
-    { C('p'), "prevmsg", "view recent game messages",
+    { C('p'), "prevmsg", "信息", "显示最近的游戏信息",
             doprev_message, IFBURIED | GENERALCMD },
-    { 'P', "puton", "put on an accessory (ring, amulet, etc)", doputon },
-    { 'q', "quaff", "quaff (drink) something", dodrink },
-    { M('q'), "quit", "exit without saving current game",
+    { 'P', "puton", "戴上", "戴上首饰( 戒指, 护身符, 等等)", doputon },
+    { 'q', "quaff", "喝", "喝什么东西", dodrink },
+    { M('q'), "quit", "退出游戏", "不保存退出游戏",
             done2, IFBURIED | AUTOCOMPLETE | GENERALCMD },
-    { 'Q', "quiver", "select ammunition for quiver", dowieldquiver },
-    { 'r', "read", "read a scroll or spellbook", doread },
-    { C('r'), "redraw", "redraw screen", doredraw, IFBURIED | GENERALCMD },
-    { 'R', "remove", "remove an accessory (ring, amulet, etc)", doremring },
-    { M('R'), "ride", "mount or dismount a saddled steed",
+    { 'Q', "quiver", "准备", "准备好发射物", dowieldquiver },
+    { 'r', "read", "阅读", "阅读卷轴或魔法书", doread },
+    { C('r'), "redraw", "刷新", "刷新屏幕", doredraw, IFBURIED | GENERALCMD },
+    { 'R', "remove", "摘下", "摘下首饰( 戒指, 护身符, 等等)", doremring },
+    { M('R'), "ride", "乘骑", "乘骑或取消乘骑怪物",
             doride, AUTOCOMPLETE },
-    { M('r'), "rub", "rub a lamp or a stone", dorub, AUTOCOMPLETE },
-    { 'S', "save", "save the game and exit", dosave, IFBURIED | GENERALCMD },
-    { 's', "search", "search for traps and secret doors",
-            dosearch, IFBURIED, "searching" },
-    { '*', "seeall", "show all equipment in use", doprinuse, IFBURIED },
-    { AMULET_SYM, "seeamulet", "show the amulet currently worn",
+    { M('r'), "rub", "擦拭", "擦拭灯或石头", dorub, AUTOCOMPLETE },
+    { 'S', "save", "保存退出", "保存游戏并退出", dosave, IFBURIED | GENERALCMD },
+    { 's', "search", "搜索", "搜索陷阱和暗门",
+            dosearch, IFBURIED, "搜索" },
+    { '*', "seeall", "查看装备", "显示所有在使用的装备", doprinuse, IFBURIED },
+    { AMULET_SYM, "seeamulet", "查看护身符", "显示穿戴的护身符",
             dopramulet, IFBURIED },
-    { ARMOR_SYM, "seearmor", "show the armor currently worn",
+    { ARMOR_SYM, "seearmor", "查看盔甲", "显示穿戴的盔甲",
             doprarm, IFBURIED },
-    { GOLD_SYM, "seegold", "count your gold", doprgold, IFBURIED },
-    { '\0', "seenv", "show seen vectors",
+    { GOLD_SYM, "seegold", "查看金币", "你拥有的金币", doprgold, IFBURIED },
+    { '\0', "seenv", "seenv", "show seen vectors",
             wiz_show_seenv, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { RING_SYM, "seerings", "show the ring(s) currently worn",
+    { RING_SYM, "seerings", "查看戒指", "显示穿戴的戒指",
             doprring, IFBURIED },
-    { SPBOOK_SYM, "seespells", "list and reorder known spells",
+    { SPBOOK_SYM, "seespells", "查看魔法", "列出并重新排序已知的魔法",
             dovspell, IFBURIED },
-    { TOOL_SYM, "seetools", "show the tools currently in use",
+    { TOOL_SYM, "seetools", "查看工具", "显示在使用的工具",
             doprtool, IFBURIED },
-    { '^', "seetrap", "show the type of adjacent trap", doidtrap, IFBURIED },
-    { WEAPON_SYM, "seeweapon", "show the weapon currently wielded",
+    { '^', "seetrap", "查看陷阱", "显示邻近的陷阱的类型", doidtrap, IFBURIED },
+    { WEAPON_SYM, "seeweapon", "查看武器", "显示装备的武器",
             doprwep, IFBURIED },
 #ifdef SHELL
-    { '!', "shell", "do a shell escape", dosh, IFBURIED | GENERALCMD },
+    { '!', "shell", "shell", "do a shell escape", dosh, IFBURIED | GENERALCMD },
 #endif /* SHELL */
-    { M('s'), "sit", "sit down", dosit, AUTOCOMPLETE },
-    { '\0', "stats", "show memory statistics",
+    { M('s'), "sit", "坐", "坐下", dosit, AUTOCOMPLETE },
+    { '\0', "stats", "stats", "show memory statistics",
             wiz_show_stats, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
 #ifdef SUSPEND
-    { C('z'), "suspend", "suspend the game",
+    { C('z'), "suspend", "suspend", "suspend the game",
             dosuspend_core, IFBURIED | GENERALCMD },
 #endif /* SUSPEND */
-    { 'x', "swap", "swap wielded and secondary weapons", doswapweapon },
-    { 'T', "takeoff", "take off one piece of armor", dotakeoff },
-    { 'A', "takeoffall", "remove all armor", doddoremarm },
-    { C('t'), "teleport", "teleport around the level", dotele, IFBURIED },
-    { '\0', "terrain", "show map without obstructions",
+    { 'x', "swap", "交换武器", "交换主武器和副武器", doswapweapon },
+    { 'T', "takeoff", "脱下", "脱下一件盔甲", dotakeoff },
+    { 'A', "takeoffall", "全部脱下", "脱下所有盔甲", doddoremarm },
+    { C('t'), "teleport", "传送", "在这一层里传送", dotele, IFBURIED },
+    { '\0', "terrain", "地图显示", "无障碍显示地图",
             doterrain, IFBURIED | AUTOCOMPLETE },
-    { '\0', "therecmdmenu",
-            "menu of commands you can do from here to adjacent spot",
+    { '\0', "therecmdmenu", "那里可执行",
+            "显示从这里到相邻点你能执行的命令菜单",
             dotherecmdmenu },
-    { 't', "throw", "throw something", dothrow },
-    { '\0', "timeout", "look at timeout queue and hero's timed intrinsics",
+    { 't', "throw", "投掷", "投掷某物", dothrow },
+    { '\0', "timeout", "timeout", "look at timeout queue and hero's timed intrinsics",
             wiz_timeout_queue, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { M('T'), "tip", "empty a container", dotip, AUTOCOMPLETE },
-    { '_', "travel", "travel to a specific location on the map", dotravel },
-    { M('t'), "turn", "turn undead away", doturn, IFBURIED | AUTOCOMPLETE },
-    { 'X', "twoweapon", "toggle two-weapon combat",
+    { M('T'), "tip", "倒出", "倒空容器", dotip, AUTOCOMPLETE },
+    { '_', "travel", "移动", "移动到地图上的具体位置", dotravel },
+    { M('t'), "turn", "超度", "超度亡灵", doturn, IFBURIED | AUTOCOMPLETE },
+    { 'X', "twoweapon", "双持", "拿两把武器战斗",
             dotwoweapon, AUTOCOMPLETE },
-    { M('u'), "untrap", "untrap something", dountrap, AUTOCOMPLETE },
-    { '<', "up", "go up a staircase", doup },
-    { '\0', "vanquished", "list vanquished monsters",
+    { M('u'), "untrap", "解除陷阱", "解除陷阱", dountrap, AUTOCOMPLETE },
+    { '<', "up", "上楼", "上楼梯", doup },
+    { '\0', "vanquished", "消灭怪物", "列出消灭的怪物",
             dovanquished, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { M('v'), "version",
-            "list compile time options for this version of NetHack",
+    { M('v'), "version", "版本",
+            "列出NetHack 这个版本的编译时间选项",
             doextversion, IFBURIED | AUTOCOMPLETE | GENERALCMD },
-    { 'v', "versionshort", "show version", doversion, IFBURIED | GENERALCMD },
-    { '\0', "vision", "show vision array",
+    { 'v', "versionshort", "版本信息", "显示版本信息", doversion, IFBURIED | GENERALCMD },
+    { '\0', "vision", "vision", "show vision array",
             wiz_show_vision, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { '.', "wait", "rest one move while doing nothing",
-            donull, IFBURIED, "waiting" },
-    { 'W', "wear", "wear a piece of armor", dowear },
-    { '&', "whatdoes", "tell what a command does", dowhatdoes, IFBURIED },
-    { '/', "whatis", "show what type of thing a symbol corresponds to",
+    { '.', "wait", "休息", "什么都不做休息一回",
+            donull, IFBURIED, "休息" },
+    { 'W', "wear", "穿戴", "穿戴一件盔甲", dowear },
+    { '&', "whatdoes", "做什么", "告诉你命令是做什么的", dowhatdoes, IFBURIED },
+    { '/', "whatis", "是什么", "显示符号对应的类型",
             dowhatis, IFBURIED | GENERALCMD },
-    { 'w', "wield", "wield (put in use) a weapon", dowield },
-    { M('w'), "wipe", "wipe off your face", dowipe, AUTOCOMPLETE },
+    { 'w', "wield", "持握", "装备武器", dowield },
+    { M('w'), "wipe", "擦脸", "擦你的脸", dowipe, AUTOCOMPLETE },
 #ifdef DEBUG
-    { '\0', "wizdebug_bury", "wizard debug: bury objs under and around you",
+    { '\0', "wizdebug_bury", "wizdebug_bury", "wizard debug: bury objs under and around you",
             wiz_debug_cmd_bury, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { '\0', "wizdebug_traveldisplay", "wizard debug: toggle travel display",
+    { '\0', "wizdebug_traveldisplay", "wizdebug_traveldisplay", "wizard debug: toggle travel display",
           wiz_debug_cmd_traveldisplay, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
 #endif
-    { C('e'), "wizdetect", "reveal hidden things within a small radius",
+    { C('e'), "wizdetect", "wizdetect", "在小范围内显示隐藏的东西",
             wiz_detect, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { C('g'), "wizgenesis", "create a monster",
+    { C('g'), "wizgenesis", "wizgenesis", "生成一只怪物",
             wiz_genesis, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { C('i'), "wizidentify", "identify all items in inventory",
+    { C('i'), "wizidentify", "wizidentify", "鉴定背包里的所有物品",
             wiz_identify, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { '\0', "wizintrinsic", "set an intrinsic",
+    { '\0', "wizintrinsic", "wizintrinsic", "设置内在",
             wiz_intrinsic, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { C('v'), "wizlevelport", "teleport to another level",
+    { C('v'), "wizlevelport", "wizlevelport", "传送到其他层",
             wiz_level_tele, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { '\0', "wizmakemap", "recreate the current level",
+    { '\0', "wizmakemap", "wizmakemap", "重新生成这一层",
             wiz_makemap, IFBURIED | WIZMODECMD },
-    { C('f'), "wizmap", "map the level",
+    { C('f'), "wizmap", "wizmap", "这一层的地图",
             wiz_map, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { '\0', "wizrumorcheck", "verify rumor boundaries",
+    { '\0', "wizrumorcheck", "wizrumorcheck", "verify rumor boundaries",
             wiz_rumor_check, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { '\0', "wizsmell", "smell monster",
+    { '\0', "wizsmell", "wizsmell", "smell monster",
             wiz_smell, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { '\0', "wizwhere", "show locations of special levels",
+    { '\0', "wizwhere", "wizwhere", "显示特殊层的位置",
             wiz_where, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { C('w'), "wizwish", "wish for something",
+    { C('w'), "wizwish", "wizwish", "许愿东西",
             wiz_wish, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { '\0', "wmode", "show wall modes",
+    { '\0', "wmode", "wmode", "show wall modes",
             wiz_show_wmodes, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
-    { 'z', "zap", "zap a wand", dozap },
-    { '\0', (char *) 0, (char *) 0, donull, 0, (char *) 0 } /* sentinel */
+    { 'z', "zap", "挥动", "挥动魔杖", dozap },
+    { '\0', (char *) 0, (char *) 0, (char *) 0, donull, 0, (char *) 0 } /* sentinel */
 };
 
 const char *
@@ -4222,7 +4202,7 @@ register char *cmd;
            a movement attempt, but that didn't provide for any
            feedback and led to strangeness if the key pressed
            ('u' in particular) was overloaded for num_pad use */
-        You_cant("get there from here...");
+        You_cant("从这里到那里...");
         context.run = 0;
         context.nopick = context.forcefight = FALSE;
         context.move = context.mv = FALSE;
@@ -4260,10 +4240,10 @@ register char *cmd;
         /* current - use *cmd to directly index cmdlist array */
         if ((tlist = Cmd.commands[*cmd & 0xff]) != 0) {
             if (!wizard && (tlist->flags & WIZMODECMD)) {
-                You_cant("do that!");
+                You_cant("做那个!");
                 res = 0;
             } else if (u.uburied && !(tlist->flags & IFBURIED)) {
-                You_cant("do that while you are buried!");
+                You_cant("在你被埋葬的时候做那个!");
                 res = 0;
             } else {
                 /* we discard 'const' because some compilers seem to have
@@ -4291,8 +4271,8 @@ register char *cmd;
         while ((c = *cmd++) != '\0')
             Strcat(expcmd, visctrl(c)); /* add 1..4 chars plus terminator */
 
-        if (!prefix_seen || !help_dir(c1, spkey, "Invalid direction key!"))
-            Norep("Unknown command '%s'.", expcmd);
+        if (!prefix_seen || !help_dir(c1, spkey, "无效的方向键!"))
+            Norep("未知命令 '%s'.", expcmd);
     }
     /* didn't move */
     context.move = FALSE;
@@ -4422,7 +4402,7 @@ retry:
     if (in_doagain || *readchar_queue)
         dirsym = readchar();
     else
-        dirsym = yn_function((s && *s != '^') ? s : "In what direction?",
+        dirsym = yn_function((s && *s != '^') ? s : "哪个方向?",
                              (char *) 0, '\0');
     /* remove the prompt string so caller won't have to */
     clear_nhwindow(WIN_MESSAGE);
@@ -4445,16 +4425,16 @@ retry:
                 did_help = help_dir((s && *s == '^') ? dirsym : '\0',
                                     NHKF_ESC,
                                     help_requested ? (const char *) 0
-                                                  : "Invalid direction key!");
+                                                  : "无效的方向键!");
                 if (help_requested)
                     goto retry;
             }
             if (!did_help)
-                pline("What a strange direction!");
+                pline("好奇怪的方向!");
         }
         return 0;
     } else if (is_mov && !dxdy_moveok()) {
-        You_cant("orient yourself that direction.");
+        You_cant("使自己朝向那个方向.");
         return 0;
     }
     if (!u.dz && (Stunned || (Confusion && !rn2(5))))
@@ -4522,14 +4502,14 @@ const char *msg;
      * Delivered via pline if 'cmdassist' is off, or instead of the
      * general message if it's on.
      */
-    dothat = "do that";
+    dothat = "做那个";
     how = " at"; /* for "<action> at yourself"; not used for up/down */
     switch (spkey) {
     case NHKF_NOPICKUP:
-        dothat = "move";
+        dothat = "移动";
         break;
     case NHKF_RUSH:
-        dothat = "rush";
+        dothat = "迅速移动";
         break;
     case NHKF_RUN2:
         if (!Cmd.num_pad)
@@ -4537,14 +4517,14 @@ const char *msg;
         /*FALLTHRU*/
     case NHKF_RUN:
     case NHKF_RUN_NOPICKUP:
-        dothat = "run";
+        dothat = "跑";
         break;
     case NHKF_FIGHT2:
         if (!Cmd.num_pad)
             break;
         /*FALLTHRU*/
     case NHKF_FIGHT:
-        dothat = "fight";
+        dothat = "战斗";
         how = ""; /* avoid "fight at yourself" */
         break;
     default:
@@ -4558,13 +4538,13 @@ const char *msg;
     if (prefixhandling
         && (sym == Cmd.spkeys[NHKF_GETDIR_SELF]
             || (Cmd.num_pad && sym == Cmd.spkeys[NHKF_GETDIR_SELF2]))) {
-        Sprintf(buf, "You can't %s%s yourself.", dothat, how);
+        Sprintf(buf, "你不能向自己%s%s.", dothat, how);
     /* for movement prefix followed by up or down */
     } else if (prefixhandling && (sym == '<' || sym == '>')) {
-        Sprintf(buf, "You can't %s %s.", dothat,
+        Sprintf(buf, "你不能%s %s.",
                 /* was "upwards" and "downwards", but they're considered
                    to be variants of canonical "upward" and "downward" */
-                (sym == '<') ? "upward" : "downward");
+                (sym == '<') ? "往上" : "往下", dothat);
     }
 
     /* if '!cmdassist', display via pline() and we're done (note: asking
@@ -4572,7 +4552,7 @@ const char *msg;
     if (!viawindow) {
         if (prefixhandling) {
             if (!*buf)
-                Sprintf(buf, "Invalid direction for '%s' prefix.",
+                Sprintf(buf, "无效的方向前缀'%s'.",
                         visctrl(Cmd.spkeys[spkey]));
             pline("%s", buf);
             return TRUE;
@@ -4590,7 +4570,7 @@ const char *msg;
         putstr(win, 0, buf);
         putstr(win, 0, "");
     } else if (msg) {
-        Sprintf(buf, "cmdassist: %s", msg);
+        Sprintf(buf, "命令助手: %s", msg);
         putstr(win, 0, buf);
         putstr(win, 0, "");
     }
@@ -4601,24 +4581,24 @@ const char *msg;
         ctrl = (sym - 'A') + 1; /* 0-27 (note: 28-31 aren't applicable) */
         if ((explain = dowhatdoes_core(ctrl, buf2)) != 0
             && (!index(wiz_only_list, sym) || wizard)) {
-            Sprintf(buf, "Are you trying to use ^%c%s?", sym,
+            Sprintf(buf, "你是想%s使用^%c 吗?",
                     index(wiz_only_list, sym) ? ""
-                        : " as specified in the Guidebook");
+                        : "按Guidebook 上的规定", sym);
             putstr(win, 0, buf);
             putstr(win, 0, "");
             putstr(win, 0, explain);
             putstr(win, 0, "");
             putstr(win, 0,
-                  "To use that command, hold down the <Ctrl> key as a shift");
-            Sprintf(buf, "and press the <%c> key.", sym);
+                  "要使用那个命令, 按住<Ctrl> 键当做shift");
+            Sprintf(buf, "并按<%c> 键.", sym);
             putstr(win, 0, buf);
             putstr(win, 0, "");
         }
     }
 
-    Sprintf(buf, "Valid direction keys%s%s%s are:",
-            prefixhandling ? " to " : "", prefixhandling ? dothat : "",
-            NODIAG(u.umonnum) ? " in your current form" : "");
+    Sprintf(buf, "%s%s%s的有效的方向键是:",
+            NODIAG(u.umonnum) ? "在你当前的外貌下" : "",
+            prefixhandling ? "来" : "", prefixhandling ? dothat : "");
     putstr(win, 0, buf);
     show_direction_keys(win, !prefixhandling ? '.' : ' ', NODIAG(u.umonnum));
 
@@ -4628,12 +4608,12 @@ const char *msg;
            given but we include up and down for 'm'+invalid_direction;
            self is excluded as a viable direction for every prefix */
         putstr(win, 0, "");
-        putstr(win, 0, "          <  up");
-        putstr(win, 0, "          >  down");
+        putstr(win, 0, "          <  上");
+        putstr(win, 0, "          >  下");
         if (!prefixhandling) {
             int selfi = Cmd.num_pad ? NHKF_GETDIR_SELF2 : NHKF_GETDIR_SELF;
 
-            Sprintf(buf,   "       %4s  direct at yourself",
+            Sprintf(buf,   "       %4s  你自己的位置",
                     visctrl(Cmd.spkeys[selfi]));
             putstr(win, 0, buf);
         }
@@ -4643,7 +4623,7 @@ const char *msg;
         /* non-null msg means that this wasn't an explicit user request */
         putstr(win, 0, "");
         putstr(win, 0,
-               "(Suppress this message with !cmdassist in config file.)");
+               "( 在配置文件中用!cmdassist来禁止此消息.)");
     }
     display_nhwindow(win, FALSE);
     destroy_nhwindow(win);
@@ -4746,34 +4726,34 @@ int x, y;
         int dm = levl[x][y].doormask;
 
         if ((dm & (D_CLOSED | D_LOCKED))) {
-            add_herecmd_menuitem(win, doopen, "Open the door"), ++K;
+            add_herecmd_menuitem(win, doopen, "开门"), ++K;
             /* unfortunately there's no lknown flag for doors to
                remember the locked/unlocked state */
             key_or_pick = (carrying(SKELETON_KEY) || carrying(LOCK_PICK));
             card = (carrying(CREDIT_CARD) != 0);
             if (key_or_pick || card) {
-                Sprintf(buf, "%sunlock the door",
-                        key_or_pick ? "lock or " : "");
+                Sprintf(buf, "%s解锁门",
+                        key_or_pick ? "上锁或者" : "");
                 add_herecmd_menuitem(win, doapply, upstart(buf)), ++K;
             }
             /* unfortunately there's no tknown flag for doors (or chests)
                to remember whether a trap had been found */
             add_herecmd_menuitem(win, dountrap,
-                                 "Search the door for a trap"), ++K;
+                                 "搜索门是否有陷阱"), ++K;
             /* [what about #force?] */
-            add_herecmd_menuitem(win, dokick, "Kick the door"), ++K;
+            add_herecmd_menuitem(win, dokick, "踢门"), ++K;
         } else if ((dm & D_ISOPEN)) {
-            add_herecmd_menuitem(win, doclose, "Close the door"), ++K;
+            add_herecmd_menuitem(win, doclose, "关门"), ++K;
         }
     }
 
     if (typ <= SCORR)
-        add_herecmd_menuitem(win, dosearch, "Search for secret doors"), ++K;
+        add_herecmd_menuitem(win, dosearch, "搜索暗门"), ++K;
 
     if ((ttmp = t_at(x, y)) != 0 && ttmp->tseen) {
-        add_herecmd_menuitem(win, doidtrap, "Examine trap"), ++K;
+        add_herecmd_menuitem(win, doidtrap, "检查陷阱"), ++K;
         if (ttmp->ttyp != VIBRATING_SQUARE)
-            add_herecmd_menuitem(win, dountrap, "Attempt to disarm trap"), ++K;
+            add_herecmd_menuitem(win, dountrap, "试图解除陷阱"), ++K;
     }
 
     mtmp = m_at(x, y);
@@ -4784,15 +4764,15 @@ int x, y;
                               SUPPRESS_SADDLE, FALSE);
 
         if (!u.usteed) {
-            Sprintf(buf, "Ride %s", mnam);
+            Sprintf(buf, "乘骑%s", mnam);
             add_herecmd_menuitem(win, doride, buf), ++K;
         }
-        Sprintf(buf, "Remove saddle from %s", mnam);
+        Sprintf(buf, "拿下%s 的鞍", mnam);
         add_herecmd_menuitem(win, doloot, buf), ++K;
     }
     if (mtmp && can_saddle(mtmp) && !which_armor(mtmp, W_SADDLE)
         && carrying(SADDLE)) {
-        Sprintf(buf, "Put saddle on %s", mon_nam(mtmp)), ++K;
+        Sprintf(buf, "把鞍放上%s", mon_nam(mtmp)), ++K;
         add_herecmd_menuitem(win, doapply, buf);
     }
 #if 0
@@ -4804,10 +4784,10 @@ int x, y;
 #endif
 
     if (K) {
-        end_menu(win, "What do you want to do?");
+        end_menu(win, "你想做什么?");
         npick = select_menu(win, PICK_ONE, &picks);
     } else {
-        pline("No applicable actions.");
+        pline("没有适用的行为.");
         npick = 0;
     }
     destroy_nhwindow(win);
@@ -4842,35 +4822,35 @@ boolean doit;
     start_menu(win);
 
     if (IS_FOUNTAIN(typ) || IS_SINK(typ)) {
-        Sprintf(buf, "Drink from the %s",
+        Sprintf(buf, "喝%s",
                 defsyms[IS_FOUNTAIN(typ) ? S_fountain : S_sink].explanation);
         add_herecmd_menuitem(win, dodrink, buf);
     }
     if (IS_FOUNTAIN(typ))
         add_herecmd_menuitem(win, dodip,
-                             "Dip something into the fountain");
+                             "把某物浸到喷泉里");
     if (IS_THRONE(typ))
         add_herecmd_menuitem(win, dosit,
-                             "Sit on the throne");
+                             "坐到王座上");
 
     if ((u.ux == xupstair && u.uy == yupstair)
         || (u.ux == sstairs.sx && u.uy == sstairs.sy && sstairs.up)
         || (u.ux == xupladder && u.uy == yupladder)) {
-        Sprintf(buf, "Go up the %s",
+        Sprintf(buf, "上%s",
                 (u.ux == xupladder && u.uy == yupladder)
-                ? "ladder" : "stairs");
+                ? "梯子" : "楼梯");
         add_herecmd_menuitem(win, doup, buf);
     }
     if ((u.ux == xdnstair && u.uy == ydnstair)
         || (u.ux == sstairs.sx && u.uy == sstairs.sy && !sstairs.up)
         || (u.ux == xdnladder && u.uy == ydnladder)) {
-        Sprintf(buf, "Go down the %s",
+        Sprintf(buf, "下%s",
                 (u.ux == xupladder && u.uy == yupladder)
-                ? "ladder" : "stairs");
+                ? "梯子" : "楼梯");
         add_herecmd_menuitem(win, dodown, buf);
     }
     if (u.usteed) { /* another movement choice */
-        Sprintf(buf, "Dismount %s",
+        Sprintf(buf, "下乘骑的%s",
                 x_monnam(u.usteed, ARTICLE_THE, (char *) 0,
                          SUPPRESS_SADDLE, FALSE));
         add_herecmd_menuitem(win, doride, buf);
@@ -4887,27 +4867,27 @@ boolean doit;
     if (OBJ_AT(u.ux, u.uy)) {
         struct obj *otmp = level.objects[u.ux][u.uy];
 
-        Sprintf(buf, "Pick up %s", otmp->nexthere ? "items" : doname(otmp));
+        Sprintf(buf, "捡取%s", otmp->nexthere ? "物品" : doname(otmp));
         add_herecmd_menuitem(win, dopickup, buf);
 
         if (Is_container(otmp)) {
-            Sprintf(buf, "Loot %s", doname(otmp));
+            Sprintf(buf, "搜刮%s", doname(otmp));
             add_herecmd_menuitem(win, doloot, buf);
         }
         if (otmp->oclass == FOOD_CLASS) {
-            Sprintf(buf, "Eat %s", doname(otmp));
+            Sprintf(buf, "吃%s", doname(otmp));
             add_herecmd_menuitem(win, doeat, buf);
         }
     }
 
     if (invent)
-        add_herecmd_menuitem(win, dodrop, "Drop items");
+        add_herecmd_menuitem(win, dodrop, "扔物品");
 
-    add_herecmd_menuitem(win, donull, "Rest one turn");
-    add_herecmd_menuitem(win, dosearch, "Search around you");
-    add_herecmd_menuitem(win, dolook, "Look at what is here");
+    add_herecmd_menuitem(win, donull, "休息一回");
+    add_herecmd_menuitem(win, dosearch, "搜索你周围");
+    add_herecmd_menuitem(win, dolook, "查看这里有什么");
 
-    end_menu(win, "What do you want to do?");
+    end_menu(win, "你想做什么?");
     npick = select_menu(win, PICK_ONE, &picks);
     destroy_nhwindow(win);
     ch = '\0';
@@ -5338,8 +5318,8 @@ dotravel(VOID_ARGS)
         }
         iflags.getloc_filter = gf;
     } else {
-        pline("Where do you want to travel to?");
-        if (getpos(&cc, TRUE, "the desired destination") < 0) {
+        pline("你想走到哪里?");
+        if (getpos(&cc, TRUE, "期望的目的地") < 0) {
             /* user pressed ESC */
             iflags.getloc_travelmode = FALSE;
             return 0;

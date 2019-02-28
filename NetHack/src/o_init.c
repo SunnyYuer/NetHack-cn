@@ -273,7 +273,7 @@ find_skates()
     register const char *s;
 
     for (i = SPEED_BOOTS; i <= LEVITATION_BOOTS; i++)
-        if ((s = OBJ_DESCR(objects[i])) != 0 && !strcmp(s, "snow boots"))
+        if ((s = OBJ_DESCR(objects[i])) != 0 && !strcmp(s, "雪地靴"))
             return i;
 
     impossible("snow boots not found?");
@@ -419,7 +419,7 @@ dodiscovered() /* free after Robert Viduya */
     winid tmpwin;
 
     tmpwin = create_nhwindow(NHW_MENU);
-    putstr(tmpwin, 0, "Discoveries");
+    putstr(tmpwin, 0, "发现物");
     putstr(tmpwin, 0, "");
 
     /* gather "unique objects" into a pseudo-class; note that they'll
@@ -427,7 +427,7 @@ dodiscovered() /* free after Robert Viduya */
     for (i = dis = 0; i < SIZE(uniq_objs); i++)
         if (objects[uniq_objs[i]].oc_name_known) {
             if (!dis++)
-                putstr(tmpwin, iflags.menu_headings, "Unique items");
+                putstr(tmpwin, iflags.menu_headings, "稀有物品");
             Sprintf(buf, "  %s", OBJ_NAME(objects[uniq_objs[i]]));
             putstr(tmpwin, 0, buf);
             ++ct;
@@ -460,7 +460,7 @@ dodiscovered() /* free after Robert Viduya */
         }
     }
     if (ct == 0) {
-        You("haven't discovered anything yet...");
+        You("目前还没有发现任何物品...");
     } else
         display_nhwindow(tmpwin, TRUE);
     destroy_nhwindow(tmpwin);
@@ -487,10 +487,10 @@ int
 doclassdisco()
 {
     static NEARDATA const char
-        prompt[] = "View discoveries for which sort of objects?",
-        havent_discovered_any[] = "haven't discovered any %s yet.",
-        unique_items[] = "unique items",
-        artifact_items[] = "artifacts";
+        prompt[] = "查看已发现的哪类物品?",
+        havent_discovered_any[] = "还没有发现任何 %s.",
+        unique_items[] = "稀有物品",
+        artifact_items[] = "神器";
     char *s, c, oclass, menulet, allclasses[MAXOCLASSES],
         discosyms[2 + MAXOCLASSES + 1], buf[BUFSZ];
     int i, ct, dis, xtras;
@@ -557,7 +557,7 @@ doclassdisco()
 
     /* there might not be anything for us to do... */
     if (!discosyms[0]) {
-        You(havent_discovered_any, "items");
+        You(havent_discovered_any, "物品");
         if (tmpwin != WIN_ERR)
             destroy_nhwindow(tmpwin);
         return 0;
@@ -629,7 +629,7 @@ doclassdisco()
         break;
     default:
         oclass = def_char_to_objclass(c);
-        Sprintf(buf, "Discovered %s", let_to_name(oclass, FALSE, FALSE));
+        Sprintf(buf, "已发现的 %s", let_to_name(oclass, FALSE, FALSE));
         putstr(tmpwin, iflags.menu_headings, buf);
         for (i = bases[(int) oclass];
              i < NUM_OBJECTS && objects[i].oc_class == oclass; ++i) {
@@ -700,11 +700,11 @@ rename_disco()
         }
     }
     if (ct == 0) {
-        You("haven't discovered anything yet...");
+        You("目前还没有发现任何物品...");
     } else if (mn == 0) {
-        pline("None of your discoveries can be assigned names...");
+        pline("你的发现物没有一个能被指定名字...");
     } else {
-        end_menu(tmpwin, "Pick an object type to name");
+        end_menu(tmpwin, "选择一个对象来命名");
         dis = STRANGE_OBJECT;
         sl = select_menu(tmpwin, PICK_ONE, &selected);
         if (sl > 0) {

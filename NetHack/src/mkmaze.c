@@ -763,6 +763,76 @@ int wallthick;
     }
 }
 
+char *
+cnspetoen(s, ensp)
+register const char *s;
+char *ensp;
+{
+    if(!strcmp(s, "矿坑小镇")) return "minetn";
+    if(!strcmp(s, "矿坑底层")) return "minend";
+    if(!strcmp(s, "神谕")) return "oracle";
+    if(!cnstrcmp(s, "仓库番"))
+    {
+        strcpy(ensp, "soko");
+        ensp[4] = s[9];
+        ensp[5] = '\0';
+        return ensp;
+    }
+    if(!strcmp(s, "大房间")) return "bigrm";
+    if(strstr(s, "开始"))
+    {
+        strcpy(ensp, s);
+        ensp[4]='\0';
+        strcat(ensp, "strt");
+        return ensp;
+    }
+    if(strstr(s, "中心"))
+    {
+        strcpy(ensp, s);
+        ensp[4]='\0';
+        strcat(ensp, "loca");
+        return ensp;
+    }
+    if(strstr(s, "终点"))
+    {
+        strcpy(ensp, s);
+        ensp[4]='\0';
+        strcat(ensp, "goal");
+        return ensp;
+    }
+    if(!strcmp(s, "诺克斯")) return "knox";
+    if(!strcmp(s, "美杜莎")) return "medusa";
+    if(!strcmp(s, "城堡")) return "castle";
+    if(!strcmp(s, "山谷")) return "valley";
+    if(!strcmp(s, "阿斯莫德")) return "asmodeus";
+    if(!strcmp(s, "巴力西卜")) return "baalz";
+    if(!strcmp(s, "朱比烈斯")) return "juiblex";
+    if(!strcmp(s, "奥迦斯")) return "orcus";
+    if(!strcmp(s, "塔1")) return "tower1";
+    if(!strcmp(s, "塔2")) return "tower2";
+    if(!strcmp(s, "塔3")) return "tower3";
+    if(!cnstrcmp(s, "巫师塔"))
+    {
+        strcpy(ensp, "wizard");
+        ensp[6] = s[9];
+        ensp[7] = '\0';
+        return ensp;
+    }
+    if(!cnstrcmp(s, "伪巫师塔"))
+    {
+        strcpy(ensp, "fakewiz");
+        ensp[7] = s[12];
+        ensp[8] = '\0';
+        return ensp;
+    }
+    if(!strcmp(s, "密室")) return "sanctum";
+    if(!strcmp(s, "土")) return "earth";
+    if(!strcmp(s, "气")) return "air";
+    if(!strcmp(s, "火")) return "fire";
+    if(!strcmp(s, "水")) return "water";
+    if(!strcmp(s, "星界")) return "astral";
+    return strcpy(ensp, s);
+}
 
 void
 makemaz(s)
@@ -770,14 +840,15 @@ const char *s;
 {
     int x, y;
     char protofile[20];
+    char ensp[20];
     s_level *sp = Is_special(&u.uz);
     coord mm;
 
     if (*s) {
         if (sp && sp->rndlevs)
-            Sprintf(protofile, "%s-%d", s, rnd((int) sp->rndlevs));
+            Sprintf(protofile, "%s-%d", cnspetoen(s, ensp), rnd((int) sp->rndlevs));
         else
-            Strcpy(protofile, s);
+            Strcpy(protofile, cnspetoen(s, ensp));
     } else if (*(dungeons[u.uz.dnum].proto)) {
         if (dunlevs_in_dungeon(&u.uz) > 1) {
             if (sp && sp->rndlevs)
@@ -1175,7 +1246,7 @@ fumaroles()
         }
     }
     if (snd && !Deaf)
-        Norep("You hear a %swhoosh!", loud ? "loud " : "");
+        Norep("你听见%s长嘶声!", loud ? "响亮的" : "");
 }
 
 /*
@@ -1370,7 +1441,7 @@ water_friction()
         eff = TRUE;
     }
     if (eff)
-        pline("Water turbulence affects your movements.");
+        pline("水的湍流影响了你的行动.");
 }
 
 void
@@ -1447,19 +1518,19 @@ xchar x, y;
         ltyp = db_under_typ(lev->drawbridgemask);
 
     if (ltyp == LAVAPOOL)
-        return hliquid("lava");
+        return hliquid("熔岩");
     else if (ltyp == ICE)
-        return "ice";
+        return "冰";
     else if (ltyp == POOL)
-        return "pool of water";
+        return "一池水";
     else if (ltyp == WATER || Is_waterlevel(&u.uz))
         ; /* fall through to default return value */
     else if (Is_juiblex_level(&u.uz))
-        return "swamp";
+        return "沼泽";
     else if (ltyp == MOAT && !Is_medusa_level(&u.uz))
-        return "moat";
+        return "护城河";
 
-    return hliquid("water");
+    return hliquid("水");
 }
 
 STATIC_OVL void

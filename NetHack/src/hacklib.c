@@ -89,8 +89,8 @@ char c;
 boolean
 letter(c)
 char c;
-{
-    return (boolean) ('@' <= c && c <= 'Z') || ('a' <= c && c <= 'z');
+{//加入中文判断
+    return (boolean) ('@' <= c && c <= 'Z') || ('a' <= c && c <= 'z') || (c < 0);
 }
 
 /* force 'c' into uppercase */
@@ -311,9 +311,9 @@ const char *s;
     else if (!strcmpi(buf, "you")) /* you -> your */
         Strcat(buf, "r");
     else if (*(eos(buf) - 1) == 's') /* Xs -> Xs' */
-        Strcat(buf, "'");
+        Strcat(buf, " 的");
     else /* X -> X's */
-        Strcat(buf, "'s");
+        Strcat(buf, " 的");
     return buf;
 }
 
@@ -347,7 +347,7 @@ const char *s;
         *(p - 1) = '\0';
     } else if (p >= &buf[1] && *(p - 1) == 'e') /* grease -> greas + ing */
         *(p - 1) = '\0';
-    Strcat(buf, "ing");
+    Strcat(buf, "");
     if (onoff[0])
         Strcat(buf, onoff);
     return buf;

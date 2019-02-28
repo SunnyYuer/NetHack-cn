@@ -175,7 +175,7 @@ static struct Bool_Opt {
 #endif
     { "perm_invent", &flags.perm_invent, FALSE, SET_IN_GAME },
     { "pickup_thrown", &flags.pickup_thrown, TRUE, SET_IN_GAME },
-    { "popup_dialog", &iflags.wc_popup_dialog, FALSE, SET_IN_GAME },   /*WC*/
+    { "popup_dialog", &iflags.wc_popup_dialog, TRUE, SET_IN_GAME },   /*WC*/
     { "preload_tiles", &iflags.wc_preload_tiles, TRUE, DISP_IN_GAME }, /*WC*/
     { "pushweapon", &flags.pushweapon, FALSE, SET_IN_GAME },
 #if defined(MICRO) && !defined(AMIGA)
@@ -259,78 +259,78 @@ static struct Comp_Opt {
                * a different format */
     int optflags;
 } compopt[] = {
-    { "align", "your starting alignment (lawful, neutral, or chaotic)", 8,
+    { "align", "你的起始阵营( 秩序, 中立, 或混沌)", 8,
       DISP_IN_GAME },
-    { "align_message", "message window alignment", 20, DISP_IN_GAME }, /*WC*/
-    { "align_status", "status window alignment", 20, DISP_IN_GAME },   /*WC*/
-    { "altkeyhandler", "alternate key handler", 20, DISP_IN_GAME },
+    { "align_message", "消息窗口对齐", 20, DISP_IN_GAME }, /*WC*/
+    { "align_status", "状态窗口对齐", 20, DISP_IN_GAME },   /*WC*/
+    { "altkeyhandler", "alt 键处理", 20, DISP_IN_GAME },
 #ifdef BACKWARD_COMPAT
-    { "boulder", "deprecated (use S_boulder in sym file instead)", 1,
+    { "boulder", "已弃用 ( 使用sym 文件中的S_boulder 来代替)", 1,
       SET_IN_GAME },
 #endif
-    { "catname", "the name of your (first) cat (e.g., catname:Tabby)",
+    { "catname", "你的( 第一只) 猫的名字 (e.g., catname:Tabby)",
       PL_PSIZ, DISP_IN_GAME },
-    { "disclose", "the kinds of information to disclose at end of game",
+    { "disclose", "在游戏结束时显示的信息种类",
       sizeof(flags.end_disclose) * 2, SET_IN_GAME },
-    { "dogname", "the name of your (first) dog (e.g., dogname:Fang)", PL_PSIZ,
+    { "dogname", "你的( 第一只) 狗的名字 (e.g., dogname:Fang)", PL_PSIZ,
       DISP_IN_GAME },
-    { "dungeon", "the symbols to use in drawing the dungeon map",
+    { "dungeon", "地图中使用的符号",
       MAXDCHARS + 1, SET_IN_FILE },
-    { "effects", "the symbols to use in drawing special effects",
+    { "effects", "绘制特殊效果使用的符号",
       MAXECHARS + 1, SET_IN_FILE },
-    { "font_map", "the font to use in the map window", 40,
+    { "font_map", "地图窗口的字体", 40,
       DISP_IN_GAME },                                              /*WC*/
-    { "font_menu", "the font to use in menus", 40, DISP_IN_GAME }, /*WC*/
-    { "font_message", "the font to use in the message window", 40,
+    { "font_menu", "菜单的字体", 40, DISP_IN_GAME }, /*WC*/
+    { "font_message", "消息窗口的字体", 40,
       DISP_IN_GAME },                                                  /*WC*/
-    { "font_size_map", "the size of the map font", 20, DISP_IN_GAME }, /*WC*/
-    { "font_size_menu", "the size of the menu font", 20,
+    { "font_size_map", "地图字体大小", 20, DISP_IN_GAME }, /*WC*/
+    { "font_size_menu", "菜单字体大小", 20,
       DISP_IN_GAME }, /*WC*/
-    { "font_size_message", "the size of the message font", 20,
+    { "font_size_message", "消息字体大小", 20,
       DISP_IN_GAME }, /*WC*/
-    { "font_size_status", "the size of the status font", 20,
+    { "font_size_status", "状态字体大小", 20,
       DISP_IN_GAME }, /*WC*/
-    { "font_size_text", "the size of the text font", 20,
+    { "font_size_text", "文本字体大小", 20,
       DISP_IN_GAME }, /*WC*/
-    { "font_status", "the font to use in status window", 40,
+    { "font_status", "状态窗口字体", 40,
       DISP_IN_GAME }, /*WC*/
-    { "font_text", "the font to use in text windows", 40,
+    { "font_text", "文本窗口字体", 40,
       DISP_IN_GAME }, /*WC*/
-    { "fruit", "the name of a fruit you enjoy eating", PL_FSIZ, SET_IN_GAME },
-    { "gender", "your starting gender (male or female)", 8, DISP_IN_GAME },
-    { "horsename", "the name of your (first) horse (e.g., horsename:Silver)",
+    { "fruit", "你喜欢吃的水果的名字", PL_FSIZ, SET_IN_GAME },
+    { "gender", "你的起始性别( 男性或女性)", 8, DISP_IN_GAME },
+    { "horsename", "你的( 第一匹) 马的名字 (e.g., horsename:Silver)",
       PL_PSIZ, DISP_IN_GAME },
-    { "map_mode", "map display mode under Windows", 20, DISP_IN_GAME }, /*WC*/
-    { "menustyle", "user interface for object selection", MENUTYPELEN,
+    { "map_mode", "窗口下的地图显示模式", 20, DISP_IN_GAME }, /*WC*/
+    { "menustyle", "物品选择使用界面", MENUTYPELEN,
       SET_IN_GAME },
-    { "menu_deselect_all", "deselect all items in a menu", 4, SET_IN_FILE },
-    { "menu_deselect_page", "deselect all items on this page of a menu", 4,
+    { "menu_deselect_all", "取消选择所有菜单项", 4, SET_IN_FILE },
+    { "menu_deselect_page", "取消选择这一页所有菜单项", 4,
       SET_IN_FILE },
-    { "menu_first_page", "jump to the first page in a menu", 4, SET_IN_FILE },
-    { "menu_headings", "text attribute for menu headings", 9, SET_IN_GAME },
-    { "menu_invert_all", "invert all items in a menu", 4, SET_IN_FILE },
-    { "menu_invert_page", "invert all items on this page of a menu", 4,
+    { "menu_first_page", "跳到菜单的第一页", 4, SET_IN_FILE },
+    { "menu_headings", "菜单标题的文本属性", 9, SET_IN_GAME },
+    { "menu_invert_all", "颠倒所有菜单项", 4, SET_IN_FILE },
+    { "menu_invert_page", "颠倒这一页的所有菜单项", 4,
       SET_IN_FILE },
-    { "menu_last_page", "jump to the last page in a menu", 4, SET_IN_FILE },
-    { "menu_next_page", "goto the next menu page", 4, SET_IN_FILE },
-    { "menu_previous_page", "goto the previous menu page", 4, SET_IN_FILE },
-    { "menu_search", "search for a menu item", 4, SET_IN_FILE },
-    { "menu_select_all", "select all items in a menu", 4, SET_IN_FILE },
-    { "menu_select_page", "select all items on this page of a menu", 4,
+    { "menu_last_page", "跳到菜单的最后一页", 4, SET_IN_FILE },
+    { "menu_next_page", "转到下一菜单页", 4, SET_IN_FILE },
+    { "menu_previous_page", "转到上一菜单页面", 4, SET_IN_FILE },
+    { "menu_search", "寻找一个菜单项", 4, SET_IN_FILE },
+    { "menu_select_all", "选择所有菜单项", 4, SET_IN_FILE },
+    { "menu_select_page", "选择这一页所有菜单项", 4,
       SET_IN_FILE },
-    { "monsters", "the symbols to use for monsters", MAXMCLASSES,
+    { "monsters", "怪物使用的符号", MAXMCLASSES,
       SET_IN_FILE },
-    { "msghistory", "number of top line messages to save", 5, DISP_IN_GAME },
+    { "msghistory", "保存顶行消息数", 5, DISP_IN_GAME },
 #ifdef TTY_GRAPHICS
-    { "msg_window", "the type of message window required", 1, SET_IN_GAME },
+    { "msg_window", "消息窗口所需类型", 1, SET_IN_GAME },
 #else
-    { "msg_window", "the type of message window required", 1, SET_IN_FILE },
+    { "msg_window", "消息窗口所需类型", 1, SET_IN_FILE },
 #endif
-    { "name", "your character's name (e.g., name:Merlin-W)", PL_NSIZ,
+    { "name", "你的角色名字 (e.g., name:Merlin-W)", PL_NSIZ,
       DISP_IN_GAME },
-    { "number_pad", "use the number pad for movement", 1, SET_IN_GAME },
-    { "objects", "the symbols to use for objects", MAXOCLASSES, SET_IN_FILE },
-    { "packorder", "the inventory order of the items in your pack",
+    { "number_pad", "使用移动步数", 1, SET_IN_GAME },
+    { "objects", "物品使用的符号", MAXOCLASSES, SET_IN_FILE },
+    { "packorder", "您的包中物品的清单",
       MAXOCLASSES, SET_IN_GAME },
 #ifdef CHANGE_COLOR
     { "palette",
@@ -345,32 +345,32 @@ static struct Comp_Opt {
     { "hicolor", "same as palette, only order is reversed", 15, SET_IN_FILE },
 #endif
 #endif
-    { "paranoid_confirmation", "extra prompting in certain situations", 28,
+    { "paranoid_confirmation", "在特定情况下的额外提示", 28,
       SET_IN_GAME },
-    { "pettype", "your preferred initial pet type", 4, DISP_IN_GAME },
-    { "pickup_burden", "maximum burden picked up before prompt", 20,
+    { "pettype", "首选的初始宠物类型", 4, DISP_IN_GAME },
+    { "pickup_burden", "提示之前的拾取最大负重", 20,
       SET_IN_GAME },
-    { "pickup_types", "types of objects to pick up automatically",
+    { "pickup_types", "自动拾取的物品类型",
       MAXOCLASSES, SET_IN_GAME },
-    { "pile_limit", "threshold for \"there are many objects here\"", 24,
+    { "pile_limit", "临界值\" 这里有很多物品\"", 24,
       SET_IN_GAME },
-    { "playmode", "normal play, non-scoring explore mode, or debug mode", 8,
+    { "playmode", "一般模式, 无分数探索模式, 或调试模式", 8,
       DISP_IN_GAME },
-    { "player_selection", "choose character via dialog or prompts", 12,
+    { "player_selection", "通过对话框和提示选择角色", 12,
       DISP_IN_GAME },
-    { "race", "your starting race (e.g., Human, Elf)", PL_CSIZ,
+    { "race", "你的起始种族 (e.g., Human, Elf)", PL_CSIZ,
       DISP_IN_GAME },
-    { "role", "your starting role (e.g., Barbarian, Valkyrie)", PL_CSIZ,
+    { "role", "你的起始职业 (e.g., Barbarian, Valkyrie)", PL_CSIZ,
       DISP_IN_GAME },
-    { "runmode", "display frequency when `running' or `travelling'",
+    { "runmode", "当`running' 或`travelling' 的显示频率",
       sizeof "teleport", SET_IN_GAME },
-    { "scores", "the parts of the score list you wish to see", 32,
+    { "scores", "你想要看的部分分数列表", 32,
       SET_IN_GAME },
-    { "scroll_amount", "amount to scroll map when scroll_margin is reached",
+    { "scroll_amount", "当scroll_margin 到达滚动地图",
       20, DISP_IN_GAME }, /*WC*/
-    { "scroll_margin", "scroll map when this far from the edge", 20,
+    { "scroll_margin", "当离边缘很远滚动地图", 20,
       DISP_IN_GAME }, /*WC*/
-    { "sortloot", "sort object selection lists by description", 4,
+    { "sortloot", "通过描述排序物品选择列表", 4,
       SET_IN_GAME },
 #ifdef MSDOS
     { "soundcard", "type of sound card to use", 20, SET_IN_FILE },
@@ -382,22 +382,22 @@ static struct Comp_Opt {
 #else
     { "statushilites", "highlight control", 20, SET_IN_FILE },
 #endif
-    { "symset", "load a set of display symbols from the symbols file", 70,
+    { "symset", "从符号文件中加载一组显示符号", 70,
       SET_IN_GAME },
     { "roguesymset",
-      "load a set of rogue display symbols from the symbols file", 70,
+      "从符号文件加载一组过时的显示符号", 70,
       SET_IN_GAME },
 #ifdef WIN32
     { "subkeyvalue", "override keystroke value", 7, SET_IN_FILE },
 #endif
-    { "suppress_alert", "suppress alerts about version-specific features", 8,
+    { "suppress_alert", "抑制版本特性的警报", 8,
       SET_IN_GAME },
-    { "tile_width", "width of tiles", 20, DISP_IN_GAME },   /*WC*/
-    { "tile_height", "height of tiles", 20, DISP_IN_GAME }, /*WC*/
-    { "tile_file", "name of tile file", 70, DISP_IN_GAME }, /*WC*/
-    { "traps", "the symbols to use in drawing traps", MAXTCHARS + 1,
+    { "tile_width", "tiles 的宽", 20, DISP_IN_GAME },   /*WC*/
+    { "tile_height", "tiles 的高", 20, DISP_IN_GAME }, /*WC*/
+    { "tile_file", "tile 文件的名字", 70, DISP_IN_GAME }, /*WC*/
+    { "traps", "绘制陷阱使用的符号", MAXTCHARS + 1,
       SET_IN_FILE },
-    { "vary_msgcount", "show more old messages at a time", 20,
+    { "vary_msgcount", "同一时间显示更多的旧信息", 20,
       DISP_IN_GAME }, /*WC*/
 #ifdef MSDOS
     { "video", "method of video updating", 20, SET_IN_FILE },
@@ -408,20 +408,20 @@ static struct Comp_Opt {
     { "videoshades", "gray shades to map to black/gray/white", 32,
       DISP_IN_GAME },
 #endif
-    { "whatis_coord", "show coordinates when auto-describing cursor position",
+    { "whatis_coord", "显示自动描述光标位置的坐标",
       1, SET_IN_GAME },
     { "whatis_filter",
-      "filter coordinate locations when targeting next or previous",
+      "在以下一个或上一个为目标时筛选坐标位置",
       1, SET_IN_GAME },
-    { "windowcolors", "the foreground/background colors of windows", /*WC*/
+    { "windowcolors", "窗口的前景背景颜色", /*WC*/
       80, DISP_IN_GAME },
-    { "windowtype", "windowing system to use", WINTYPELEN, DISP_IN_GAME },
+    { "windowtype", "视窗系统使用", WINTYPELEN, DISP_IN_GAME },
 #ifdef WINCHAIN
     { "windowchain", "window processor to use", WINTYPELEN, SET_IN_SYS },
 #endif
 #ifdef BACKWARD_COMPAT
-    { "DECgraphics", "load DECGraphics display symbols", 70, SET_IN_FILE },
-    { "IBMgraphics", "load IBMGraphics display symbols", 70, SET_IN_FILE },
+    { "DECgraphics", "加载DECGraphics 显示符号", 70, SET_IN_FILE },
+    { "IBMgraphics", "加载IBMGraphics 显示符号", 70, SET_IN_FILE },
 #ifdef MAC_GRAPHICS_ENV
     { "Macgraphics", "load MACGraphics display symbols", 70, SET_IN_FILE },
 #endif
@@ -1419,7 +1419,7 @@ const char *prompt;
         add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, colornames[i].name,
                  MENU_UNSELECTED);
     }
-    end_menu(tmpwin, (prompt && *prompt) ? prompt : "Pick a color");
+    end_menu(tmpwin, (prompt && *prompt) ? prompt : "选择一种颜色");
     pick_cnt = select_menu(tmpwin, PICK_ONE, &picks);
     destroy_nhwindow(tmpwin);
     if (pick_cnt > 0) {
@@ -1449,7 +1449,7 @@ const char *prompt;
         add_menu(tmpwin, NO_GLYPH, &any, 0, 0, attrnames[i].attr,
                  attrnames[i].name, MENU_UNSELECTED);
     }
-    end_menu(tmpwin, (prompt && *prompt) ? prompt : "Pick an attribute");
+    end_menu(tmpwin, (prompt && *prompt) ? prompt : "选择一个属性");
     pick_cnt = select_menu(tmpwin, PICK_ONE, &picks);
     destroy_nhwindow(tmpwin);
     if (pick_cnt > 0) {
@@ -2499,7 +2499,7 @@ boolean tinitial, tfrom_file;
         /* OBJ_NAME(objects[SLIME_MOLD]) won't work for this after
            initialization; it gets changed to generic "fruit" */
         if (!*pl_fruit)
-            nmcpy(pl_fruit, "slime mold", PL_FSIZ);
+            nmcpy(pl_fruit, "黏液", PL_FSIZ);
         if (!initial) {
             /* if 'forig' is nonNull, we replace it rather than add
                a new fruit; it can only be nonNull if no fruits have
@@ -4158,7 +4158,7 @@ doset() /* changing options via menu by Per Liboriussen */
 
     any = zeroany;
     add_menu(tmpwin, NO_GLYPH, &any, 0, 0, iflags.menu_headings,
-             "Booleans (selecting will toggle value):", MENU_UNSELECTED);
+             "是否选项 ( 选择了会切换值):", MENU_UNSELECTED);
     any.a_int = 0;
     /* first list any other non-modifiable booleans, then modifiable ones */
     for (pass = 0; pass <= 1; pass++)
@@ -4190,7 +4190,7 @@ doset() /* changing options via menu by Per Liboriussen */
     any = zeroany;
     add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, "", MENU_UNSELECTED);
     add_menu(tmpwin, NO_GLYPH, &any, 0, 0, iflags.menu_headings,
-             "Compounds (selecting will prompt for new value):",
+             "复合选项 ( 选择了会提示新的值):",
              MENU_UNSELECTED);
 
     /* deliberately put playmode, name, role+race+gender+align first */
@@ -4237,7 +4237,7 @@ doset() /* changing options via menu by Per Liboriussen */
     for (i = 0; i < PREFIX_COUNT; i++)
         doset_add_menu(tmpwin, fqn_prefix_names[i], 0);
 #endif
-    end_menu(tmpwin, "Set what options?");
+    end_menu(tmpwin, "设置哪个选项?");
     need_redraw = FALSE;
     if ((pick_cnt = select_menu(tmpwin, PICK_ANY, &pick_list)) > 0) {
         /*
@@ -5509,17 +5509,17 @@ dotogglepickup()
     flags.pickup = !flags.pickup;
     if (flags.pickup) {
         oc_to_str(flags.pickup_types, ocl);
-        Sprintf(buf, "ON, for %s objects%s", ocl[0] ? ocl : "all",
+        Sprintf(buf, " 开, 拾取 %s 物品%s", ocl[0] ? ocl : "所有",
                 (iflags.autopickup_exceptions[AP_LEAVE]
                  || iflags.autopickup_exceptions[AP_GRAB])
                     ? ((count_ape_maps((int *) 0, (int *) 0) == 1)
-                           ? ", with one exception"
-                           : ", with some exceptions")
+                           ? ", 一个除外"
+                           : ", 一些除外")
                     : "");
     } else {
-        Strcpy(buf, "OFF");
+        Strcpy(buf, " 关");
     }
-    pline("Autopickup: %s.", buf);
+    pline("自动拾取: %s.", buf);
     return 0;
 }
 
@@ -5776,25 +5776,25 @@ const char *strval;
 
 /* data for option_help() */
 static const char *opt_intro[] = {
-    "", "                 NetHack Options Help:", "",
+    "", "                 NetHack 选项帮助:", "",
 #define CONFIG_SLOT 3 /* fill in next value at run-time */
     (char *) 0,
 #if !defined(MICRO) && !defined(MAC)
-    "or use `NETHACKOPTIONS=\"<options>\"' in your environment",
+    "或使用 `NETHACKOPTIONS=\"<options>\"' ",
 #endif
-    "(<options> is a list of options separated by commas)",
+    "(<options> 是以逗号分隔的选项列表)",
 #ifdef VMS
     "-- for example, $ DEFINE NETHACKOPTIONS \"noautopickup,fruit:kumquat\"",
 #endif
-    "or press \"O\" while playing and use the menu.", "",
- "Boolean options (which can be negated by prefixing them with '!' or \"no\"):",
+    "或按大写字母\"O\" 修改选项.", "",
+ "是与否选项 ( 可以通过加前缀 '!'  或 \"no\" 来取消选项):",
     (char *) 0
 };
 
 static const char *opt_epilog[] = {
     "",
-    "Some of the options can be set only before the game is started; those",
-    "items will not be selectable in the 'O' command's menu.", (char *) 0
+    "一些选项只能在游戏开始之前设置; 这些",
+    "选项在'O' 命令菜单中会不可选.", (char *) 0
 };
 
 void
@@ -5805,7 +5805,7 @@ option_help()
     winid datawin;
 
     datawin = create_nhwindow(NHW_TEXT);
-    Sprintf(buf, "Set options as OPTIONS=<options> in %s", configfile);
+    Sprintf(buf, "在%s 像这样设置OPTIONS=<options>", configfile);
     opt_intro[CONFIG_SLOT] = (const char *) buf;
     for (i = 0; opt_intro[i]; i++)
         putstr(datawin, 0, opt_intro[i]);
@@ -5823,7 +5823,7 @@ option_help()
     next_opt(datawin, "");
 
     /* Compound options */
-    putstr(datawin, 0, "Compound options:");
+    putstr(datawin, 0, "复合选项:");
     for (i = 0; compopt[i].name; i++) {
         Sprintf(buf2, "`%s'", compopt[i].name);
         Sprintf(buf, "%-20s - %s%c", buf2, compopt[i].descr,
@@ -5928,20 +5928,20 @@ struct fruit *replace_fruit;
                 numeric = TRUE;
         }
         if (found || numeric
-            || !strncmp(str, "cursed ", 7)
-            || !strncmp(str, "uncursed ", 9)
-            || !strncmp(str, "blessed ", 8)
-            || !strncmp(str, "partly eaten ", 13)
-            || (!strncmp(str, "tin of ", 7)
-                && (!strcmp(str + 7, "spinach")
-                    || name_to_mon(str + 7) >= LOW_PM))
-            || !strcmp(str, "empty tin")
-            || ((str_end_is(str, " corpse")
-                 || str_end_is(str, " egg"))
+            || !cnstrcmp(str, "被诅咒的")
+            || !cnstrcmp(str, "未被诅咒的")
+            || !cnstrcmp(str, "受祝福的")
+            || !cnstrcmp(str, "部分食用的")
+            || (str_end_is(str, "罐头")
+                && (!cnstrcmp(str, "菠菜")
+                    || name_to_mon(str) >= LOW_PM))
+            || !strcmp(str, "空罐头")
+            || ((str_end_is(str, "尸体")
+                 || str_end_is(str, "蛋"))
                 && name_to_mon(str) >= LOW_PM)) {
             Strcpy(buf, pl_fruit);
-            Strcpy(pl_fruit, "candied ");
-            nmcpy(pl_fruit + 8, buf, PL_FSIZ - 8);
+            Strcpy(pl_fruit, "糖制的");
+            nmcpy(pl_fruit + 9, buf, PL_FSIZ - 9);
         }
         *altname = '\0';
         /* This flag indicates that a fruit has been made since the

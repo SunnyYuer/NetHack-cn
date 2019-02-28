@@ -262,7 +262,7 @@ VA_DECL(const char *, line)
     char *tmp;
     VA_START(line);
     VA_INIT(line, const char *);
-    vpline(YouMessage(tmp, "You ", line), VA_ARGS);
+    vpline(YouMessage(tmp, "你 ", line), VA_ARGS);
     VA_END();
 }
 
@@ -273,7 +273,7 @@ VA_DECL(const char *, line)
     char *tmp;
     VA_START(line);
     VA_INIT(line, const char *);
-    vpline(YouMessage(tmp, "Your ", line), VA_ARGS);
+    vpline(YouMessage(tmp, "你的 ", line), VA_ARGS);
     VA_END();
 }
 
@@ -285,9 +285,9 @@ VA_DECL(const char *, line)
     VA_START(line);
     VA_INIT(line, const char *);
     if (Unaware)
-        YouPrefix(tmp, "You dream that you feel ", line);
+        YouPrefix(tmp, "你梦见你感觉 ", line);
     else
-        YouPrefix(tmp, "You feel ", line);
+        YouPrefix(tmp, "你感觉 ", line);
     vpline(strcat(tmp, line), VA_ARGS);
     VA_END();
 }
@@ -299,7 +299,7 @@ VA_DECL(const char *, line)
     char *tmp;
     VA_START(line);
     VA_INIT(line, const char *);
-    vpline(YouMessage(tmp, "You can't ", line), VA_ARGS);
+    vpline(YouMessage(tmp, "你不能 ", line), VA_ARGS);
     VA_END();
 }
 
@@ -310,7 +310,7 @@ VA_DECL(const char *, line)
     char *tmp;
     VA_START(line);
     VA_INIT(line, const char *);
-    vpline(YouMessage(tmp, "The ", line), VA_ARGS);
+    vpline(YouMessage(tmp, " ", line), VA_ARGS);
     VA_END();
 }
 
@@ -321,7 +321,7 @@ VA_DECL(const char *, line)
     char *tmp;
     VA_START(line);
     VA_INIT(line, const char *);
-    vpline(YouMessage(tmp, "There ", line), VA_ARGS);
+    vpline(YouMessage(tmp, "这里 ", line), VA_ARGS);
     VA_END();
 }
 
@@ -336,11 +336,11 @@ VA_DECL(const char *, line)
     VA_START(line);
     VA_INIT(line, const char *);
     if (Underwater)
-        YouPrefix(tmp, "You barely hear ", line);
+        YouPrefix(tmp, "你勉强听见 ", line);
     else if (Unaware)
-        YouPrefix(tmp, "You dream that you hear ", line);
+        YouPrefix(tmp, "你梦到你听见 ", line);
     else
-        YouPrefix(tmp, "You hear ", line);
+        YouPrefix(tmp, "你听见 ", line);
     vpline(strcat(tmp, line), VA_ARGS);
     VA_END();
 }
@@ -354,11 +354,11 @@ VA_DECL(const char *, line)
     VA_START(line);
     VA_INIT(line, const char *);
     if (Unaware)
-        YouPrefix(tmp, "You dream that you see ", line);
+        YouPrefix(tmp, "你梦到你看见 ", line);
     else if (Blind) /* caller should have caught this... */
-        YouPrefix(tmp, "You sense ", line);
+        YouPrefix(tmp, "你感到 ", line);
     else
-        YouPrefix(tmp, "You see ", line);
+        YouPrefix(tmp, "你看见 ", line);
     vpline(strcat(tmp, line), VA_ARGS);
     VA_END();
 }
@@ -375,8 +375,8 @@ VA_DECL(const char *, line)
 
     VA_START(line);
     VA_INIT(line, const char *);
-    tmp = You_buf((int) strlen(line) + sizeof "\"\"");
-    Strcpy(tmp, "\"");
+    tmp = You_buf((int) strlen(line) + sizeof "\" \"");
+    Strcpy(tmp, "\" ");
     Strcat(tmp, line);
     Strcat(tmp, "\"");
     vpline(tmp, VA_ARGS);

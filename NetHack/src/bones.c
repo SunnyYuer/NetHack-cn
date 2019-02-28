@@ -199,13 +199,16 @@ char *namebuf;
        that assumption false */
     while (*namebuf) {
         c = *namebuf & 0177;
-        if (c < ' ' || c == '\177') {
-            /* non-printable or undesirable */
-            *namebuf = '.';
-        } else if (c != *namebuf) {
-            /* expected to be printable if user wants such things */
-            if (strip_8th_bit)
-                *namebuf = '_';
+        if(*namebuf >= 0)  /*读取bones文件不处理中文字符*/
+        {
+            if (c < ' ' || c == '\177') {
+                /* non-printable or undesirable */
+                *namebuf = '.';
+            } else if (c != *namebuf) {
+                /* expected to be printable if user wants such things */
+                if (strip_8th_bit)
+                    *namebuf = '_';
+            }
         }
         ++namebuf;
     }

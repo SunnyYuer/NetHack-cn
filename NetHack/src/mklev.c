@@ -673,7 +673,7 @@ makelevel()
             char fillname[9];
             s_level *loc_lev;
 
-            Sprintf(fillname, "%s-loca", urole.filecode);
+            Sprintf(fillname, "%s- 中心", urole.filecode);
             loc_lev = find_level(fillname);
 
             Sprintf(fillname, "%s-fil", urole.filecode);
@@ -1668,8 +1668,8 @@ mkinvokearea()
     xchar ymin = inv_pos.y, ymax = inv_pos.y;
     register xchar i;
 
-    pline_The("floor shakes violently under you!");
-    pline_The("walls around you begin to bend and crumble!");
+    pline_The("地板在你下面剧烈晃动!");
+    pline_The("你周围的墙壁开始弯曲和崩溃!");
     display_nhwindow(WIN_MESSAGE, TRUE);
 
     /* any trap hero is stuck in will be going away now */
@@ -1704,7 +1704,7 @@ mkinvokearea()
         delay_output();
     }
 
-    You("are standing at the top of a stairwell leading down!");
+    You("站在通往下面的楼梯井的顶端!");
     mkstairs(u.ux, u.uy, 0, (struct mkroom *) 0); /* down */
     newsym(u.ux, u.uy);
     vision_full_recalc = 1; /* everything changed */
@@ -1806,7 +1806,7 @@ xchar x, y;
     branch *br;
     schar u_depth;
 
-    br = dungeon_branch("Fort Ludios");
+    br = dungeon_branch("吕底人堡垒");  //Fort Ludios
     if (on_level(&knox_level, &br->end1)) {
         source = &br->end2;
     } else {
@@ -1821,7 +1821,7 @@ xchar x, y;
         return;
 
     if (!(u.uz.dnum == oracle_level.dnum      /* in main dungeon */
-          && !at_dgn_entrance("The Quest")    /* but not Quest's entry */
+          && !at_dgn_entrance("任务")    /* but not Quest's entry */  //The Quest
           && (u_depth = depth(&u.uz)) > 10    /* beneath 10 */
           && u_depth < depth(&medusa_level))) /* and above Medusa */
         return;

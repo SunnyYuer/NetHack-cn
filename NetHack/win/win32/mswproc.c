@@ -682,7 +682,7 @@ mswin_askname(void)
 {
     logDebug("mswin_askname()\n");
 
-    if (mswin_getlin_window("Who are you?", plname, PL_NSIZ) == IDCANCEL) {
+    if (mswin_getlin_window("你叫什么?", plname, PL_NSIZ) == IDCANCEL) {
         bail("bye-bye");
         /* not reached */
     }
@@ -978,7 +978,19 @@ mswin_putstr(winid wid, int attr, const char *text)
 {
     logDebug("mswin_putstr(%d, %d, %s)\n", wid, attr, text);
 
-    mswin_putstr_ex(wid, attr, text, 0);
+    int i = 0, j = 0, l;
+    char cntext[3 * BUFSZ] = "";
+    l = strlen(text);
+    while(i < l-1)
+    {
+        if(text[i]==32 && text[i+1]<0) i++;
+        cntext[j] = text[i];
+        j++;
+        i++;
+    }
+    if(l > 0) cntext[j] = text[i];
+    
+    mswin_putstr_ex(wid, attr, cntext, 0);
 }
 
 void
@@ -2907,31 +2919,31 @@ mswin_status_update(int idx, genericptr_t ptr, int chg, int percent, int color, 
             cond = *condptr;
             *_status_vals[idx] = '\0';
             if (cond & BL_MASK_STONE)
-                Strcat(_status_vals[idx], " Stone");
+                Strcat(_status_vals[idx], " 石化");
             if (cond & BL_MASK_SLIME)
-                Strcat(_status_vals[idx], " Slime");
+                Strcat(_status_vals[idx], " 污秽");
             if (cond & BL_MASK_STRNGL)
-                Strcat(_status_vals[idx], " Strngl");
+                Strcat(_status_vals[idx], " 束缚");
             if (cond & BL_MASK_FOODPOIS)
-                Strcat(_status_vals[idx], " FoodPois");
+                Strcat(_status_vals[idx], " 食物中毒");
             if (cond & BL_MASK_TERMILL)
-                Strcat(_status_vals[idx], " TermIll");
+                Strcat(_status_vals[idx], " 生病");
             if (cond & BL_MASK_BLIND)
-                Strcat(_status_vals[idx], " Blind");
+                Strcat(_status_vals[idx], " 失明");
             if (cond & BL_MASK_DEAF)
-                Strcat(_status_vals[idx], " Deaf");
+                Strcat(_status_vals[idx], " 耳聋");
             if (cond & BL_MASK_STUN)
-                Strcat(_status_vals[idx], " Stun");
+                Strcat(_status_vals[idx], " 眩晕");
             if (cond & BL_MASK_CONF)
-                Strcat(_status_vals[idx], " Conf");
+                Strcat(_status_vals[idx], " 混乱");
             if (cond & BL_MASK_HALLU)
-                Strcat(_status_vals[idx], " Hallu");
+                Strcat(_status_vals[idx], " 幻觉");
             if (cond & BL_MASK_LEV)
-                Strcat(_status_vals[idx], " Lev");
+                Strcat(_status_vals[idx], " 飘浮");
             if (cond & BL_MASK_FLY)
-                Strcat(_status_vals[idx], " Fly");
+                Strcat(_status_vals[idx], " 飞行");
             if (cond & BL_MASK_RIDE)
-                Strcat(_status_vals[idx], " Ride");
+                Strcat(_status_vals[idx], " 乘骑");
             value = cond;
         } break;
         case BL_GOLD: {

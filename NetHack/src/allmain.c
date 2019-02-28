@@ -45,14 +45,14 @@ boolean resuming;
     /* side-effects from the real world */
     flags.moonphase = phase_of_the_moon();
     if (flags.moonphase == FULL_MOON) {
-        You("are lucky!  Full moon tonight.");
+        You("很幸运!  今晚满月.");
         change_luck(1);
     } else if (flags.moonphase == NEW_MOON) {
-        pline("Be careful!  New moon tonight.");
+        pline("要小心!  今晚新月.");
     }
     flags.friday13 = friday_13th();
     if (flags.friday13) {
-        pline("Watch out!  Bad things can happen on Friday the 13th.");
+        pline("注意!  坏的事情会发生在13 号星期五.");
         change_luck(-1);
     }
 
@@ -209,7 +209,7 @@ boolean resuming;
                             } else if (!Upolyd && u.uhp > 1) {
                                 u.uhp--;
                             } else {
-                                You("pass out from exertion!");
+                                You("因劳累而昏倒!");
                                 exercise(A_CON, FALSE);
                                 fall_asleep(-10, FALSE);
                             }
@@ -227,7 +227,7 @@ boolean resuming;
                             u.uen = u.uenmax;
                         context.botl = 1;
                         if (u.uen == u.uenmax)
-                            interrupt_multi("You feel full of energy.");
+                            interrupt_multi("你感觉充满了能量.");
                     }
 
                     if (!u.uinvulnerable) {
@@ -515,7 +515,7 @@ stop_occupation()
 {
     if (occupation) {
         if (!maybe_finished_meal(TRUE))
-            You("stop %s.", occtxt);
+            You("停止了%s.", occtxt);
         occupation = 0;
         context.botl = 1; /* in case u.uhs changed */
         nomul(0);
@@ -644,7 +644,7 @@ boolean new_game; /* false => restoring an old game */
     /* skip "welcome back" if restoring a doomed character */
     if (!new_game && Upolyd && ugenocided()) {
         /* death via self-genocide is pending */
-        pline("You're back, but you still feel %s inside.", udeadinside());
+        pline("你回来了, 但你仍然感觉内心%s.", udeadinside());
         return;
     }
 
@@ -663,10 +663,10 @@ boolean new_game; /* false => restoring an old game */
         && (new_game
                 ? (urole.allow & ROLE_GENDMASK) == (ROLE_MALE | ROLE_FEMALE)
                 : currentgend != flags.initgend))
-        Sprintf(eos(buf), " %s", genders[currentgend].adj);
+        Sprintf(eos(buf), "%s", genders[currentgend].adj);
 
-    pline(new_game ? "%s %s, welcome to NetHack!  You are a%s %s %s."
-                   : "%s %s, the%s %s %s, welcome back to NetHack!",
+    pline(new_game ? "%s %s,  欢迎来到NetHack!  你是一位%s%s%s."
+                   : "%s %s,  %s %s%s,  欢迎回到NetHack!",
           Hello((struct monst *) 0), plname, buf, urace.adj,
           (currentgend && urole.name.f) ? urole.name.f : urole.name.m);
 }

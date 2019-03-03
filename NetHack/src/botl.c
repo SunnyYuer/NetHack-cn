@@ -521,7 +521,7 @@ unsigned long cond_hilites[BL_ATTCLR_MAX];
 
 void
 bot_via_windowport()
-{//windows版会调用这个函数
+{//定义有STATUS_HILITES，所以会调用这个函数
     char buf[BUFSZ];
     register char *nb;
     static int i, idx = 0, idx_p, cap;
@@ -547,7 +547,8 @@ bot_via_windowport()
      */
     Strcpy(nb = buf, plname);
     nb[0] = highc(nb[0]);
-    nb[10] = '\0';
+    if(strlen("中")==2) nb[10] = '\0';
+    else nb[15] = '\0';
     Sprintf(nb = eos(nb), "  ");
     if (Upolyd) {
         for (i = 0, nb = strcpy(eos(nb), mons[u.umonnum].mname); nb[i]; i++)

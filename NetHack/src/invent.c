@@ -2817,13 +2817,13 @@ dotypeinv()
                 before = "已知为受祝福的";
                 break;
             case 'U':
-                before = "已知为未被诅咒的";
+                before = "已知为未诅咒的";
                 break;
             case 'C':
                 before = "已知为被诅咒的";
                 break;
             case 'X':
-                after = "受祝福的/ 未被诅咒的/ 被诅咒的 状态未知的物品";
+                after = "受祝福的/ 未诅咒的/ 被诅咒的 状态未知的物品";
                 break; /* better phrasing is desirable */
             default:
                 /* 'c' is an object class, because we've already handled

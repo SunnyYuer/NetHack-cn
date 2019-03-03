@@ -1524,7 +1524,7 @@ register struct obj *otmp;
         boolean use_plural = (is_boots(otmp) || is_gloves(otmp)
                               || otmp->otyp == LENSES || otmp->quan > 1L);
 
-        You("没办法.  %s 被诅咒的.", use_plural ? "它们是" : "它是");
+        You("没办法.  %s被诅咒的.", use_plural ? "它们是" : "它是");
         otmp->bknown = TRUE;
         return 1;
     }

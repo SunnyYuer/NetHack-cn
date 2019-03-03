@@ -1157,7 +1157,7 @@ int how;               /* type of query */
         any = zeroany;
         any.a_int = 'U';
         add_menu(win, NO_GLYPH, &any, invlet, 0, ATR_NONE,
-                 "物品已知为未被诅咒的", MENU_UNSELECTED);
+                 "物品已知为未诅咒的", MENU_UNSELECTED);
     }
     if (do_buc_unknown) {
         invlet = 'X';

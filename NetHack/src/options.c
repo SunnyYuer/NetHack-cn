@@ -5929,7 +5929,7 @@ struct fruit *replace_fruit;
         }
         if (found || numeric
             || !cnstrcmp(str, "被诅咒的")
-            || !cnstrcmp(str, "未被诅咒的")
+            || !cnstrcmp(str, "未诅咒的")
             || !cnstrcmp(str, "受祝福的")
             || !cnstrcmp(str, "部分食用的")
             || (str_end_is(str, "罐头")

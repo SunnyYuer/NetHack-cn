@@ -575,12 +575,12 @@ boolean user_typed_name, without_asking;
         dbase_str += strlen("隐形的");
     if (!cnstrcmp(dbase_str, "装有鞍的"))
         dbase_str += strlen("装有鞍的");
-    if (!cnstrcmp(dbase_str, "受祝福的"))
-        dbase_str += strlen("受祝福的");
-    else if (!cnstrcmp(dbase_str, "未被诅咒的"))
-        dbase_str += strlen("未被诅咒的");
-    else if (!cnstrcmp(dbase_str, "被诅咒的"))
-        dbase_str += strlen("被诅咒的");
+    if (!cnstrcmp(dbase_str, "受祝福的 "))
+        dbase_str += strlen("受祝福的 ");
+    else if (!cnstrcmp(dbase_str, "未诅咒的 "))
+        dbase_str += strlen("未诅咒的 ");
+    else if (!cnstrcmp(dbase_str, "被诅咒的 "))
+        dbase_str += strlen("被诅咒的 ");
     if (!cnstrcmp(dbase_str, "空的"))
         dbase_str += strlen("空的");
     if (!cnstrcmp(dbase_str, "部分使用的"))

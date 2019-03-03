@@ -749,8 +749,8 @@ struct obj *obj;
         bareobj.spe = obj->spe;
 
     bufp = distant_name(&bareobj, xname); /* xname(&bareobj) */
-    if (!cnstrcmp(bufp, "未被诅咒的"))
-        bufp += strlen("未被诅咒的"); /* Role_if(PM_PRIEST) */
+    if (!cnstrcmp(bufp, "未诅咒的 "))
+        bufp += strlen("未诅咒的 "); /* Role_if(PM_PRIEST) */
 
     objects[otyp].oc_uname = saveobcls.oc_uname;
     objects[otyp].oc_name_known = saveobcls.oc_name_known;
@@ -971,9 +971,9 @@ unsigned doname_flags;
          * always allow "uncursed potion of water"
          */
         if (obj->cursed)
-            Strcat(prefix, "被诅咒的");
+            Strcat(prefix, "被诅咒的 ");
         else if (obj->blessed)
-            Strcat(prefix, "受祝福的");
+            Strcat(prefix, "受祝福的 ");
         else if (!iflags.implicit_uncursed
             /* For most items with charges or +/-, if you know how many
              * charges are left or what the +/- is, then you must have
@@ -994,7 +994,7 @@ unsigned doname_flags;
                      && obj->otyp != FAKE_AMULET_OF_YENDOR
                      && obj->otyp != AMULET_OF_YENDOR
                      && !Role_if(PM_PRIEST)))
-            Strcat(prefix, "未被诅咒的");
+            Strcat(prefix, "未诅咒的 ");
     }
 
     if (lknown && Is_box(obj)) {
@@ -2861,7 +2861,7 @@ struct obj *no_wish;
                    || !cnstrcmpi(bp, "邪水", l)) {
             iscursed = 1;
             if(!cnstrcmp(bp, "邪")) l = strlen("邪");
-        } else if (!cnstrcmpi(bp, "未被诅咒的", l)) {
+        } else if (!cnstrcmpi(bp, "未诅咒的", l)) {
             uncursed = 1;
         } else if (!cnstrcmpi(bp, "防锈的", l)
                    || !cnstrcmpi(bp, "erodeproof ", l)
@@ -3415,7 +3415,7 @@ srch:
                 blessedf = 1;
             } else if (!cnstrcmpi(fp, "被诅咒的", l)) {
                 iscursedf = 1;
-            } else if (!cnstrcmpi(fp, "未被诅咒的", l)) {
+            } else if (!cnstrcmpi(fp, "未诅咒的", l)) {
                 uncursedf = 1;
             } else if (!cnstrcmpi(fp, "partly eaten ", l)
                        || !cnstrcmpi(fp, "部分食用的", l)) {

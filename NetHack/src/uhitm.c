@@ -202,7 +202,7 @@ struct obj *wep; /* uwep for attack(), null for kick_monster() */
             return FALSE;
         }
         if (canspotmon(mtmp)) {
-            Sprintf(qbuf, "真的要攻击 %s?", mon_nam(mtmp));
+            Sprintf(qbuf, "确定要攻击%s?", mon_nam(mtmp));
             if (!paranoid_query(ParanoidHit, qbuf)) {
                 context.move = 0;
                 return TRUE;

@@ -78,7 +78,7 @@ int
 dosave()
 {
     clear_nhwindow(WIN_MESSAGE);
-    if (yn("保存退出?") == 'n') {
+    if (yn("确定保存?") == 'n') {
         clear_nhwindow(WIN_MESSAGE);
         if (multi > 0)
             nomul(0);

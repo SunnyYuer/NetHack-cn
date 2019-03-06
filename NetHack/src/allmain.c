@@ -507,7 +507,7 @@ int wtcap;
     }
 
     if (reached_full)
-        interrupt_multi("You are in full health.");
+        interrupt_multi("你完全健康了.");
 }
 
 void

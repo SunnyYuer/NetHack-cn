@@ -1710,20 +1710,20 @@ int final;
 
     if (hp < 0)
         hp = 0;
-    Sprintf(buf, "有%d 生命值( 最大:%d)", hp, hpmax);
+    Sprintf(buf, "有%d HP(最大:%d)", hp, hpmax);
     you_have(buf, "");
 
-    Sprintf(buf, "有%d 魔力( 最大:%d)", u.uen, u.uenmax);
+    Sprintf(buf, "有%d Pw(最大:%d)", u.uen, u.uenmax);
     you_have(buf, "");
 
     Sprintf(buf, "%d", u.uac);
-    enl_msg("你的ac", "是", "是", buf, "");
+    enl_msg("你的AC", "是", "是", buf, "");
 
     if (Upolyd) {
         switch (mons[u.umonnum].mlevel) {
         case 0:
             /* status line currently being explained shows "HD:0" */
-            Strcpy(buf, "有0 生命骰 ( 实际1/2)");
+            Strcpy(buf, "有0 生命骰 (实际1/2)");
             break;
         case 1:
             Strcpy(buf, "有1 生命骰");

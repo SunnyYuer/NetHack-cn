@@ -112,7 +112,8 @@ unsigned seed; /* for semi-controlled randomization */
             //中文模糊处理
             int cnnum = 0;
             int cnchar = strlen("中");
-            for(int k=0; k<nxt;k++)
+            int k;
+            for(k=0; k<nxt; k++)
             {
                 if(engr[k]<0) cnnum++;
             }

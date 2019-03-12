@@ -8,41 +8,50 @@
 
 STATIC_VAR NEARDATA struct engr *head_engr;
 
-/* degrade a utf-8 char in a string */
 void
-wipeout_utf8_char(str, ch, rep)
+wipeout_cnstr_char(str, ch, rep)
 char *str, *ch; /* str: the string; ch: the char to be wiped out */
 int rep;    /* rep: replace `ch` with `rep` if `ch` is an ascii */
-{
+{/* 带中文的字符串模糊 */
     char *s = str;
     boolean is_ascii;
-        int step;
+    int step;
+    int cnchar = strlen("中");
     while (s <= ch) {
         is_ascii = FALSE;
-        if (((*s & 0xf8) == 0xf0) &&
-            ((*(s+1) & 0xc0) == 0x80) &&
-            ((*(s+2) & 0xc0) == 0x80) &&
-            ((*(s+3) & 0xc0) == 0x80))
-            step = 4;
-        else if (((*s & 0xf0) == 0xe0) &&
-            ((*(s+1) & 0xc0) == 0x80) &&
-            ((*(s+2) & 0xc0) == 0x80))
-            step = 3;
-        else if (((*s & 0xe0) == 0xc0) &&
-            ((*(s+1) & 0xc0) == 0x80))
-            step = 2;
-        else {
-            step = 1;
-            is_ascii = TRUE;
-        }
+        if (cnchar == 3)
+		{
+            if (((*s & 0xf8) == 0xf0) && ((*(s + 1) & 0xc0) == 0x80)
+                && ((*(s + 2) & 0xc0) == 0x80) && ((*(s + 3) & 0xc0) == 0x80))
+                step = 4;
+            else if (((*s & 0xf0) == 0xe0) && ((*(s + 1) & 0xc0) == 0x80)
+                     && ((*(s + 2) & 0xc0) == 0x80))
+                step = 3;
+            else if (((*s & 0xe0) == 0xc0) && ((*(s + 1) & 0xc0) == 0x80))
+                step = 2;
+            else {
+                step = 1;
+                is_ascii = TRUE;
+            }
+		}
+		else
+		{
+            if (((*s & 0x80) == 0x80) && ((*(s + 1) & 0x80) == 0x80))
+                step = 2;
+            else
+			{
+                step = 1;
+                is_ascii = TRUE;
+			}
+		}
         s += step;
     }
-
+    
     if (is_ascii) {
         --s;
         *s = rep;
     } else {
-        if (rep == ' ' || rep == '?') {
+        if ((rep == ' ' || rep == '?') && ((s-step) == ch)) {
             char *n = s;
             s -= step;
            *(s++) = rep;
@@ -52,11 +61,20 @@ int rep;    /* rep: replace `ch` with `rep` if `ch` is an ascii */
             *s = '\0';
         } else {
             --s;
-            int r = rnd(5);
-            if ((unsigned char)(*s + r) <= (unsigned char)(0xbf))
+            int r = 1+rnd(4);
+            if (cnchar == 3)
+			{
+                if ((unsigned char) (*s + r) <= (unsigned char) (0xbf))
+                    *s += r;
+                else if ((unsigned char) (*s - r) >= (unsigned char) (0x80))
+                    *s -= r;
+			}
+			else
+			{
+                if ((unsigned char) (*s + r) <= (unsigned char) (0x80))
+					r = -r;
                 *s += r;
-            else if ((unsigned char)(*s - r) >= (unsigned char)(0x80))
-                *s -= r;
+			}
         }
     }
 }
@@ -161,7 +179,7 @@ unsigned seed; /* for semi-controlled randomization */
             
             /* rub out unreadable & small punctuation marks */
             if (index("?.,'`-|_", *s)) {
-                wipeout_utf8_char(engr, s, ' ');
+                wipeout_cnstr_char(engr, s, ' ');
                 continue;
             }
 
@@ -179,13 +197,13 @@ unsigned seed; /* for semi-controlled randomization */
                             seed *= 31, seed %= (BUFSZ - 1);
                             j = seed % (strlen(rubouts[i].wipeto));
                         }
-                        wipeout_utf8_char(engr, s, rubouts[i].wipeto[j]);
+                        wipeout_cnstr_char(engr, s, rubouts[i].wipeto[j]);
                         break;
                     }
 
             /* didn't pick rubout; use '?' for unreadable character */
             if (i == SIZE(rubouts))
-                wipeout_utf8_char(engr, s, '?');
+                wipeout_cnstr_char(engr, s, '?');
         }
     }
 
@@ -1091,7 +1109,7 @@ doengrave()
             || (Blind && !rn2(11)) || (Confusion && !rn2(7))
             || (Stunned && !rn2(4)) || (Hallucination && !rn2(2)))
         {//异常状态立马进行模糊处理
-            wipeout_utf8_char(ebuf, sp, ' ' + rnd(96 - 2)); /* ASCII '!' thru '~'
+            wipeout_cnstr_char(ebuf, sp, ' ' + rnd(96 - 2)); /* ASCII '!' thru '~'
                                         (excludes ' ' and DEL) */
         }
     }

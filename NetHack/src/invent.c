@@ -2289,7 +2289,7 @@ long *out_cnt;
         /* wizard override ID and xtra_choice are mutually exclusive */
         if (flags.sortpack)
             add_menu(win, NO_GLYPH, &any, 0, 0, iflags.menu_headings,
-                     "各种各样的", MENU_UNSELECTED);
+                     "混杂", MENU_UNSELECTED);
         any.a_char = HANDS_SYM; /* '-' */
         add_menu(win, NO_GLYPH, &any, HANDS_SYM, 0, ATR_NONE,
                  xtra_choice, MENU_UNSELECTED);
@@ -2328,7 +2328,7 @@ nextclass:
                  "特殊", MENU_UNSELECTED);
         any.a_char = '*';
         add_menu(win, NO_GLYPH, &any, '*', 0, ATR_NONE,
-                 "( 列出所有)", MENU_UNSELECTED);
+                 "(列出所有)", MENU_UNSELECTED);
     }
     /* for permanent inventory where we intend to show everything but
        nothing has been listed (because there isn't anyhing to list;

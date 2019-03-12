@@ -1026,7 +1026,7 @@ doup()
         return 0;
     }
     if (u.ustuck) {
-        You("被 %s, 不能上去.",
+        You("被%s, 不能上去.",
             !u.uswallow ? "牵制着" : is_animal(u.ustuck->data)
                                              ? "吞食了"
                                              : "吞没了");
@@ -1039,7 +1039,7 @@ doup()
         return 1;
     }
     if (ledger_no(&u.uz) == 1) {
-        if (yn("注意, 那将不会回来了! 还要上去吗?") != 'y')
+        if (yn("请在获得了岩德护身符后再上去. 还要上去吗?") != 'y')
             return 0;
     }
     if (!next_to_u()) {

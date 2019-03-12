@@ -8,6 +8,59 @@
 
 STATIC_VAR NEARDATA struct engr *head_engr;
 
+/* degrade a utf-8 char in a string */
+void
+wipeout_utf8_char(str, ch, rep)
+char *str, *ch; /* str: the string; ch: the char to be wiped out */
+int rep;    /* rep: replace `ch` with `rep` if `ch` is an ascii */
+{
+    char *s = str;
+    boolean is_ascii;
+        int step;
+    while (s <= ch) {
+        is_ascii = FALSE;
+        if (((*s & 0xf8) == 0xf0) &&
+            ((*(s+1) & 0xc0) == 0x80) &&
+            ((*(s+2) & 0xc0) == 0x80) &&
+            ((*(s+3) & 0xc0) == 0x80))
+            step = 4;
+        else if (((*s & 0xf0) == 0xe0) &&
+            ((*(s+1) & 0xc0) == 0x80) &&
+            ((*(s+2) & 0xc0) == 0x80))
+            step = 3;
+        else if (((*s & 0xe0) == 0xc0) &&
+            ((*(s+1) & 0xc0) == 0x80))
+            step = 2;
+        else {
+            step = 1;
+            is_ascii = TRUE;
+        }
+        s += step;
+    }
+
+    if (is_ascii) {
+        --s;
+        *s = rep;
+    } else {
+        if (rep == ' ' || rep == '?') {
+            char *n = s;
+            s -= step;
+           *(s++) = rep;
+            while (*n != '\0') {
+                *(s++) = *(n++);
+            }
+            *s = '\0';
+        } else {
+            --s;
+            int r = rnd(5);
+            if ((unsigned char)(*s + r) <= (unsigned char)(0xbf))
+                *s += r;
+            else if ((unsigned char)(*s - r) >= (unsigned char)(0x80))
+                *s -= r;
+        }
+    }
+}
+
 char *
 random_engraving(outbuf)
 char *outbuf;
@@ -17,12 +70,9 @@ char *outbuf;
     /* a random engraving may come from the "rumors" file,
        or from the "engrave" file (formerly in an array here) */
     if (!rn2(4) || !(rumor = getrumor(0, outbuf, TRUE)) || !*rumor)
-    {
-        (void) get_rnd_text(ENGRAVEFILE, outbuf);//engrave文件未翻译
-        wipeout_text(outbuf, (int) (strlen(outbuf) / 4), 0);
-    }
-    else//其余以中文方式处理
-        wipeout_text(outbuf, (int) (strlen(outbuf) / (4*strlen("中"))), 0);
+        (void) get_rnd_text(ENGRAVEFILE, outbuf);
+
+    wipeout_text(outbuf, (int) (strlen(outbuf) / (4*strlen("中"))), 0);
 
     return outbuf;
 }
@@ -109,24 +159,9 @@ unsigned seed; /* for semi-controlled randomization */
             if (*s == ' ')
                 continue;
             
-            //中文模糊处理
-            int cnnum = 0;
-            int cnchar = strlen("中");
-            int k;
-            for(k=0; k<nxt; k++)
-            {
-                if(engr[k]<0) cnnum++;
-            }
-            if(cnnum%cnchar != 0) continue;
-            if (*s < 0)
-            {
-                engr[nxt+1] = '?';
-                if(cnchar==3) engr[nxt+2] = '?';
-            }
-
             /* rub out unreadable & small punctuation marks */
             if (index("?.,'`-|_", *s)) {
-                *s = ' ';
+                wipeout_utf8_char(engr, s, ' ');
                 continue;
             }
 
@@ -144,13 +179,13 @@ unsigned seed; /* for semi-controlled randomization */
                             seed *= 31, seed %= (BUFSZ - 1);
                             j = seed % (strlen(rubouts[i].wipeto));
                         }
-                        *s = rubouts[i].wipeto[j];
+                        wipeout_utf8_char(engr, s, rubouts[i].wipeto[j]);
                         break;
                     }
 
             /* didn't pick rubout; use '?' for unreadable character */
             if (i == SIZE(rubouts))
-                *s = '?';
+                wipeout_utf8_char(engr, s, '?');
         }
     }
 
@@ -1049,8 +1084,6 @@ doengrave()
 
     /* Mix up engraving if surface or state of mind is unsound.
        Note: this won't add or remove any spaces. */
-    int cnnum = 0;
-    int cnchar = strlen("中");
     for (sp = ebuf; *sp; sp++) {
         if (*sp == ' ')
             continue;
@@ -1058,25 +1091,9 @@ doengrave()
             || (Blind && !rn2(11)) || (Confusion && !rn2(7))
             || (Stunned && !rn2(4)) || (Hallucination && !rn2(2)))
         {//异常状态立马进行模糊处理
-            if(cnnum%cnchar != 0)
-            {
-                if(*sp < 0) cnnum++;
-                continue;
-            }
-            if (*sp < 0)
-            {//中文模糊处理
-                *sp = ' ' + rnd(96 - 2);
-                sp++;
-                if(cnchar == 3)
-                {
-                    *sp = ' ' + rnd(96 - 2);
-                    sp++;
-                }
-            }
-            *sp = ' ' + rnd(96 - 2); /* ASCII '!' thru '~'
+            wipeout_utf8_char(ebuf, sp, ' ' + rnd(96 - 2)); /* ASCII '!' thru '~'
                                         (excludes ' ' and DEL) */
         }
-        if(*sp < 0) cnnum++;
     }
 
     /* Previous engraving is overwritten */

@@ -1687,7 +1687,7 @@ long num;
         if (nodrop)
             Sprintf(eos(obuf), ".");
         else
-            Sprintf(eos(obuf), "和%s %s.", otense(otmp, "掉落"), gate_str);
+            Sprintf(eos(obuf), "然后%s %s.", otense(otmp, "掉落"), gate_str);
         pline1(obuf);
     } else if (!nodrop)
         pline("%s %s %s.", obuf, otense(otmp, "掉落"), gate_str);

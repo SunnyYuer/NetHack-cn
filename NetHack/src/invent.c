@@ -3023,9 +3023,9 @@ boolean picked_some;
             pline1(fbuf);
         read_engr_at(u.ux, u.uy); /* Eric Backus */
         if (obj_cnt == 1 && otmp->quan == 1L)
-            There("有 %s 物品.", picked_some ? "另一个" : "一个");
+            There("有%s物品.", picked_some ? "另一个" : "一个");
         else
-            There("有 %s%s 物品.",
+            There("有%s%s物品.",
                 (obj_cnt < 5)
                       ? "几个"
                       : (obj_cnt < 10)

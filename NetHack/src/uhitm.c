@@ -179,7 +179,7 @@ struct obj *wep; /* uwep for attack(), null for kick_monster() */
             if (Blind || (is_pool(mtmp->mx, mtmp->my) && !Underwater))
                 pline("等等!  那里有一只隐藏的怪物!");
             else if ((obj = level.objects[mtmp->mx][mtmp->my]) != 0)
-                pline("等等!  那里有 %s 隐藏在 %s下面!",
+                pline("等等!  那里有%s 隐藏在%s下面!",
                       l_monnam(mtmp), doname(obj));
             return TRUE;
         }

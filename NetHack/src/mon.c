@@ -824,7 +824,7 @@ register struct monst *mtmp;
             && touch_artifact(otmp, mtmp)) {
             if (mtmp->data == &mons[PM_RUST_MONSTER] && otmp->oerodeproof) {
                 if (canseemon(mtmp) && flags.verbose) {
-                    pline("%s 吃食 %s!", Monnam(mtmp),
+                    pline("%s 吃食%s!", Monnam(mtmp),
                           distant_name(otmp, doname));
                 }
                 /* The object's rustproofing is gone now */
@@ -836,7 +836,7 @@ register struct monst *mtmp;
                 }
             } else {
                 if (cansee(mtmp->mx, mtmp->my) && flags.verbose)
-                    pline("%s 吃食 %s!", Monnam(mtmp),
+                    pline("%s 吃食%s!", Monnam(mtmp),
                           distant_name(otmp, doname));
                 else if (flags.verbose)
                     You_hear("嘎吱嘎吱的声音.");
@@ -1085,7 +1085,7 @@ register const char *str;
                 otmp3 = splitobj(otmp, carryamt);
             }
             if (cansee(mtmp->mx, mtmp->my) && flags.verbose)
-                pline("%s 捡起了 %s.", Monnam(mtmp),
+                pline("%s 捡起了%s.", Monnam(mtmp),
                       (distu(mtmp->mx, mtmp->my) <= 5)
                           ? doname(otmp3)
                           : distant_name(otmp3, doname));

@@ -946,7 +946,7 @@ unsigned doname_flags;
         if(obj->oclass==COIN_CLASS)
             Strcpy(prefix, "1 ");
         else
-            Strcpy(prefix, " ");
+            Strcpy(prefix, "");
     }
 
     /* "empty" goes at the beginning, but item count goes at the end */

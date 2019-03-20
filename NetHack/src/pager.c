@@ -1659,7 +1659,7 @@ dowhatdoes()
     char q, *reslt;
 
     if (!once) {
-        pline("Ask about '&' or '?' to get more info.%s",
+        pline("用'&'或者'?'来获取更多信息.%s",
 #ifdef ALTMETA
               iflags.altmeta ? "  (For ESC, type it twice.)" :
 #endif

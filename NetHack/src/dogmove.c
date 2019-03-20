@@ -276,10 +276,10 @@ boolean devour;
             if (tunnels(mtmp->data))
                 pline("%s 挖了进去.", noit_Monnam(mtmp));
             else
-                pline("%s %s %s.", noit_Monnam(mtmp),
+                pline("%s %s%s.", noit_Monnam(mtmp),
                       devour ? "吞食" : "吃食", distant_name(obj, doname));
         } else if (seeobj)
-            pline("它 %s %s.", devour ? "吞食" : "吃食",
+            pline("它 %s%s.", devour ? "吞食" : "吃食",
                   distant_name(obj, doname));
     }
     if (obj->unpaid) {

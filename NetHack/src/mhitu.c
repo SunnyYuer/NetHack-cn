@@ -933,7 +933,7 @@ register struct attack *mattk;
                 else
                     what = doname(obj);
 
-                pline("%s 隐藏在 %s下面!", Amonnam(mtmp), what);
+                pline("%s 隐藏在%s下面!", Amonnam(mtmp), what);
             }
             newsym(mtmp->mx, mtmp->my);
         }

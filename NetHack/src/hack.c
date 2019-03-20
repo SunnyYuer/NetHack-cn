@@ -141,7 +141,7 @@ moverock()
             if (Sokoban && u.dx && u.dy) {
                 if (Blind)
                     feel_location(sx, sy);
-                pline("%s 不能对角滚动在 %s上.",
+                pline("%s 不能在%s上对角滚动.",
                       xname(otmp), surface(sx, sy));
                 goto cannot_push;
             }
@@ -206,17 +206,17 @@ moverock()
                 case HOLE:
                 case TRAPDOOR:
                     if (Blind)
-                        pline("扑通!  你不再能感受到 %s.",
+                        pline("扑通!  你不再能感受到%s.",
                               xname(otmp));
                     else
-                        pline("%s%s并%s%s 在%s上!",
+                        pline("%s%s并%s了%s上的%s!",
                               Tobjnam(otmp, (ttmp->ttyp == TRAPDOOR)
                                                 ? "触发"
                                                 : "掉落"),
                               (ttmp->ttyp == TRAPDOOR) ? "" : "进",
                               otense(otmp, "堵上"),
-                              (ttmp->ttyp == TRAPDOOR) ? "陷阱门" : "洞",
-                              surface(rx, ry));
+                              surface(rx, ry),
+                              (ttmp->ttyp == TRAPDOOR) ? "陷阱门" : "洞");
                     deltrap(ttmp);
                     delobj(otmp);
                     bury_objs(rx, ry);

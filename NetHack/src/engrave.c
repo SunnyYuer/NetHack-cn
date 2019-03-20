@@ -61,7 +61,7 @@ int rep;    /* rep: replace `ch` with `rep` if `ch` is an ascii */
             *s = '\0';
         } else {
             --s;
-            int r = 1+rnd(4);
+            int r = rnd(5);
             if (cnchar == 3)
 			{
                 if ((unsigned char) (*s + r) <= (unsigned char) (0xbf))

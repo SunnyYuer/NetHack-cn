@@ -355,7 +355,7 @@ HELM("dented pot", "瘪锅", None,
 /* with shuffled appearances... */
 HELM("helmet", "钢盔", "羽饰头盔",  //"plumed helmet"
      0, 0,           0, 10, 1, 30, 10,  9, 0, IRON, HI_METAL),
-HELM("helm of brilliance", "卓越头盔", "蚀刻的头盔",  //"etched helmet"
+HELM("helm of brilliance", "卓越头盔", "蚀刻头盔",  //"etched helmet"
      0, 1,           0,  6, 1, 50, 50,  9, 0, IRON, CLR_GREEN),
 HELM("helm of opposite alignment", "敌对阵营头盔", "羽冠头盔",  //"crested helmet"
      0, 1,           0,  6, 1, 50, 50,  9, 0, IRON, HI_METAL),
@@ -438,7 +438,7 @@ ARMOR("leather jacket", "皮夹克", None,
 /* shirts */
 ARMOR("Hawaiian shirt", "夏威夷衬衫", None,
       1, 0, 0,  0,  8, 0,   5,   3, 10, 0,  ARM_SHIRT, CLOTH, CLR_MAGENTA),
-ARMOR("T-shirt", "T 恤衫", None,
+ARMOR("T-shirt", "T恤衫", None,
       1, 0, 0,  0,  2, 0,   5,   2, 10, 0,  ARM_SHIRT, CLOTH, CLR_WHITE),
 
 /* cloaks */
@@ -573,13 +573,13 @@ RING("conflict", "冲突", "红宝石",  //"ruby"
      CONFLICT,                 300, 1, 0,  9, GEMSTONE, CLR_RED),
 RING("warning", "警报", "钻石",  //"diamond"
      WARNING,                  100, 1, 0, 10, GEMSTONE, CLR_WHITE),
-RING("poison resistance", "抗毒", "珍珠",  //"pearl"
+RING("poison resistance", "毒抗", "珍珠",  //"pearl"
      POISON_RES,               150, 1, 0,  4, BONE, CLR_WHITE),
-RING("fire resistance", "抗火", "铁",  //"iron"
+RING("fire resistance", "火抗", "铁",  //"iron"
      FIRE_RES,                 200, 1, 0,  5, IRON, HI_METAL),
-RING("cold resistance", "抗寒", "黄铜",  //"brass"
+RING("cold resistance", "寒抗", "黄铜",  //"brass"
      COLD_RES,                 150, 1, 0,  4, COPPER, HI_COPPER),
-RING("shock resistance", "抗电", "铜",  //"copper"
+RING("shock resistance", "电抗", "铜",  //"copper"
      SHOCK_RES,                150, 1, 0,  3, COPPER, HI_COPPER),
 RING("free action", "自由行动", "扭曲的",  //"twisted"
      FREE_ACTION,              200, 1, 0,  6, IRON, HI_METAL),
@@ -777,8 +777,8 @@ FOOD("pancake", "煎饼",              25,  2,  2, 0, VEGGY, 200, CLR_YELLOW),
 FOOD("lembas wafer", "兰巴斯片",         20,  2,  5, 0, VEGGY, 800, CLR_WHITE),
 FOOD("cram ration", "压缩口粮",          20,  3, 15, 0, VEGGY, 600, HI_ORGANIC),
 FOOD("food ration", "口粮",         380,  5, 20, 0, VEGGY, 800, HI_ORGANIC),
-FOOD("K-ration", "K- 口粮",              0,  1, 10, 0, VEGGY, 400, HI_ORGANIC),
-FOOD("C-ration", "C- 口粮",              0,  1, 10, 0, VEGGY, 300, HI_ORGANIC),
+FOOD("K-ration", "K-口粮",              0,  1, 10, 0, VEGGY, 400, HI_ORGANIC),
+FOOD("C-ration", "C-口粮",              0,  1, 10, 0, VEGGY, 300, HI_ORGANIC),
 /* tins have type specified by obj->spe (+1 for spinach, other implies
    flesh; negative specifies preparation method {homemade,boiled,&c})
    and by obj->corpsenm (type of monster flesh) */

@@ -1657,14 +1657,14 @@ int final;
        trailing "and" on all three aligned entries but looks too verbose] */
     Sprintf(buf, " %s敌对的是", !final ? "" : "");
     if (u.ualign.type != A_LAWFUL)
-        Sprintf(eos(buf), " %s( %s) 和", align_gname(A_LAWFUL),
+        Sprintf(eos(buf), " %s(%s) 和", align_gname(A_LAWFUL),
                 align_str(A_LAWFUL));
     if (u.ualign.type != A_NEUTRAL)
-        Sprintf(eos(buf), " %s( %s)%s", align_gname(A_NEUTRAL),
+        Sprintf(eos(buf), " %s(%s)%s", align_gname(A_NEUTRAL),
                 align_str(A_NEUTRAL),
                 (u.ualign.type != A_CHAOTIC) ? " 和" : "");
     if (u.ualign.type != A_CHAOTIC)
-        Sprintf(eos(buf), " %s( %s)", align_gname(A_CHAOTIC),
+        Sprintf(eos(buf), " %s(%s)", align_gname(A_CHAOTIC),
                 align_str(A_CHAOTIC));
     Strcat(buf, "."); /* terminate sentence */
     putstr(en_win, 0, buf);
@@ -1835,7 +1835,7 @@ int mode, final, attrindx;
         interesting_alimit =
             final ? TRUE /* was originally `(abase != alimit)' */
                   : (alimit != (attrindx != A_STR ? 18 : STR18(100)));
-        paren_pfx = final ? " (" : " ( 当前; ";
+        paren_pfx = final ? " (" : " (当前; ";
         if (acurrent != abase) {
             Sprintf(eos(valubuf), "%s 基础:%s", paren_pfx,
                     attrval(attrindx, abase, valstring));
@@ -2532,7 +2532,7 @@ int final;
             case 1:
                 break; /* just "are dead" */
             default:
-                Sprintf(buf, " ( 第%d 次!)", u.umortality);
+                Sprintf(buf, " (第%d 次!)", u.umortality);
                 break;
             }
         }
@@ -2816,7 +2816,7 @@ int final;
              *  N wishes (M for artifacts)
              */
             if (u.uconduct.wisharti == u.uconduct.wishes)
-                Sprintf(eos(buf), " ( %s",
+                Sprintf(eos(buf), " (%s",
                         (u.uconduct.wisharti > 2L) ? "全是"
                           : (u.uconduct.wisharti == 2L) ? "都是" : "");
             else
@@ -2830,7 +2830,7 @@ int final;
 
         if (!u.uconduct.wisharti)
             enl_msg(You_, "未许愿", "未许愿",
-                    " 任何神器", "");
+                    "任何神器", "");
     }
 
     /* Pop up the window and wait for a key */
@@ -2865,7 +2865,7 @@ struct ext_func_tab extcmdlist[] = {
             doorganize, IFBURIED | AUTOCOMPLETE },
     { M('A'), "annotate", "备注", "给这一层备注",
             donamelevel, IFBURIED | AUTOCOMPLETE },
-    { 'a', "apply", "使用", "使用工具( 十字镐, 钥匙, 灯...)",
+    { 'a', "apply", "使用", "使用工具(鹤嘴锄, 钥匙, 灯...)",
             doapply },
     { C('x'), "attributes", "属性", "显示你的属性",
             doattributes, IFBURIED },
@@ -2885,7 +2885,7 @@ struct ext_func_tab extcmdlist[] = {
     { 'E', "engrave", "刻写", "在地上写字", doengrave },
     { M('e'), "enhance", "提升能力", "提高或检查武器和魔法技能",
             enhance_weapon_skill, IFBURIED | AUTOCOMPLETE },
-    { '\0', "exploremode", "探索模式", "进入探索( 发现) 模式",
+    { '\0', "exploremode", "探索模式", "进入探索(发现) 模式",
             enter_explore_mode, IFBURIED },
     { 'f', "fire", "发射", "从箭袋里发射", dofire },
     { M('f'), "force", "开锁", "强行开锁", doforce, AUTOCOMPLETE },
@@ -2944,14 +2944,14 @@ struct ext_func_tab extcmdlist[] = {
             dopray, IFBURIED | AUTOCOMPLETE },
     { C('p'), "prevmsg", "信息", "显示最近的游戏信息",
             doprev_message, IFBURIED | GENERALCMD },
-    { 'P', "puton", "戴上", "戴上首饰( 戒指, 护身符, 等等)", doputon },
+    { 'P', "puton", "戴上", "戴上首饰(戒指, 护身符, 等等)", doputon },
     { 'q', "quaff", "喝", "喝什么东西", dodrink },
     { M('q'), "quit", "退出游戏", "不保存退出游戏",
             done2, IFBURIED | AUTOCOMPLETE | GENERALCMD },
     { 'Q', "quiver", "准备", "准备好发射物", dowieldquiver },
     { 'r', "read", "阅读", "阅读卷轴或魔法书", doread },
     { C('r'), "redraw", "刷新", "刷新屏幕", doredraw, IFBURIED | GENERALCMD },
-    { 'R', "remove", "摘下", "摘下首饰( 戒指, 护身符, 等等)", doremring },
+    { 'R', "remove", "摘下", "摘下首饰(戒指, 护身符, 等等)", doremring },
     { M('R'), "ride", "乘骑", "乘骑或取消乘骑怪物",
             doride, AUTOCOMPLETE },
     { M('r'), "rub", "擦拭", "擦拭灯或石头", dorub, AUTOCOMPLETE },
@@ -2982,7 +2982,7 @@ struct ext_func_tab extcmdlist[] = {
     { '\0', "stats", "stats", "show memory statistics",
             wiz_show_stats, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
 #ifdef SUSPEND
-    { C('z'), "suspend", "suspend", "suspend the game",
+    { C('z'), "suspend", "暂停", "暂停游戏",
             dosuspend_core, IFBURIED | GENERALCMD },
 #endif /* SUSPEND */
     { 'x', "swap", "交换武器", "交换主武器和副武器", doswapweapon },
@@ -3167,40 +3167,40 @@ dokeylist(VOID_ARGS)
     winid datawin;
     int i;
     static const char
-        run_desc[] = "Prefix: run until something very interesting is seen",
+        run_desc[] = "前缀: 一直跑直到看见有趣的东西",
         forcefight_desc[] =
-                     "Prefix: force fight even if you don't see a monster";
+                     "前缀: 强制战斗即使你没有看见怪物";
     static const struct {
         int nhkf;
         const char *desc;
         boolean numpad;
     } misc_keys[] = {
-        { NHKF_ESC, "escape from the current query/action", FALSE },
+        { NHKF_ESC, "退出当前查询/操作", FALSE },
         { NHKF_RUSH,
-          "Prefix: rush until something interesting is seen", FALSE },
+          "前缀: 急速前进直到看见有趣的东西", FALSE },
         { NHKF_RUN, run_desc, FALSE },
         { NHKF_RUN2, run_desc, TRUE },
         { NHKF_FIGHT, forcefight_desc, FALSE },
         { NHKF_FIGHT2, forcefight_desc, TRUE } ,
         { NHKF_NOPICKUP,
-          "Prefix: move without picking up objects/fighting", FALSE },
+          "前缀: 移动时不捡取物品/战斗", FALSE },
         { NHKF_RUN_NOPICKUP,
-          "Prefix: run without picking up objects/fighting", FALSE },
-        { NHKF_DOINV, "view inventory", TRUE },
-        { NHKF_REQMENU, "Prefix: request a menu", FALSE },
+          "前缀: 跑时不捡取物品/战斗", FALSE },
+        { NHKF_DOINV, "查看背包", TRUE },
+        { NHKF_REQMENU, "前缀: 请求菜单", FALSE },
 #ifdef REDO
-        { NHKF_DOAGAIN , "re-do: perform the previous command again", FALSE },
+        { NHKF_DOAGAIN , "重新执行: 再次执行上一个命令", FALSE },
 #endif
         { 0, (const char *) 0, FALSE }
     };
 
     datawin = create_nhwindow(NHW_TEXT);
     putstr(datawin, 0, "");
-    putstr(datawin, 0, "            Full Current Key Bindings List");
+    putstr(datawin, 0, "            完整的当前键位绑定列表");
 
     /* directional keys */
     putstr(datawin, 0, "");
-    putstr(datawin, 0, "Directional keys:");
+    putstr(datawin, 0, "方向键:");
     show_direction_keys(datawin, '.', FALSE); /* '.'==self in direction grid */
 
     keys_used[(uchar) Cmd.move_NW] = keys_used[(uchar) Cmd.move_N]
@@ -3228,15 +3228,15 @@ dokeylist(VOID_ARGS)
             = keys_used[(uchar) C(Cmd.move_SE)] = TRUE;
         putstr(datawin, 0, "");
         putstr(datawin, 0,
-          "Shift-<direction> will move in specified direction until you hit");
-        putstr(datawin, 0, "        a wall or run into something.");
+          "Shift-<direction> 将沿指定方向移动直到你");
+        putstr(datawin, 0, "        撞到墙或者跑进什么东西.");
         putstr(datawin, 0,
-          "Ctrl-<direction> will run in specified direction until something");
-        putstr(datawin, 0, "        very interesting is seen.");
+          "Ctrl-<direction> 将沿指定方向跑直到");
+        putstr(datawin, 0, "        看见有趣的东西.");
     }
 
     putstr(datawin, 0, "");
-    putstr(datawin, 0, "Miscellaneous keys:");
+    putstr(datawin, 0, "其他键:");
     for (i = 0; misc_keys[i].desc; i++) {
         key = Cmd.spkeys[misc_keys[i].nhkf];
         if (key && ((misc_keys[i].numpad && iflags.num_pad)
@@ -3256,21 +3256,21 @@ dokeylist(VOID_ARGS)
 
     if (dokeylist_putcmds(datawin, TRUE, GENERALCMD, WIZMODECMD, keys_used)) {
         putstr(datawin, 0, "");
-        putstr(datawin, 0, "General commands:");
+        putstr(datawin, 0, "一般命令:");
         (void) dokeylist_putcmds(datawin, FALSE, GENERALCMD, WIZMODECMD,
                                  keys_used);
     }
 
     if (dokeylist_putcmds(datawin, TRUE, 0, WIZMODECMD, keys_used)) {
         putstr(datawin, 0, "");
-        putstr(datawin, 0, "Game commands:");
+        putstr(datawin, 0, "游戏命令:");
         (void) dokeylist_putcmds(datawin, FALSE, 0, WIZMODECMD, keys_used);
     }
 
     if (wizard
         && dokeylist_putcmds(datawin, TRUE, WIZMODECMD, 0, keys_used)) {
         putstr(datawin, 0, "");
-        putstr(datawin, 0, "Wizard-mode commands:");
+        putstr(datawin, 0, "向导模式命令:");
         (void) dokeylist_putcmds(datawin, FALSE, WIZMODECMD, 0, keys_used);
     }
 
@@ -4623,7 +4623,7 @@ const char *msg;
         /* non-null msg means that this wasn't an explicit user request */
         putstr(win, 0, "");
         putstr(win, 0,
-               "( 在配置文件中用!cmdassist来禁止此消息.)");
+               "(在配置文件中用!cmdassist来禁止此消息.)");
     }
     display_nhwindow(win, FALSE);
     destroy_nhwindow(win);
@@ -5473,7 +5473,7 @@ dosuspend_core()
         dosuspend();
     } else
 #endif
-        Norep("Suspend command not available.");
+        Norep("暂停命令不可用.");
     return 0;
 }
 

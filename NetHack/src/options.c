@@ -3948,7 +3948,7 @@ boolean dolist;
 {
     char buf[BUFSZ];
 
-    putstr(win, 0, "Menu control keys:");
+    putstr(win, 0, "菜单控制键:");
     if (dolist) {
         int i;
 

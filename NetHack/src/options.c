@@ -259,20 +259,20 @@ static struct Comp_Opt {
                * a different format */
     int optflags;
 } compopt[] = {
-    { "align", "你的起始阵营( 秩序, 中立, 或混沌)", 8,
+    { "align", "你的起始阵营(秩序, 中立, 或混沌)", 8,
       DISP_IN_GAME },
     { "align_message", "消息窗口对齐", 20, DISP_IN_GAME }, /*WC*/
     { "align_status", "状态窗口对齐", 20, DISP_IN_GAME },   /*WC*/
     { "altkeyhandler", "alt 键处理", 20, DISP_IN_GAME },
 #ifdef BACKWARD_COMPAT
-    { "boulder", "已弃用 ( 使用sym 文件中的S_boulder 来代替)", 1,
+    { "boulder", "已弃用 (使用sym 文件中的S_boulder 来代替)", 1,
       SET_IN_GAME },
 #endif
-    { "catname", "你的( 第一只) 猫的名字 (e.g., catname:Tabby)",
+    { "catname", "你的(第一只) 猫的名字 (e.g., catname:Tabby)",
       PL_PSIZ, DISP_IN_GAME },
     { "disclose", "在游戏结束时显示的信息种类",
       sizeof(flags.end_disclose) * 2, SET_IN_GAME },
-    { "dogname", "你的( 第一只) 狗的名字 (e.g., dogname:Fang)", PL_PSIZ,
+    { "dogname", "你的(第一只) 狗的名字 (e.g., dogname:Fang)", PL_PSIZ,
       DISP_IN_GAME },
     { "dungeon", "地图中使用的符号",
       MAXDCHARS + 1, SET_IN_FILE },
@@ -297,8 +297,8 @@ static struct Comp_Opt {
     { "font_text", "文本窗口字体", 40,
       DISP_IN_GAME }, /*WC*/
     { "fruit", "你喜欢吃的水果的名字", PL_FSIZ, SET_IN_GAME },
-    { "gender", "你的起始性别( 男性或女性)", 8, DISP_IN_GAME },
-    { "horsename", "你的( 第一匹) 马的名字 (e.g., horsename:Silver)",
+    { "gender", "你的起始性别(男性或女性)", 8, DISP_IN_GAME },
+    { "horsename", "你的(第一匹) 马的名字 (e.g., horsename:Silver)",
       PL_PSIZ, DISP_IN_GAME },
     { "map_mode", "窗口下的地图显示模式", 20, DISP_IN_GAME }, /*WC*/
     { "menustyle", "物品选择使用界面", MENUTYPELEN,
@@ -328,17 +328,17 @@ static struct Comp_Opt {
 #endif
     { "name", "你的角色名字 (e.g., name:Merlin-W)", PL_NSIZ,
       DISP_IN_GAME },
-    { "number_pad", "使用移动步数", 1, SET_IN_GAME },
+    { "number_pad", "使用数字键来移动", 1, SET_IN_GAME },
     { "objects", "物品使用的符号", MAXOCLASSES, SET_IN_FILE },
     { "packorder", "您的包中物品的清单",
       MAXOCLASSES, SET_IN_GAME },
 #ifdef CHANGE_COLOR
     { "palette",
 #ifndef WIN32
-      "palette (00c/880/-fff is blue/yellow/reverse white)", 15,
+      "调色板 (00c/880/-fff 是蓝色/黄色/反白)", 15,
       SET_IN_GAME },
 #else
-      "palette (adjust an RGB color in palette (color-R-G-B)", 15,
+      "调色板 (在调色板里调整RGB颜色(color-R-G-B)", 15,
       SET_IN_FILE },
 #endif
 #if defined(MAC)
@@ -377,10 +377,10 @@ static struct Comp_Opt {
 #endif
 #ifdef STATUS_HILITES
     { "statushilites",
-      "0=no status highlighting, N=show highlights for N turns",
+      "0=无状态高亮, N=显示高亮N回合",
       20, SET_IN_GAME },
 #else
-    { "statushilites", "highlight control", 20, SET_IN_FILE },
+    { "statushilites", "高亮控制", 20, SET_IN_FILE },
 #endif
     { "symset", "从符号文件中加载一组显示符号", 70,
       SET_IN_GAME },
@@ -388,7 +388,7 @@ static struct Comp_Opt {
       "从符号文件加载一组过时的显示符号", 70,
       SET_IN_GAME },
 #ifdef WIN32
-    { "subkeyvalue", "override keystroke value", 7, SET_IN_FILE },
+    { "subkeyvalue", "覆盖键值", 7, SET_IN_FILE },
 #endif
     { "suppress_alert", "抑制版本特性的警报", 8,
       SET_IN_GAME },
@@ -4158,7 +4158,7 @@ doset() /* changing options via menu by Per Liboriussen */
 
     any = zeroany;
     add_menu(tmpwin, NO_GLYPH, &any, 0, 0, iflags.menu_headings,
-             "是否选项 ( 选择了会切换值):", MENU_UNSELECTED);
+             "是否选项 (选择了会切换值):", MENU_UNSELECTED);
     any.a_int = 0;
     /* first list any other non-modifiable booleans, then modifiable ones */
     for (pass = 0; pass <= 1; pass++)
@@ -4190,7 +4190,7 @@ doset() /* changing options via menu by Per Liboriussen */
     any = zeroany;
     add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, "", MENU_UNSELECTED);
     add_menu(tmpwin, NO_GLYPH, &any, 0, 0, iflags.menu_headings,
-             "复合选项 ( 选择了会提示新的值):",
+             "复合选项 (选择了会提示新的值):",
              MENU_UNSELECTED);
 
     /* deliberately put playmode, name, role+race+gender+align first */
@@ -4219,7 +4219,7 @@ doset() /* changing options via menu by Per Liboriussen */
     any = zeroany;
     add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, "", MENU_UNSELECTED);
     add_menu(tmpwin, NO_GLYPH, &any, 0, 0, iflags.menu_headings,
-             "Other settings:", MENU_UNSELECTED);
+             "其他设置:", MENU_UNSELECTED);
 
     for (i = 0; (name = othropt[i].name) != 0; i++) {
         if ((is_wc_option(name) && !wc_supported(name))
@@ -5787,7 +5787,7 @@ static const char *opt_intro[] = {
     "-- for example, $ DEFINE NETHACKOPTIONS \"noautopickup,fruit:kumquat\"",
 #endif
     "或按大写字母\"O\" 修改选项.", "",
- "是与否选项 ( 可以通过加前缀 '!'  或 \"no\" 来取消选项):",
+ "是与否选项 (可以通过加前缀 '!'  或 \"no\" 来取消选项):",
     (char *) 0
 };
 

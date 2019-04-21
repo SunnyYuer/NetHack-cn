@@ -277,6 +277,9 @@ WINQTLIB = -L$(QTDIR)/lib -lqt
 # libraries for Qt 4
 WINQT4LIB = `pkg-config QtGui --libs`
 #
+# libraries for Qt 5 (use with WINQT4SRC and WINQT4OBJ)
+WINQT5LIB = `pkg-config Qt5Gui Qt5Widgets Qt5Multimedia --libs`
+#
 # libraries for KDE (with Qt)
 WINKDELIB = -lkdecore -lkdeui -lXext
 #

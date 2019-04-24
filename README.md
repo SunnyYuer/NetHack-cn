@@ -8,6 +8,6 @@
 
   完美支持
 
-2.[Linux-Qt](https://github.com/SunnyEric/NetHack-cn/blob/NetHack-cn/NetHack/win/Qt/Linux-Qt%E7%BC%96%E8%AF%91%E8%AF%B4%E6%98%8E.txt)
+2.[Linux-Qt](https://github.com/SunnyEric/NetHack-cn/blob/NetHack-cn/NetHack/win/Qt4/Linux-Qt%E7%BC%96%E8%AF%91%E8%AF%B4%E6%98%8E.txt)
 
-  已知问题：乱码
+  已知问题：许愿无法输入中文

@@ -774,7 +774,7 @@ char *ensp;
     if(!cnstrcmp(s, "仓库番"))
     {
         strcpy(ensp, "soko");
-        ensp[4] = s[9];
+        ensp[4] = s[strlen("仓库番")];
         ensp[5] = '\0';
         return ensp;
     }
@@ -814,14 +814,14 @@ char *ensp;
     if(!cnstrcmp(s, "巫师塔"))
     {
         strcpy(ensp, "wizard");
-        ensp[6] = s[9];
+        ensp[6] = s[strlen("巫师塔")];
         ensp[7] = '\0';
         return ensp;
     }
     if(!cnstrcmp(s, "伪巫师塔"))
     {
         strcpy(ensp, "fakewiz");
-        ensp[7] = s[12];
+        ensp[7] = s[strlen("伪巫师塔")];
         ensp[8] = '\0';
         return ensp;
     }

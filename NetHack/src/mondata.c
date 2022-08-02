@@ -263,7 +263,7 @@ struct obj *obj; /* aatyp == AT_WEAP, AT_SPIT */
         for (; o; o = o->nobj)
             if ((o->owornmask & W_ARMH)
                 && (s = OBJ_DESCR(objects[o->otyp])) != (char *) 0
-                && !strcmp(s, "visored helmet"))
+                && !strcmp(s, "檐帽头盔"))
                 return FALSE;
     }
 
@@ -717,7 +717,7 @@ const char *in_str;
     slen = strlen(str); /* length possibly needs recomputing */
 
     {
-        static const struct alt_spl names[] = {
+        static const struct alt_spl names[] = {//不用翻译
             /* Alternate spellings */
             { "grey dragon", PM_GRAY_DRAGON },
             { "baby grey dragon", PM_BABY_GRAY_DRAGON },
@@ -794,9 +794,11 @@ const char *in_str;
                            || !strcmpi(&str[m_i_len], "'")
                            || !strncmpi(&str[m_i_len], "' ", 2)
                            || !strcmpi(&str[m_i_len], "'s")
-                           || !strncmpi(&str[m_i_len], "'s ", 3)
-                           || !strcmpi(&str[m_i_len], "es")
-                           || !strncmpi(&str[m_i_len], "es ", 3))) {
+                           || !cnstrcmp(&str[m_i_len], "小")  //小雕像
+                           || !cnstrcmp(&str[m_i_len], "雕")  //雕像
+                           || !cnstrcmp(&str[m_i_len], "尸")  //尸体
+                           || !cnstrcmp(&str[m_i_len], "团")  //布丁团
+                           || !cnstrcmp(&str[m_i_len], "罐"))) {  //罐头
                 mntmp = i;
                 len = m_i_len;
             }
@@ -830,14 +832,14 @@ int *mndx_p;
     static NEARDATA const struct alt_spl truematch[] = {
         /* "long worm" won't match "worm" class but would accidentally match
            "long worm tail" class before the comparison with monster types */
-        { "long worm", PM_LONG_WORM },
+        { "长蠕虫", PM_LONG_WORM },
         /* matches wrong--or at least suboptimal--class */
-        { "demon", -S_DEMON }, /* hits "imp or minor demon" */
+        { "恶魔", -S_DEMON }, /* hits "imp or minor demon" */
         /* matches specific monster (overly restrictive) */
-        { "devil", -S_DEMON }, /* always "horned devil" */
+        { "魔鬼", -S_DEMON }, /* always "horned devil" */
         /* some plausible guesses which need help */
-        { "bug", -S_XAN },  /* would match bugbear... */
-        { "fish", -S_EEL }, /* wouldn't match anything */
+        { "虫", -S_XAN },  /* would match bugbear... */
+        { "鱼", -S_EEL }, /* wouldn't match anything */
         /* end of list */
         { 0, NON_PM }
     };
@@ -864,7 +866,7 @@ int *mndx_p;
         return i;
     } else {
         /* multiple characters */
-        if (!strcmpi(in_str, "long")) /* not enough to match "long worm" */
+        if (!strcmpi(in_str, "long")) /* 不需要改 not enough to match "long worm" */
             return 0; /* avoid false whole-word match with "long worm tail" */
         in_str = makesingular(in_str);
         /* check for special cases */
@@ -1087,13 +1089,13 @@ struct monst *mtmp;
         return mtmp->data;
 }
 
-static const char *levitate[4] = { "float", "Float", "wobble", "Wobble" };
-static const char *flys[4] = { "fly", "Fly", "flutter", "Flutter" };
-static const char *flyl[4] = { "fly", "Fly", "stagger", "Stagger" };
-static const char *slither[4] = { "slither", "Slither", "falter", "Falter" };
-static const char *ooze[4] = { "ooze", "Ooze", "tremble", "Tremble" };
-static const char *immobile[4] = { "wiggle", "Wiggle", "pulsate", "Pulsate" };
-static const char *crawl[4] = { "crawl", "Crawl", "falter", "Falter" };
+static const char *levitate[4] = { "飘", "飘", "摇晃", "摇晃" };
+static const char *flys[4] = { "飞", "飞", "飘动", "飘动" };
+static const char *flyl[4] = { "飞", "飞", "蹒跚", "蹒跚" };
+static const char *slither[4] = { "滑", "滑", "踉跄", "踉跄" };
+static const char *ooze[4] = { "渗", "渗", "颤抖", "颤抖" };
+static const char *immobile[4] = { "摆动", "摆动", "震动", "震动" };
+static const char *crawl[4] = { "爬", "爬", "踉跄", "踉跄" };
 
 const char *
 locomotion(ptr, def)
@@ -1142,16 +1144,16 @@ struct attack *mattk;
     case PM_FIRE_VORTEX:
     case PM_FIRE_ELEMENTAL:
     case PM_SALAMANDER:
-        what = "already on fire";
+        what = "已经着火了";
         break;
     case PM_WATER_ELEMENTAL:
     case PM_FOG_CLOUD:
     case PM_STEAM_VORTEX:
-        what = "boiling";
+        what = "在沸腾";
         break;
     case PM_ICE_VORTEX:
     case PM_GLASS_GOLEM:
-        what = "melting";
+        what = "在融化";
         break;
     case PM_STONE_GOLEM:
     case PM_CLAY_GOLEM:
@@ -1160,10 +1162,10 @@ struct attack *mattk;
     case PM_EARTH_ELEMENTAL:
     case PM_DUST_VORTEX:
     case PM_ENERGY_VORTEX:
-        what = "heating up";
+        what = "在加热";
         break;
     default:
-        what = (mattk->aatyp == AT_HUGS) ? "being roasted" : "on fire";
+        what = (mattk->aatyp == AT_HUGS) ? "被烤" : "着火了";
         break;
     }
     return what;

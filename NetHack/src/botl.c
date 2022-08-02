@@ -10,8 +10,10 @@
 
 extern const char *hu_stat[]; /* defined in eat.c */
 
-const char *const enc_stat[] = { "",         "Burdened",  "Stressed",
-                                 "Strained", "Overtaxed", "Overloaded" };
+const char *const enc_stat[] = { "",         "负担",  "压力",
+                                 "强压", "过重", "超重" };
+/*const char *const enc_stat[] = { "",         "Burdened",  "Stressed",
+                                 "Strained", "Overtaxed", "Overloaded" };*/
 
 STATIC_OVL NEARDATA int mrank_sz = 0; /* loaded by max_rank_sz (from u_init) */
 STATIC_DCL const char *NDECL(rank);
@@ -55,8 +57,8 @@ do_statusline1()
     Strcpy(newbot1, plname);
     if ('a' <= newbot1[0] && newbot1[0] <= 'z')
         newbot1[0] += 'A' - 'a';
-    newbot1[10] = 0;
-    Sprintf(nb = eos(newbot1), " the ");
+    newbot1[15] = 0;
+    Sprintf(nb = eos(newbot1), "  ");
 
     if (Upolyd) {
         char mbot[BUFSZ];
@@ -79,14 +81,14 @@ do_statusline1()
     if ((i - j) > 0)
         Sprintf(nb = eos(nb), "%*s", i - j, " "); /* pad with spaces */
 
-    Sprintf(nb = eos(nb), "St:%s Dx:%-1d Co:%-1d In:%-1d Wi:%-1d Ch:%-1d",
+    Sprintf(nb = eos(nb), "力:%s  敏:%-1d  体:%-1d  智:%-1d  感:%-1d  魅:%-1d",
             get_strength_str(),
             ACURR(A_DEX), ACURR(A_CON), ACURR(A_INT), ACURR(A_WIS),
             ACURR(A_CHA));
     Sprintf(nb = eos(nb),
             (u.ualign.type == A_CHAOTIC)
-                ? "  Chaotic"
-                : (u.ualign.type == A_NEUTRAL) ? "  Neutral" : "  Lawful");
+                ? "   混沌"
+                : (u.ualign.type == A_NEUTRAL) ? "   中立" : "   秩序");
 #ifdef SCORE_ON_BOTL
     if (flags.showscore)
         Sprintf(nb = eos(nb), " S:%ld", botl_score());
@@ -149,7 +151,7 @@ do_statusline2()
 
     /* time/move counter */
     if (flags.time)
-        Sprintf(tmmv, "T:%ld", moves);
+        Sprintf(tmmv, " 回:%ld", moves);
     else
         tmmv[0] = '\0';
     tln = strlen(tmmv);
@@ -164,38 +166,38 @@ do_statusline2()
      * unusual for more than one of them to apply at a time.]
      */
     if (Stoned)
-        Strcpy(nb = eos(nb), " Stone");
+        Strcpy(nb = eos(nb), "  石化");
     if (Slimed)
-        Strcpy(nb = eos(nb), " Slime");
+        Strcpy(nb = eos(nb), "  污秽");
     if (Strangled)
-        Strcpy(nb = eos(nb), " Strngl");
+        Strcpy(nb = eos(nb), "  束缚");
     if (Sick) {
         if (u.usick_type & SICK_VOMITABLE)
-            Strcpy(nb = eos(nb), " FoodPois");
+            Strcpy(nb = eos(nb), "  食物中毒");
         if (u.usick_type & SICK_NONVOMITABLE)
-            Strcpy(nb = eos(nb), " TermIll");
+            Strcpy(nb = eos(nb), "  生病");
     }
     if (u.uhs != NOT_HUNGRY)
         Sprintf(nb = eos(nb), " %s", hu_stat[u.uhs]);
     if ((cap = near_capacity()) > UNENCUMBERED)
         Sprintf(nb = eos(nb), " %s", enc_stat[cap]);
     if (Blind)
-        Strcpy(nb = eos(nb), " Blind");
+        Strcpy(nb = eos(nb), "  失明");
     if (Deaf)
-        Strcpy(nb = eos(nb), " Deaf");
+        Strcpy(nb = eos(nb), "  耳聋");
     if (Stunned)
-        Strcpy(nb = eos(nb), " Stun");
+        Strcpy(nb = eos(nb), "  眩晕");
     if (Confusion)
-        Strcpy(nb = eos(nb), " Conf");
+        Strcpy(nb = eos(nb), "  混乱");
     if (Hallucination)
-        Strcpy(nb = eos(nb), " Hallu");
+        Strcpy(nb = eos(nb), "  幻觉");
     /* levitation and flying are mutually exclusive; riding is not */
     if (Levitation)
-        Strcpy(nb = eos(nb), " Lev");
+        Strcpy(nb = eos(nb), "  飘浮");
     if (Flying)
-        Strcpy(nb = eos(nb), " Fly");
+        Strcpy(nb = eos(nb), "  飞行");
     if (u.usteed)
-        Strcpy(nb = eos(nb), " Ride");
+        Strcpy(nb = eos(nb), "  乘骑");
     cln = strlen(cond);
 
     /*
@@ -392,15 +394,15 @@ char *buf;
     if (Is_knox(&u.uz)) {
         Sprintf(buf, "%s ", dungeons[u.uz.dnum].dname);
     } else if (In_quest(&u.uz)) {
-        Sprintf(buf, "Home %d ", dunlev(&u.uz));
+        Sprintf(buf, "家乡 %d ", dunlev(&u.uz));
     } else if (In_endgame(&u.uz)) {
         /* [3.6.2: this used to be "Astral Plane" or generic "End Game"] */
         (void) endgamelevelname(buf, depth(&u.uz));
-        (void) strsubst(buf, "Plane of ", ""); /* just keep <element> */
+        (void) strsubst(buf, "位面", ""); /* just keep <element> */
         Strcat(buf, " ");
     } else {
         /* ports with more room may expand this one */
-        Sprintf(buf, "Dlvl:%-2d ", depth(&u.uz));
+        Sprintf(buf, "地牢:%-2d ", depth(&u.uz));
         ret = 0;
     }
     return ret;
@@ -508,12 +510,12 @@ STATIC_DCL boolean FDECL(status_hilite_menu_add, (int));
 /* If entries are added to this, botl.h will require updating too */
 STATIC_VAR struct istat_s initblstats[MAXBLSTATS] = {
     INIT_BLSTAT("title", "%s", ANY_STR, MAXVALWIDTH, BL_TITLE),
-    INIT_BLSTAT("strength", " St:%s", ANY_INT, 10, BL_STR),
-    INIT_BLSTAT("dexterity", " Dx:%s", ANY_INT,  10, BL_DX),
-    INIT_BLSTAT("constitution", " Co:%s", ANY_INT, 10, BL_CO),
-    INIT_BLSTAT("intelligence", " In:%s", ANY_INT, 10, BL_IN),
-    INIT_BLSTAT("wisdom", " Wi:%s", ANY_INT, 10, BL_WI),
-    INIT_BLSTAT("charisma", " Ch:%s", ANY_INT, 10, BL_CH),
+    INIT_BLSTAT("strength", " 力:%s", ANY_INT, 10, BL_STR),
+    INIT_BLSTAT("dexterity", " 敏:%s", ANY_INT,  10, BL_DX),
+    INIT_BLSTAT("constitution", " 体:%s", ANY_INT, 10, BL_CO),
+    INIT_BLSTAT("intelligence", " 智:%s", ANY_INT, 10, BL_IN),
+    INIT_BLSTAT("wisdom", " 感:%s", ANY_INT, 10, BL_WI),
+    INIT_BLSTAT("charisma", " 魅:%s", ANY_INT, 10, BL_CH),
     INIT_BLSTAT("alignment", " %s", ANY_STR, 40, BL_ALIGN),
     INIT_BLSTAT("score", " S:%s", ANY_LONG, 20, BL_SCORE),
     INIT_BLSTAT("carrying-capacity", " %s", ANY_INT, 20, BL_CAP),
@@ -523,7 +525,7 @@ STATIC_VAR struct istat_s initblstats[MAXBLSTATS] = {
     INIT_BLSTAT("experience-level", " Xp:%s", ANY_INT, 10, BL_XP),
     INIT_BLSTAT("armor-class", " AC:%s", ANY_INT, 10, BL_AC),
     INIT_BLSTAT("HD", " HD:%s", ANY_INT, 10, BL_HD),
-    INIT_BLSTAT("time", " T:%s", ANY_LONG, 20, BL_TIME),
+    INIT_BLSTAT("time", " 回:%s", ANY_LONG, 20, BL_TIME),
     /* hunger used to be 'ANY_UINT'; see note below in bot_via_windowport() */
     INIT_BLSTAT("hunger", " %s", ANY_INT, 40, BL_HUNGER),
     INIT_BLSTATP("hitpoints", " HP:%s", ANY_INT, 10, BL_HPMAX, BL_HP),
@@ -585,15 +587,17 @@ bot_via_windowport()
     Strcpy(nb = buf, plname);
     nb[0] = highc(nb[0]);
     titl = !Upolyd ? rank() : mons[u.umonnum].mname;
-    i = (int) (strlen(buf) + sizeof " the " + strlen(titl) - sizeof "");
+    i = (int) (strlen(buf) + sizeof "  " + strlen(titl) - sizeof "");
     /* if "Name the Rank/monster" is too long, we truncate the name
        but always keep at least 10 characters of it; when hitpintbar is
        enabled, anything beyond 30 (long monster name) will be truncated */
-    if (i > 30) {
-        i = 30 - (int) (sizeof " the " + strlen(titl) - sizeof "");
-        nb[max(i, 10)] = '\0';
+    // 最多允许 中文名5个汉字+职业名5个汉字+2个空格 32字节的长度
+    if (i > 32) {
+        i = 32 - (int) (sizeof "  " + strlen(titl) - sizeof "");
+        if(strlen("中") == 2) nb[max(i, 10)] = '\0';
+        else nb[max(i, 15)] = '\0';
     }
-    Strcpy(nb = eos(nb), " the ");
+    Strcpy(nb = eos(nb), "  ");
     Strcpy(nb = eos(nb), titl);
     if (Upolyd) { /* when poly'd, capitalize monster name */
         for (i = 0; nb[i]; i++)
@@ -617,10 +621,10 @@ bot_via_windowport()
 
     /* Alignment */
     Strcpy(blstats[idx][BL_ALIGN].val, (u.ualign.type == A_CHAOTIC)
-                                          ? "Chaotic"
+                                          ? "混沌"
                                           : (u.ualign.type == A_NEUTRAL)
-                                               ? "Neutral"
-                                               : "Lawful");
+                                               ? "中立"
+                                               : "秩序");
 
     /* Score */
     blstats[idx][BL_SCORE].a.a_long =

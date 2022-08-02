@@ -149,7 +149,9 @@ boolean exclude_cookie;
             Strcat(rumor_buf, xcrypt(line, xbuf));
         } while (
             count++ < 50 && exclude_cookie
-            && (strstri(rumor_buf, "fortune") || strstri(rumor_buf, "pity")));
+            && (strstri(rumor_buf, "fortune") || strstri(rumor_buf, "pity")
+            || strstri(rumor_buf, "幸运") || strstri(rumor_buf, "命运")
+            || strstri(rumor_buf, "可惜")));
         (void) dlb_fclose(rumors);
         if (count >= 50)
             impossible("Can't find non-cookie rumor?");
@@ -332,7 +334,7 @@ int truth; /* 1=true, -1=false, 0=either */
 int mechanism;
 {
     static const char fortune_msg[] =
-        "This cookie has a scrap of paper inside.";
+        "这个饼干里面有一张废纸.";
     const char *line;
     char buf[BUFSZ];
     boolean reading = (mechanism == BY_COOKIE || mechanism == BY_PAPER);
@@ -344,7 +346,7 @@ int mechanism;
         else if (Blind) {
             if (mechanism == BY_COOKIE)
                 pline(fortune_msg);
-            pline("What a pity that you cannot read it!");
+            pline("真遗憾你无法阅读它!");
             return;
         }
     }
@@ -354,10 +356,10 @@ int mechanism;
     switch (mechanism) {
     case BY_ORACLE:
         /* Oracle delivers the rumor */
-        pline("True to her word, the Oracle %ssays: ",
-              (!rn2(4) ? "offhandedly "
-                       : (!rn2(3) ? "casually "
-                                  : (rn2(2) ? "nonchalantly " : ""))));
+        pline("不背其言, 神谕 %s说: ",
+              (!rn2(4) ? "随口 "
+                       : (!rn2(3) ? "胡乱 "
+                                  : (rn2(2) ? "平静的 " : ""))));
         verbalize1(line);
         /* [WIS exercized by getrumor()] */
         return;
@@ -365,7 +367,7 @@ int mechanism;
         pline(fortune_msg);
     /* FALLTHRU */
     case BY_PAPER:
-        pline("It reads:");
+        pline("上面写着:");
         break;
     }
     pline1(line);
@@ -459,10 +461,10 @@ boolean delphi;
         if (delphi)
             putstr(tmpwin, 0,
                    special
-                     ? "The Oracle scornfully takes all your money and says:"
-                     : "The Oracle meditates for a moment and then intones:");
+                     ? "神谕轻蔑地拿走了你所有的钱然后说:"
+                     : "神谕沉思片刻然后吟诵:");
         else
-            putstr(tmpwin, 0, "The message reads:");
+            putstr(tmpwin, 0, "消息显示:");
         putstr(tmpwin, 0, "");
 
         while (dlb_fgets(line, COLNO, oracles) && strcmp(line, "---\n")) {
@@ -493,17 +495,17 @@ struct monst *oracl;
     umoney = money_cnt(invent);
 
     if (!oracl) {
-        There("is no one here to consult.");
+        There("没有人来咨询.");
         return 0;
     } else if (!oracl->mpeaceful) {
-        pline("%s is in no mood for consultations.", Monnam(oracl));
+        pline("%s 没有心情让你咨询.", Monnam(oracl));
         return 0;
     } else if (!umoney) {
-        You("have no money.");
+        You("没有钱.");
         return 0;
     }
 
-    Sprintf(qbuf, "\"Wilt thou settle for a minor consultation?\" (%d %s)",
+    Sprintf(qbuf, "\" 汝欲小咨询否?\" (%d %s)",
             minor_cost, currency((long) minor_cost));
     switch (ynq(qbuf)) {
     default:
@@ -511,7 +513,7 @@ struct monst *oracl;
         return 0;
     case 'y':
         if (umoney < (long) minor_cost) {
-            You("don't even have enough money for that!");
+            You("没有足够的钱咨询!");
             return 0;
         }
         u_pay = minor_cost;
@@ -520,7 +522,7 @@ struct monst *oracl;
         if (umoney <= (long) minor_cost /* don't even ask */
             || (oracle_cnt == 1 || oracle_flg < 0))
             return 0;
-        Sprintf(qbuf, "\"Then dost thou desire a major one?\" (%d %s)",
+        Sprintf(qbuf, "\" 则汝欲大咨询耶?\" (%d %s)",
                 major_cost, currency((long) major_cost));
         if (yn(qbuf) != 'y')
             return 0;

@@ -129,13 +129,13 @@ const char *str;
     int otoplin = ttyDisplay->toplin;
 
     home();
-    if (*str & 0x80) {
-        /* kludge for the / command, the only time we ever want a */
-        /* graphics character on the top line */
-        g_putch((int) *str++);
-        ttyDisplay->curx++;
-    }
-    end_glyphout(); /* in case message printed during graphics output */
+    /* if (*str & 0x80) { */
+    /*     #<{(| kludge for the / command, the only time we ever want a |)}># */
+    /*     #<{(| graphics character on the top line |)}># */
+    /*     g_putch((int) *str++); */
+    /*     ttyDisplay->curx++; */
+    /* } */
+    /* end_glyphout(); #<{(| in case message printed during graphics output |)}># */
     putsyms(str);
     cl_end();
     ttyDisplay->toplin = 1;

@@ -6,7 +6,7 @@
 #-PRE
 # Linux hints file
 # This hints file provides a single-user Qt5 build for Linux, specifically
-# for Fedora 26.
+# for openSUSE Leap 15.0.
 
 
 #PREFIX=/usr

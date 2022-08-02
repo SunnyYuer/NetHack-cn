@@ -219,50 +219,50 @@ NEARDATA long domove_attempting = 0L;
 NEARDATA long domove_succeeded = 0L;
 
 NEARDATA struct c_color_names c_color_names = {
-    "black",  "amber", "golden", "light blue", "red",   "green",
-    "silver", "blue",  "purple", "white",      "orange"
+    "黑色",  "琥珀色", "金色", "淡蓝色", "红色",   "绿色",
+    "银色", "蓝色",  "紫色", "白色",      "橙色"
 };
 
 struct menucoloring *menu_colorings = NULL;
 
 const char *c_obj_colors[] = {
-    "black",          /* CLR_BLACK */
-    "red",            /* CLR_RED */
-    "green",          /* CLR_GREEN */
-    "brown",          /* CLR_BROWN */
-    "blue",           /* CLR_BLUE */
-    "magenta",        /* CLR_MAGENTA */
-    "cyan",           /* CLR_CYAN */
-    "gray",           /* CLR_GRAY */
-    "transparent",    /* no_color */
-    "orange",         /* CLR_ORANGE */
-    "bright green",   /* CLR_BRIGHT_GREEN */
-    "yellow",         /* CLR_YELLOW */
-    "bright blue",    /* CLR_BRIGHT_BLUE */
-    "bright magenta", /* CLR_BRIGHT_MAGENTA */
-    "bright cyan",    /* CLR_BRIGHT_CYAN */
-    "white",          /* CLR_WHITE */
+    "黑色的",          /* CLR_BLACK */
+    "红色的",            /* CLR_RED */
+    "绿色的",          /* CLR_GREEN */
+    "褐色的",          /* CLR_BROWN */
+    "蓝色的",           /* CLR_BLUE */
+    "洋红色",        /* CLR_MAGENTA */
+    "蓝绿色",           /* CLR_CYAN */
+    "灰色的",           /* CLR_GRAY */
+    "透明的",    /* no_color */
+    "橙色的",         /* CLR_ORANGE */
+    "亮绿色",   /* CLR_BRIGHT_GREEN */
+    "黄色的",         /* CLR_YELLOW */
+    "亮蓝色",    /* CLR_BRIGHT_BLUE */
+    "亮洋红色", /* CLR_BRIGHT_MAGENTA */
+    "亮蓝绿色",    /* CLR_BRIGHT_CYAN */
+    "白色的",          /* CLR_WHITE */
 };
 
-struct c_common_strings c_common_strings = { "Nothing happens.",
-                                             "That's enough tries!",
-                                             "That is a silly thing to %s.",
-                                             "shudder for a moment.",
-                                             "something",
-                                             "Something",
-                                             "You can move again.",
-                                             "Never mind.",
-                                             "vision quickly clears.",
-                                             { "the", "your" } };
+struct c_common_strings c_common_strings = { "无事发生.",
+                                             "试得足够多了!",
+                                             "%s那个是件傻傻的事.",
+                                             "颤抖了片刻.",
+                                             "什么东西",
+                                             "什么东西",
+                                             "你可以移动了.",
+                                             "不用了.",
+                                             "视野迅速清晰了.",
+                                             { "", "你的" } };
 
 /* NOTE: the order of these words exactly corresponds to the
    order of oc_material values #define'd in objclass.h. */
-const char *materialnm[] = { "mysterious", "liquid",  "wax",        "organic",
-                             "flesh",      "paper",   "cloth",      "leather",
-                             "wooden",     "bone",    "dragonhide", "iron",
-                             "metal",      "copper",  "silver",     "gold",
-                             "platinum",   "mithril", "plastic",    "glass",
-                             "gemstone",   "stone" };
+const char *materialnm[] = { "神秘的", "透明的",  "蜡制的",        "有机的",
+                             "肉",      "纸",   "布",      "皮革",
+                             "木",     "骨",    "龙皮", "铁",
+                             "金属",      "铜",  "银",     "金",
+                             "白金",   "秘银", "塑料",    "玻璃",
+                             "宝石",   "石" };
 
 /* Vision */
 NEARDATA boolean vision_full_recalc = 0;

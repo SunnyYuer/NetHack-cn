@@ -364,20 +364,20 @@ register struct monst *mtmp;
 {
     static const char
         *same_class_msg[3] = {
-            "I can't win, and neither will you!",
-            "You don't deserve to win!",
-            "Mine should be the honor, not yours!",
+            "我不能赢, 你也不能!",
+            "你不配赢!",
+            "这是我的荣誉, 不是你的!",
         },
         *other_class_msg[3] = {
-            "The low-life wants to talk, eh?",
-            "Fight, scum!",
-            "Here is what I have to say!",
+            "低贱的人想和我说话, 啊?",
+            "战斗, 人渣!",
+            "这就是我要说的!",
         };
 
     if (mtmp->mpeaceful)
         return; /* will drop to humanoid talk */
 
-    pline("Talk? -- %s", (mtmp->data == &mons[urole.malenum]
+    pline("交谈? -- %s", (mtmp->data == &mons[urole.malenum]
                           || mtmp->data == &mons[urole.femalenum])
                              ? same_class_msg[rn2(3)]
                              : other_class_msg[rn2(3)]);

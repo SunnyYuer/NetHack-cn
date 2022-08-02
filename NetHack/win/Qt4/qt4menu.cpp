@@ -193,7 +193,7 @@ void NetHackQtMenuWindow::AddMenu(int glyph, const ANY_P* identifier,
     }
     int mcolor, mattr;
     if (attr == 0
-        && get_menu_coloring(str.toUtf8().constData(), &mcolor, &mattr)) {
+        && get_menu_coloring(str.toLatin1().constData(), &mcolor, &mattr)) {
 	itemlist[itemcount].attr = mattr;
 	itemlist[itemcount].color = mcolor;
     }

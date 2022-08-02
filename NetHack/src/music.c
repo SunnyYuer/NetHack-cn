@@ -1,4 +1,4 @@
-/* NetHack 3.6	music.c	$NHDT-Date: 1517877381 2018/02/06 00:36:21 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.47 $ */
+/* NetHack 3.6	music.c	$NHDT-Date: 1544442713 2018/12/10 11:51:53 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.57 $ */
 /*      Copyright (c) 1989 by Jean-Christophe Collet */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -130,11 +130,11 @@ int distance;
             newsym(mtmp->mx, mtmp->my);
             if (canseemon(mtmp)) {
                 if (!could_see_mon)
-                    You("注意到%s, 在随着音乐摇摆.", a_monnam(mtmp));
+                    You("notice %s, swaying with the music.", a_monnam(mtmp));
                 else
-                    pline("%s 站住不动, 然后随着音乐摇摆%s.",
+                    pline("%s freezes, then sways with the music%s.",
                           Monnam(mtmp),
-                          was_peaceful ? "" : ", 现在似乎更安静了");
+                          was_peaceful ? "" : ", and now seems quieter");
             }
         }
     }
@@ -161,7 +161,7 @@ int distance;
             mtmp->mstrategy &= ~STRAT_WAITMASK;
             if (canseemon(mtmp))
                 pline(
-                    "%s 欢乐地听着音乐, 然后似乎更安静了.",
+                    "%s listens cheerfully to the music, then seems quieter.",
                       Monnam(mtmp));
         }
     }
@@ -186,9 +186,9 @@ struct monst *bugler; /* monster that played instrument */
             mtmp->mcanmove = 1;
             mtmp->mstrategy &= ~STRAT_WAITMASK;
             if (canseemon(mtmp))
-                pline("%s 现在准备好战斗了!", Monnam(mtmp));
+                pline("%s is now ready for battle!", Monnam(mtmp));
             else
-                Norep("你听见准备好战争的吵闹声.");
+                Norep("You hear the rattle of battle gear being readied.");
         } else if ((distm = ((bugler == &youmonst)
                                  ? distu(mtmp->mx, mtmp->my)
                                  : dist2(bugler->mx, bugler->my, mtmp->mx,
@@ -249,19 +249,15 @@ int force;
     unsigned tu_pit = 0;
 
     if (trap_at_u)
-        tu_pit = (trap_at_u->ttyp == PIT || trap_at_u->ttyp == SPIKED_PIT);
+        tu_pit = is_pit(trap_at_u->ttyp);
     start_x = u.ux - (force * 2);
     start_y = u.uy - (force * 2);
     end_x = u.ux + (force * 2);
     end_y = u.uy + (force * 2);
-    if (start_x < 1)
-        start_x = 1;
-    if (start_y < 1)
-        start_y = 1;
-    if (end_x >= COLNO)
-        end_x = COLNO - 1;
-    if (end_y >= ROWNO)
-        end_y = ROWNO - 1;
+    start_x = max(start_x, 1);
+    start_y = max(start_y, 0);
+    end_x = min(end_x, COLNO - 1);
+    end_y = min(end_y, ROWNO - 1);
     for (x = start_x; x <= end_x; x++)
         for (y = start_y; y <= end_y; y++) {
             if ((mtmp = m_at(x, y)) != 0) {
@@ -269,12 +265,12 @@ int force;
                 if (mtmp->mundetected && is_hider(mtmp->data)) {
                     mtmp->mundetected = 0;
                     if (cansee(x, y))
-                        pline("%s 从天花板被摆脱下来!",
+                        pline("%s is shaken loose from the ceiling!",
                               Amonnam(mtmp));
                     else
-                        You_hear("重击的声音.");
+                        You_hear("a thumping sound.");
                     if (x == u.ux && y == u.uy)
-                        You("轻易地避开了掉落的 %s.", mon_nam(mtmp));
+                        You("easily dodge the falling %s.", mon_nam(mtmp));
                     newsym(x, y);
                 }
             }
@@ -282,26 +278,26 @@ int force;
                 switch (levl[x][y].typ) {
                 case FOUNTAIN: /* Make the fountain disappear */
                     if (cansee(x, y))
-                        pline_The("喷泉掉进了裂缝.");
+                        pline_The("fountain falls into a chasm.");
                     goto do_pit;
                 case SINK:
                     if (cansee(x, y))
-                        pline_The("厨房水槽掉进了裂缝.");
+                        pline_The("kitchen sink falls into a chasm.");
                     goto do_pit;
                 case ALTAR:
                     if (Is_astralevel(&u.uz) || Is_sanctum(&u.uz))
                         break;
 
                     if (cansee(x, y))
-                        pline_The("祭坛掉进了裂缝.");
+                        pline_The("altar falls into a chasm.");
                     goto do_pit;
                 case GRAVE:
                     if (cansee(x, y))
-                        pline_The("墓碑倒进了裂缝.");
+                        pline_The("headstone topples into a chasm.");
                     goto do_pit;
                 case THRONE:
                     if (cansee(x, y))
-                        pline_The("王座掉进了裂缝.");
+                        pline_The("throne falls into a chasm.");
                     /*FALLTHRU*/
                 case ROOM:
                 case CORR: /* Try to make a pit */
@@ -311,6 +307,11 @@ int force;
                         break; /* no pit if portal at that location */
                     chasm->tseen = 1;
 
+                    /* TODO:
+                     * This ought to be split into a separate routine to
+                     * reduce indentation and the consequent line-wraps.
+                     */
+
                     levl[x][y].doormask = 0;
                     /*
                      * Let liquid flow into the newly created chasm.
@@ -319,7 +320,7 @@ int force;
                      */
                     filltype = fillholetyp(x, y, FALSE);
                     if (filltype != ROOM) {
-                        levl[x][y].typ = filltype;
+                        levl[x][y].typ = filltype; /* flags set via doormask */
                         liquid_flow(x, y, filltype, chasm, (char *) 0);
                     }
 
@@ -327,9 +328,9 @@ int force;
 
                     if ((otmp = sobj_at(BOULDER, x, y)) != 0) {
                         if (cansee(x, y))
-                            pline("嘣! 巨石掉进了%s裂缝!",
-                                  ((x == u.ux) && (y == u.uy)) ? " 你下面的"
-                                                               : "");
+                            pline("KADOOM!  The boulder falls into a chasm%s!",
+                                  (x == u.ux && y == u.uy) ? " below you"
+                                                           : "");
                         if (mtmp)
                             mtmp->mtrapped = 0;
                         obj_extract_self(otmp);
@@ -343,27 +344,28 @@ int force;
                         if (!is_flyer(mtmp->data)
                             && !is_clinger(mtmp->data)) {
                             boolean m_already_trapped = mtmp->mtrapped;
+
                             mtmp->mtrapped = 1;
                             if (!m_already_trapped) { /* suppress messages */
                                 if (cansee(x, y))
-                                    pline("%s 掉进了裂缝!",
+                                    pline("%s falls into a chasm!",
                                           Monnam(mtmp));
                                 else if (humanoid(mtmp->data))
-                                    You_hear("尖叫声!");
+                                    You_hear("a scream!");
                             }
                             /* Falling is okay for falling down
                                 within a pit from jostling too */
-                            mselftouch(mtmp, "掉落, ", TRUE);
-                            if (mtmp->mhp > 0) {
+                            mselftouch(mtmp, "Falling, ", TRUE);
+                            if (!DEADMONSTER(mtmp)) {
                                 mtmp->mhp -= rnd(m_already_trapped ? 4 : 6);
-                                if (mtmp->mhp <= 0) {
+                                if (DEADMONSTER(mtmp)) {
                                     if (!cansee(x, y)) {
-                                        pline("它被消灭了!");
+                                        pline("It is destroyed!");
                                     } else {
-                                        You("消灭了%s!",
+                                        You("destroy %s!",
                                             mtmp->mtame
                                               ? x_monnam(mtmp, ARTICLE_THE,
-                                                         "可怜的",
+                                                         "poor",
                                                          has_mname(mtmp)
                                                            ? SUPPRESS_SADDLE
                                                            : 0,
@@ -375,40 +377,49 @@ int force;
                             }
                         }
                     } else if (x == u.ux && y == u.uy) {
+                        if (u.utrap && u.utraptype == TT_BURIEDBALL) {
+                            /* Note:  the chain should break if a pit gets
+                               created at the buried ball's location, which
+                               is not necessarily here.  But if we don't do
+                               things this way, entering the new pit below
+                               will override current trap anyway, but too
+                               late to get Lev and Fly handling. */
+                            Your("chain breaks!");
+                            reset_utrap(TRUE);
+                        }
                         if (Levitation || Flying
                             || is_clinger(youmonst.data)) {
                             if (!tu_pit) { /* no pit here previously */
-                                pline("一条裂缝出现在你下面!");
-                                You("没有掉进去!");
+                                pline("A chasm opens up under you!");
+                                You("don't fall in!");
                             }
                         } else if (!tu_pit || !u.utrap
                                    || (u.utrap && u.utraptype != TT_PIT)) {
                             /* no pit here previously, or you were
-                               not in it even it there was */
-                            You("掉进了裂缝!");
-                            u.utrap = rn1(6, 2);
-                            u.utraptype = TT_PIT;
+                               not in it even if there was */
+                            You("fall into a chasm!");
+                            set_utrap(rn1(6, 2), TT_PIT);
                             losehp(Maybe_Half_Phys(rnd(6)),
-                                   "掉落进裂缝", NO_KILLER_PREFIX);
-                            selftouch("掉落, 你");
+                                   "fell into a chasm", NO_KILLER_PREFIX);
+                            selftouch("Falling, you");
                         } else if (u.utrap && u.utraptype == TT_PIT) {
                             boolean keepfooting =
                                 ((Fumbling && !rn2(5))
                                  || (!rnl(Role_if(PM_ARCHEOLOGIST) ? 3 : 9))
                                  || ((ACURR(A_DEX) > 7) && rn2(5)));
-                            You("到处被剧烈地撞击!");
-                            u.utrap = rn1(6, 2);
-                            u.utraptype = TT_PIT; /* superfluous */
+
+                            You("are jostled around violently!");
+                            set_utrap(rn1(6, 2), TT_PIT);
                             losehp(Maybe_Half_Phys(rnd(keepfooting ? 2 : 4)),
-                                   "在裂缝受伤", NO_KILLER_PREFIX);
+                                   "hurt in a chasm", NO_KILLER_PREFIX);
                             if (keepfooting)
                                 exercise(A_DEX, TRUE);
                             else
                                 selftouch(
                                     (Upolyd && (slithy(youmonst.data)
                                                 || nolimbs(youmonst.data)))
-                                        ? "摇动, 你"
-                                        : "跌落, 你");
+                                        ? "Shaken, you"
+                                        : "Falling down, you");
                         }
                     } else
                         newsym(x, y);
@@ -417,7 +428,7 @@ int force;
                     if (levl[x][y].doormask == D_NODOOR)
                         goto do_pit;
                     if (cansee(x, y))
-                        pline_The("门倒塌了.");
+                        pline_The("door collapses.");
                     if (*in_rooms(x, y, SHOPBASE))
                         add_damage(x, y, 0L);
                     levl[x][y].doormask = D_NODOOR;
@@ -432,18 +443,23 @@ const char *
 generic_lvl_desc()
 {
     if (Is_astralevel(&u.uz))
-        return "星界";
+        return "astral plane";
     else if (In_endgame(&u.uz))
-        return "位面";
+        return "plane";
     else if (Is_sanctum(&u.uz))
-        return "密室";
+        return "sanctum";
     else if (In_sokoban(&u.uz))
-        return "仓库";
+        return "puzzle";
     else if (In_V_tower(&u.uz))
-        return "塔";
+        return "tower";
     else
-        return "地牢";
+        return "dungeon";
 }
+
+const char *beats[] = {
+    "stepper", "one drop", "slow two", "triple stroke roll",
+    "double shuffle", "half-time shuffle", "second line", "train"
+};
 
 /*
  * The player is trying to extract something from his/her instrument.
@@ -454,6 +470,7 @@ struct obj *instr;
 {
     int damage, mode, do_spec = !(Stunned || Confusion);
     struct obj itmp;
+    boolean mundane = FALSE;
 
     itmp = *instr;
     itmp.oextra = (struct oextra *) 0; /* ok on this copy as instr maintains
@@ -462,8 +479,10 @@ struct obj *instr;
 
     /* if won't yield special effect, make sound of mundane counterpart */
     if (!do_spec || instr->spe <= 0)
-        while (objects[itmp.otyp].oc_magic)
+        while (objects[itmp.otyp].oc_magic) {
             itmp.otyp -= 1;
+            mundane = TRUE;
+        }
 #ifdef MAC
     mac_speaker(&itmp, "C");
 #endif
@@ -492,16 +511,16 @@ struct obj *instr;
 
     switch (mode) {
     case PLAY_NORMAL:
-        You("开始演奏%s.", yname(instr));
+        You("start playing %s.", yname(instr));
         break;
     case PLAY_STUNNED:
-        You("发出令人讨厌低沉单调的声音.");
+        You("produce an obnoxious droning sound.");
         break;
     case PLAY_CONFUSED:
-        You("发出刺耳的噪音.");
+        You("produce a raucous noise.");
         break;
     case PLAY_HALLU:
-        You("产生出千变万化的飞舞的蝴蝶.");
+        You("produce a kaleidoscopic display of floating butterfiles.");
         break;
     /* TODO? give some or all of these combinations their own feedback;
        hallucination ones should reference senses other than hearing... */
@@ -510,7 +529,7 @@ struct obj *instr;
     case PLAY_CONFUSED | PLAY_HALLU:
     case PLAY_STUNNED | PLAY_CONFUSED | PLAY_HALLU:
     default:
-        pline("你产生出的远不是音乐...");
+        pline("What you produce is quite far from music...");
         break;
     }
 #undef PLAY_NORMAL
@@ -522,13 +541,13 @@ struct obj *instr;
     case MAGIC_FLUTE: /* Make monster fall asleep */
         consume_obj_charge(instr, TRUE);
 
-        You("产生出%s音乐.", Hallucination ? "管" : "轻");
+        You("produce %s music.", Hallucination ? "piped" : "soft");
         put_monsters_to_sleep(u.ulevel * 5);
         exercise(A_DEX, TRUE);
         break;
     case WOODEN_FLUTE: /* May charm snakes */
         do_spec &= (rn2(ACURR(A_DEX)) + u.ulevel > 25);
-        pline("%s.", Tobjnam(instr, do_spec ? "发出颤音" : "发出嘟嘟声"));
+        pline("%s.", Tobjnam(instr, do_spec ? "trill" : "toot"));
         if (do_spec)
             charm_snakes(u.ulevel * 3);
         exercise(A_DEX, TRUE);
@@ -538,13 +557,13 @@ struct obj *instr;
         consume_obj_charge(instr, TRUE);
 
         if (!getdir((char *) 0)) {
-            pline("%s.", Tobjnam(instr, "振动"));
+            pline("%s.", Tobjnam(instr, "vibrate"));
             break;
         } else if (!u.dx && !u.dy && !u.dz) {
             if ((damage = zapyourself(instr, TRUE)) != 0) {
                 char buf[BUFSZ];
 
-                Sprintf(buf, "在%s自己身上使用魔力号角", uhim());
+                Sprintf(buf, "using a magical horn on %sself", uhim());
                 losehp(damage, buf, KILLED_BY); /* fire or frost damage */
             }
         } else {
@@ -554,45 +573,54 @@ struct obj *instr;
         makeknown(instr->otyp);
         break;
     case TOOLED_HORN: /* Awaken or scare monsters */
-        You("产生出毛骨悚然的, 坟墓声音.");
+        You("produce a frightful, grave sound.");
         awaken_monsters(u.ulevel * 30);
         exercise(A_WIS, FALSE);
         break;
     case BUGLE: /* Awaken & attract soldiers */
-        You("从%s发出一声巨响.", yname(instr));
+        You("extract a loud noise from %s.", yname(instr));
         awaken_soldiers(&youmonst);
         exercise(A_WIS, FALSE);
         break;
     case MAGIC_HARP: /* Charm monsters */
         consume_obj_charge(instr, TRUE);
 
-        pline("%s出非常有吸引力的音乐.", Tobjnam(instr, "产生"));
+        pline("%s very attractive music.", Tobjnam(instr, "produce"));
         charm_monsters((u.ulevel - 1) / 3 + 1);
         exercise(A_DEX, TRUE);
         break;
     case WOODEN_HARP: /* May calm Nymph */
         do_spec &= (rn2(ACURR(A_DEX)) + u.ulevel > 25);
         pline("%s %s.", Yname2(instr),
-              do_spec ? "产生出一个轻快的旋律" : "砰然一声");
+              do_spec ? "produces a lilting melody" : "twangs");
         if (do_spec)
             calm_nymphs(u.ulevel * 3);
         exercise(A_DEX, TRUE);
         break;
     case DRUM_OF_EARTHQUAKE: /* create several pits */
+        /* a drum of earthquake does not cause deafness
+           while still magically functional, nor afterwards
+           when it invokes the LEATHER_DRUM case instead and
+           mundane is flagged */
         consume_obj_charge(instr, TRUE);
 
-        You("产生出一个巨大的, 雷鸣般的轰鸣!");
-        pline_The("整个%s都在摇晃!", generic_lvl_desc());
+        You("produce a heavy, thunderous rolling!");
+        pline_The("entire %s is shaking around you!", generic_lvl_desc());
         do_earthquake((u.ulevel - 1) / 3 + 1);
         /* shake up monsters in a much larger radius... */
         awaken_monsters(ROWNO * COLNO);
         makeknown(DRUM_OF_EARTHQUAKE);
         break;
     case LEATHER_DRUM: /* Awaken monsters */
-        You("拍打出一个震耳欲聋响声!");
-        awaken_monsters(u.ulevel * 40);
-        incr_itimeout(&HDeaf, rn1(20, 30));
-        exercise(A_WIS, FALSE);
+        if (!mundane) {
+            You("beat a deafening row!");
+            incr_itimeout(&HDeaf, rn1(20, 30));
+            exercise(A_WIS, FALSE);
+        } else
+            You("%s %s.",
+                rn2(2) ? "butcher" : rn2(2) ? "manage" : "pull off",
+                an(beats[rn2(SIZE(beats))]));
+        awaken_monsters(u.ulevel * (mundane ? 5 : 40));
         context.botl = TRUE;
         break;
     default:
@@ -615,31 +643,31 @@ struct obj *instr;
     boolean ok;
 
     if (Underwater) {
-        You_cant("在水下演奏音乐!");
+        You_cant("play music underwater!");
         return 0;
     } else if ((instr->otyp == WOODEN_FLUTE || instr->otyp == MAGIC_FLUTE
                 || instr->otyp == TOOLED_HORN || instr->otyp == FROST_HORN
                 || instr->otyp == FIRE_HORN || instr->otyp == BUGLE)
                && !can_blow(&youmonst)) {
-        You("没有能力演奏 %s.", the(distant_name(instr, xname)));
+        You("are incapable of playing %s.", the(distant_name(instr, xname)));
         return 0;
     }
     if (instr->otyp != LEATHER_DRUM && instr->otyp != DRUM_OF_EARTHQUAKE
         && !(Stunned || Confusion || Hallucination)) {
-        c = ynq("即兴创作?");
+        c = ynq("Improvise?");
         if (c == 'q')
             goto nevermind;
     }
 
     if (c == 'n') {
         if (u.uevent.uheard_tune == 2)
-            c = ynq("演奏曲调密令?");
+            c = ynq("Play the passtune?");
         if (c == 'q') {
             goto nevermind;
         } else if (c == 'y') {
             Strcpy(buf, tune);
         } else {
-            getlin("你要演奏什么曲调? [5 音符, A-G]", buf);
+            getlin("What tune are you playing? [5 notes, A-G]", buf);
             (void) mungspaces(buf);
             if (*buf == '\033')
                 goto nevermind;
@@ -657,7 +685,7 @@ struct obj *instr;
                     *s = 'B';
             }
         }
-        You("从%s发出奇怪的声音!", the(xname(instr)));
+        You("extract a strange sound from %s!", the(xname(instr)));
 #ifdef UNIX386MUSIC
         /* if user is at the console, play through the console speaker */
         if (atconsole())
@@ -742,12 +770,14 @@ struct obj *instr;
                         }
                     if (tumblers)
                         if (gears)
-                            You_hear("%d 个转臂发出咔哒声而且%d 个齿轮在转动.",
-                                     tumblers, gears);
+                            You_hear("%d tumbler%s click and %d gear%s turn.",
+                                     tumblers, plur(tumblers), gears,
+                                     plur(gears));
                         else
-                            You_hear("%d 个转臂发出咔哒声.", tumblers);
+                            You_hear("%d tumbler%s click.", tumblers,
+                                     plur(tumblers));
                     else if (gears) {
-                        You_hear("%d 个齿轮在转动.", gears);
+                        You_hear("%d gear%s turn.", gears, plur(gears));
                         /* could only get `gears == 5' by playing five
                            correct notes followed by excess; otherwise,
                            tune would have matched above */

@@ -105,57 +105,57 @@ register struct obj *pen;
     const char *typeword;
 
     if (nohands(youmonst.data)) {
-        You("需要有手才能写!");
+        You("need hands to be able to write!");
         return 0;
     } else if (Glib) {
-        pline("%s你的%s.", Tobjnam(pen, "滑出"),
+        pline("%s from your %s.", Tobjnam(pen, "slip"),
               makeplural(body_part(FINGER)));
         dropx(pen);
         return 1;
     }
 
     /* get paper to write on */
-    paper = getobj(write_on, "写到");  //write on
+    paper = getobj(write_on, "write on");
     if (!paper)
         return 0;
     /* can't write on a novel (unless/until it's been converted into a blank
        spellbook), but we want messages saying so to avoid "spellbook" */
     typeword = (paper->otyp == SPE_NOVEL)
-                  ? "书"
+                  ? "book"
                   : (paper->oclass == SPBOOK_CLASS)
-                     ? "魔法书"
-                     : "卷轴";
+                     ? "spellbook"
+                     : "scroll";
     if (Blind) {
         if (!paper->dknown) {
-            You("不知道那个%s是否是空白的.", typeword);
+            You("don't know if that %s is blank or not.", typeword);
             return 0;
         } else if (paper->oclass == SPBOOK_CLASS) {
             /* can't write a magic book while blind */
-            pline("%s 不能创作盲文.",
+            pline("%s can't create braille text.",
                   upstart(ysimple_name(pen)));
             return 0;
         }
     }
     paper->dknown = 1;
     if (paper->otyp != SCR_BLANK_PAPER && paper->otyp != SPE_BLANK_PAPER) {
-        pline("那个%s不是空白的!", typeword);
+        pline("That %s is not blank!", typeword);
         exercise(A_WIS, FALSE);
         return 1;
     }
 
     /* what to write */
-    Sprintf(qbuf, "你想要写哪种%s?", typeword);
+    Sprintf(qbuf, "What type of %s do you want to write?", typeword);
     getlin(qbuf, namebuf);
     (void) mungspaces(namebuf); /* remove any excess whitespace */
     if (namebuf[0] == '\033' || !namebuf[0])
         return 1;
     nm = namebuf;
-    if (!cnstrcmp(nm, "卷轴"))
-        nm += strlen("卷轴");
-    else if (!cnstrcmp(nm, "魔法书"))
-        nm += strlen("魔法书");
-    if (!cnstrcmp(nm, "之"))
-        nm += strlen("之");
+    if (!strncmpi(nm, "scroll ", 7))
+        nm += 7;
+    else if (!strncmpi(nm, "spellbook ", 10))
+        nm += 10;
+    if (!strncmpi(nm, "of ", 3))
+        nm += 3;
 
     if ((bp = strstri(nm, " armour")) != 0) {
         (void) strncpy(bp, " armor ", 7); /* won't add '\0' */
@@ -204,21 +204,21 @@ register struct obj *pen;
         goto found;
     }
 
-    There("没有这种%s!", typeword);
+    There("is no such %s!", typeword);
     return 1;
 found:
 
     if (i == SCR_BLANK_PAPER || i == SPE_BLANK_PAPER) {
-        You_cant("写那个!");
-        pline("这是不允许的!");
+        You_cant("write that!");
+        pline("It's obscene!");
         return 1;
     } else if (i == SPE_BOOK_OF_THE_DEAD) {
-        pline("没有单单一个冒险家就能写那个.");
+        pline("No mere dungeon adventurer could write that.");
         return 1;
     } else if (by_descr && paper->oclass == SPBOOK_CLASS
                && !objects[i].oc_name_known) {
         /* can't write unknown spellbooks by description */
-        pline("不幸的是你没有足够的知识来继续.");
+        pline("Unfortunately you don't have enough information to go on.");
         return 1;
     }
 
@@ -234,7 +234,7 @@ found:
     /* see if there's enough ink */
     basecost = cost(new_obj);
     if (pen->spe < basecost / 2) {
-        Your("魔笔太干了来写那个!");
+        Your("marker is too dry to write that!");
         obfree(new_obj, (struct obj *) 0);
         return 1;
     }
@@ -247,13 +247,13 @@ found:
     /* dry out marker */
     if (pen->spe < actualcost) {
         pen->spe = 0;
-        Your("魔笔干了!");
+        Your("marker dries out!");
         /* scrolls disappear, spellbooks don't */
         if (paper->oclass == SPBOOK_CLASS) {
-            pline_The("魔法书未完成且你写的消退了.");
+            pline_The("spellbook is left unfinished and your writing fades.");
             update_inventory(); /* pen charges */
         } else {
-            pline_The("卷轴现在没用了并消失了!");
+            pline_The("scroll is now useless and disappears!");
             useup(paper);
         }
         obfree(new_obj, (struct obj *) 0);
@@ -290,19 +290,19 @@ found:
         && !(by_descr && label_known(new_obj->otyp, invent))
         /* and Luck might override after both checks have failed */
         && rnl(Role_if(PM_WIZARD) ? 5 : 15)) {
-        You("%s去写那个.", by_descr ? "失败了" : "不知道如何");
+        You("%s to write that.", by_descr ? "fail" : "don't know how");
         /* scrolls disappear, spellbooks don't */
         if (paper->oclass == SPBOOK_CLASS) {
             You(
-      "写上你最好的字:  \" 我的日记\", 但它很快消退了.");
+      "write in your best handwriting:  \"My Diary\", but it quickly fades.");
             update_inventory(); /* pen charges */
         } else {
             if (by_descr) {
                 Strcpy(namebuf, OBJ_DESCR(objects[new_obj->otyp]));
                 wipeout_text(namebuf, (6 + MAXULEV - u.ulevel) / 6, 0);
             } else
-                Sprintf(namebuf, "%s 到此一游!", plname);
-            You("写上 \" %s\"  然后卷轴消失了.", namebuf);
+                Sprintf(namebuf, "%s was here!", plname);
+            You("write \"%s\" and the scroll disappears.", namebuf);
             useup(paper);
         }
         obfree(new_obj, (struct obj *) 0);
@@ -316,7 +316,7 @@ found:
            have passed the write-an-unknown scroll test
            above we can still fail this one, so it's doubly
            hard to write an unknown scroll while blind */
-        You("无法正确地写卷轴然后它消失了.");
+        You("fail to write the scroll correctly and it disappears.");
         useup(paper);
         obfree(new_obj, (struct obj *) 0);
         return 1;
@@ -328,7 +328,7 @@ found:
     /* success */
     if (new_obj->oclass == SPBOOK_CLASS) {
         /* acknowledge the change in the object's description... */
-        pline_The("魔法书奇怪地扭曲, 然后变为%s.",
+        pline_The("spellbook warps strangely, then turns %s.",
                   new_book_description(new_obj->otyp, namebuf));
     }
     new_obj->blessed = (curseval > 0);
@@ -345,8 +345,8 @@ found:
        where the label associated with the type-name isn't known yet */
     new_obj->dknown = label_known(new_obj->otyp, invent) ? 1 : 0;
 
-    new_obj = hold_another_object(new_obj, "哎哟!  %s你的手!",
-                                  The(aobjnam(new_obj, "滑出")),
+    new_obj = hold_another_object(new_obj, "Oops!  %s out of your grasp!",
+                                  The(aobjnam(new_obj, "slip")),
                                   (const char *) 0);
     nhUse(new_obj); /* try to avoid complaint about dead assignment */
     return 1;
@@ -367,9 +367,9 @@ char *outbuf;
     /* subset of description strings from objects.c; if it grows
        much, we may need to add a new flag field to objects[] instead */
     static const char *const compositions[] = {
-        "羊皮纸",
-        "牛皮纸",
-        "布",
+        "parchment",
+        "vellum",
+        "cloth",
 #if 0
         "canvas", "hardcover", /* not used */
         "papyrus", /* not applicable--can't be produced via writing */
@@ -383,7 +383,7 @@ char *outbuf;
         if (!strcmpi(descr, *comp_p))
             break;
 
-    Sprintf(outbuf, "%s%s", *comp_p ? "" : "", descr);
+    Sprintf(outbuf, "%s%s", *comp_p ? "into " : "", descr);
     return outbuf;
 }
 

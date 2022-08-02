@@ -178,7 +178,7 @@ ldrname()
 {
     int i = urole.ldrnum;
 
-    Sprintf(nambuf, "%s%s", type_is_pname(&mons[i]) ? "" : " ",
+    Sprintf(nambuf, "%s%s", type_is_pname(&mons[i]) ? "" : "the ",
             mons[i].mname);
     return nambuf;
 }
@@ -255,7 +255,7 @@ neminame()
 {
     int i = urole.neminum;
 
-    Sprintf(nambuf, "%s%s", type_is_pname(&mons[i]) ? "" : " ",
+    Sprintf(nambuf, "%s%s", type_is_pname(&mons[i]) ? "" : "the ",
             mons[i].mname);
     return nambuf;
 }
@@ -347,10 +347,10 @@ char c;
         str = rank_of(MIN_QUEST_LEVEL, Role_switch, flags.female);
         break;
     case 's':
-        str = (flags.female) ? "姐妹" : "兄弟";
+        str = (flags.female) ? "sister" : "brother";
         break;
     case 'S':
-        str = (flags.female) ? "女儿" : "儿子";
+        str = (flags.female) ? "daughter" : "son";
         break;
     case 'l':
         str = ldrname();
@@ -395,16 +395,16 @@ char c;
         str = align_gname(A_LAWFUL);
         break;
     case 'C':
-        str = "混沌";
+        str = "chaotic";
         break;
     case 'N':
-        str = "中立";
+        str = "neutral";
         break;
     case 'L':
-        str = "秩序";
+        str = "lawful";
         break;
     case 'x':
-        str = Blind ? "感觉" : "看见";
+        str = Blind ? "sense" : "see";
         break;
     case 'Z':
         str = dungeons[0].dname;
@@ -441,11 +441,11 @@ char *in_line, *out_line;
                 switch (*(++c)) {
                 /* insert "a"/"an" prefix */
                 case 'A':
-                    Strcat(cc, cvt_buf);
+                    Strcat(cc, An(cvt_buf));
                     cc += strlen(cc);
                     continue; /* for */
                 case 'a':
-                    Strcat(cc, cvt_buf);
+                    Strcat(cc, an(cvt_buf));
                     cc += strlen(cc);
                     continue; /* for */
 

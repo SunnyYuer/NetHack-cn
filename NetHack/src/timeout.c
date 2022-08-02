@@ -1,4 +1,4 @@
-/* NetHack 3.6	timeout.c	$NHDT-Date: 1505214876 2017/09/12 11:14:36 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.75 $ */
+/* NetHack 3.6	timeout.c	$NHDT-Date: 1545182148 2018/12/19 01:15:48 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.89 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2018. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -11,6 +11,7 @@ STATIC_DCL void NDECL(vomiting_dialogue);
 STATIC_DCL void NDECL(choke_dialogue);
 STATIC_DCL void NDECL(levitation_dialogue);
 STATIC_DCL void NDECL(slime_dialogue);
+STATIC_DCL void FDECL(slimed_to_death, (struct kinfo *));
 STATIC_DCL void NDECL(slip_or_trip);
 STATIC_DCL void FDECL(see_lamp_flicker, (struct obj *, const char *));
 STATIC_DCL void FDECL(lantern_message, (struct obj *));
@@ -45,7 +46,7 @@ const struct propname {
     { SEE_INVIS, "see invisible" },
     { INVIS, "invisible" },
     /* properties beyond here don't have timed values during normal play,
-       so there's no much point in trying to order them sensibly;
+       so there's not much point in trying to order them sensibly;
        they're either on or off based on equipment, role, actions, &c */
     { FIRE_RES, "fire resistance" },
     { COLD_RES, "cold resistance" },
@@ -97,11 +98,11 @@ const struct propname {
 
 /* He is being petrified - dialogue by inmet!tower */
 static NEARDATA const char *const stoned_texts[] = {
-    "你正在减速.",            /* 5 */
-    "你的四肢正在僵硬.",       /* 4 */
-    "你的四肢变成了石头.", /* 3 */
-    "你已经变成了石头.",        /* 2 */
-    "你成了一座雕像."                 /* 1 */
+    "You are slowing down.",            /* 5 */
+    "Your limbs are stiffening.",       /* 4 */
+    "Your limbs have turned to stone.", /* 3 */
+    "You have turned to stone.",        /* 2 */
+    "You are a statue."                 /* 1 */
 };
 
 STATIC_OVL void
@@ -113,8 +114,8 @@ stoned_dialogue()
         char buf[BUFSZ];
 
         Strcpy(buf, stoned_texts[SIZE(stoned_texts) - i]);
-        if (nolimbs(youmonst.data) && strstri(buf, "四肢"))
-            (void) strsubst(buf, "四肢", "末端");
+        if (nolimbs(youmonst.data) && strstri(buf, "limbs"))
+            (void) strsubst(buf, "limbs", "extremities");
         pline1(buf);
     }
     switch ((int) i) {
@@ -134,12 +135,21 @@ stoned_dialogue()
     case 3: /* limbs turned to stone */
         stop_occupation();
         nomul(-3); /* can't move anymore */
-        multi_reason = "变成石头";
+        multi_reason = "getting stoned";
         nomovemsg = You_can_move_again; /* not unconscious */
+        /* "your limbs have turned to stone" so terminate wounded legs */
+        if (Wounded_legs && !u.usteed)
+            heal_legs(2);
         break;
-    case 2:
+    case 2: /* turned to stone */
         if ((HDeaf & TIMEOUT) > 0L && (HDeaf & TIMEOUT) < 5L)
             set_itimeout(&HDeaf, 5L); /* avoid Hear_again at tail end */
+        /* if also vomiting or turning into slime, stop those (no messages) */
+        if (Vomiting)
+            make_vomiting(0L, FALSE);
+        if (Slimed)
+            make_slimed(0L, (char *) 0);
+        break;
     default:
         break;
     }
@@ -148,11 +158,11 @@ stoned_dialogue()
 
 /* hero is getting sicker and sicker prior to vomiting */
 static NEARDATA const char *const vomiting_texts[] = {
-    "感觉轻微的恶心.", /* 14 */
-    "感觉轻微的混乱.",       /* 11 */
-    "似乎不能清晰思考.", /* 8 */
-    "感觉非常的恶心.",         /* 5 */
-    "要吐了."            /* 2 */
+    "are feeling mildly nauseated.", /* 14 */
+    "feel slightly confused.",       /* 11 */
+    "can't seem to think straight.", /* 8 */
+    "feel incredibly sick.",         /* 5 */
+    "are about to vomit."            /* 2 */
 };
 
 STATIC_OVL void
@@ -189,11 +199,11 @@ vomiting_dialogue()
     case 2:
         txt = vomiting_texts[4];
         if (cantvomit(youmonst.data))
-            txt = "不能控制地作呕.";
+            txt = "gag uncontrollably.";
         else if (Hallucination)
             /* "hurl" is short for "hurl chunks" which is slang for
                relatively violent vomiting... */
-            txt = "要猛投大块东西!";
+            txt = "are about to hurl!";
         break;
     case 0:
         stop_occupation();
@@ -208,7 +218,7 @@ vomiting_dialogue()
                [vomit() issues its own message for the cantvomit() case
                and for the FAINTING-or-worse case where stomach is empty] */
             if (u.uhs < FAINTING)
-                You("%s!", !Hallucination ? "吐了" : "猛投大块东西");
+                You("%s!", !Hallucination ? "vomit" : "hurl chunks");
         }
         vomit();
         break;
@@ -221,19 +231,19 @@ vomiting_dialogue()
 }
 
 static NEARDATA const char *const choke_texts[] = {
-    "你发现很难呼吸.",
-    "你直喘气.",
-    "你再不能呼吸.",
-    "你就快变成%s.",
-    "你窒息了."
+    "You find it hard to breathe.",
+    "You're gasping for air.",
+    "You can no longer breathe.",
+    "You're turning %s.",
+    "You suffocate."
 };
 
 static NEARDATA const char *const choke_texts2[] = {
-    "你的%s被束缚.",
-    "你的血液不能到达你的脑中.",
-    "在你%s上的压力增加了.",
-    "你渐渐失去意识.",
-    "你窒息了."
+    "Your %s is becoming constricted.",
+    "Your blood is having trouble reaching your brain.",
+    "The pressure on your %s increases.",
+    "Your consciousness is fading.",
+    "You suffocate."
 };
 
 STATIC_OVL void
@@ -257,8 +267,8 @@ choke_dialogue()
 }
 
 static NEARDATA const char *const levi_texts[] = {
-    "你飘浮得稍微低了一点.",
-    "你%s%s摇摇晃晃."
+    "You float slightly lower.",
+    "You wobble unsteadily %s the %s."
 };
 
 STATIC_OVL void
@@ -281,19 +291,19 @@ levitation_dialogue()
             boolean danger = (is_pool_or_lava(u.ux, u.uy)
                               && !Is_waterlevel(&u.uz));
 
-            pline(s, danger ? "在" : "在",
-                  danger ? surface(u.ux, u.uy) : "空中");
+            pline(s, danger ? "over" : "in",
+                  danger ? surface(u.ux, u.uy) : "air");
         } else
             pline1(s);
     }
 }
 
 static NEARDATA const char *const slime_texts[] = {
-    "你变得有些%s.",   /* 5 */
-    "你的四肢在泥化.",   /* 4 */
-    "你的皮肤开始脱落.", /* 3 */
-    "你正在变成%s.",       /* 2 */
-    "你变成了%s."             /* 1 */
+    "You are turning a little %s.",   /* 5 */
+    "Your limbs are getting oozy.",   /* 4 */
+    "Your skin begins to peel away.", /* 3 */
+    "You are turning into %s.",       /* 2 */
+    "You have become %s."             /* 1 */
 };
 
 STATIC_OVL void
@@ -301,12 +311,19 @@ slime_dialogue()
 {
     register long i = (Slimed & TIMEOUT) / 2L;
 
+    if (i == 1L) {
+        /* display as green slime during "You have become green slime."
+           but don't worry about not being able to see self; if already
+           mimicking something else at the time, implicitly be revealed */
+        youmonst.m_ap_type = M_AP_MONSTER;
+        youmonst.mappearance = PM_GREEN_SLIME;
+    }
     if (((Slimed & TIMEOUT) % 2L) && i >= 0L && i < SIZE(slime_texts)) {
         char buf[BUFSZ];
 
         Strcpy(buf, slime_texts[SIZE(slime_texts) - i - 1L]);
-        if (nolimbs(youmonst.data) && strstri(buf, "四肢"))
-            (void) strsubst(buf, "四肢", "末端");
+        if (nolimbs(youmonst.data) && strstri(buf, "limbs"))
+            (void) strsubst(buf, "limbs", "extremities");
 
         if (index(buf, '%')) {
             if (i == 4L) {  /* "you are turning green" */
@@ -314,19 +331,29 @@ slime_dialogue()
                     pline(buf, hcolor(NH_GREEN));
             } else
                 pline(buf,
-                      Hallucination ? rndmonnam(NULL) : "绿粘液");
+                      an(Hallucination ? rndmonnam(NULL) : "green slime"));
         } else
             pline1(buf);
     }
-    if (i == 3L) {  /* limbs becoming oozy */
+
+    switch (i) {
+    case 3L:  /* limbs becoming oozy */
         HFast = 0L; /* lose intrinsic speed */
         if (!Popeye(SLIMED))
             stop_occupation();
         if (multi > 0)
             nomul(0);
+        break;
+    case 2L: /* skin begins to peel */
+        if ((HDeaf & TIMEOUT) > 0L && (HDeaf & TIMEOUT) < 5L)
+            set_itimeout(&HDeaf, 5L); /* avoid Hear_again at tail end */
+        break;
+    case 1L: /* turning into slime */
+        /* if also turning to stone, stop doing that (no message) */
+        if (Stoned)
+            make_stoned(0L, (char *) 0, KILLED_BY_AN, (char *) 0);
+        break;
     }
-    if (i == 2L && (HDeaf & TIMEOUT) > 0L && (HDeaf & TIMEOUT) < 5L)
-        set_itimeout(&HDeaf, 5L); /* avoid Hear_again at tail end */
     exercise(A_DEX, FALSE);
 }
 
@@ -334,8 +361,64 @@ void
 burn_away_slime()
 {
     if (Slimed) {
-        make_slimed(0L, "覆盖在你身上的粘液逐渐消失!");
+        make_slimed(0L, "The slime that covers you is burned away!");
     }
+}
+
+/* countdown timer for turning into green slime has run out; kill our hero */
+STATIC_OVL void
+slimed_to_death(kptr)
+struct kinfo *kptr;
+{
+    uchar save_mvflags;
+
+    /* redundant: polymon() cures sliming when polying into green slime */
+    if (Upolyd && youmonst.data == &mons[PM_GREEN_SLIME]) {
+        dealloc_killer(kptr);
+        return;
+    }
+    /* more sure killer reason is set up */
+    if (kptr && kptr->name[0]) {
+        killer.format = kptr->format;
+        Strcpy(killer.name, kptr->name);
+    } else {
+        killer.format = NO_KILLER_PREFIX;
+        Strcpy(killer.name, "turned into green slime");
+    }
+    dealloc_killer(kptr);
+
+    /*
+     * Polymorph into a green slime, which might destroy some worn armor
+     * (potentially affecting bones) and dismount from steed.
+     * Can't be Unchanging; wouldn't have turned into slime if we were.
+     * Despite lack of Unchanging, neither done() nor savelife() calls
+     * rehumanize() if hero dies while polymorphed.
+     * polymon() undoes the slime countdown's mimick-green-slime hack
+     * but does not perform polyself()'s light source bookkeeping.
+     * No longer need to manually increment uconduct.polyselfs to reflect
+     * [formerly implicit] change of form; polymon() takes care of that.
+     * Temporarily ungenocide if necessary.
+     */
+    if (emits_light(youmonst.data))
+        del_light_source(LS_MONSTER, monst_to_any(&youmonst));
+    save_mvflags = mvitals[PM_GREEN_SLIME].mvflags;
+    mvitals[PM_GREEN_SLIME].mvflags = save_mvflags & ~G_GENOD;
+    (void) polymon(PM_GREEN_SLIME);
+    mvitals[PM_GREEN_SLIME].mvflags = save_mvflags;
+    done(TURNED_SLIME);
+
+    /* life-saved; even so, hero still has turned into green slime;
+       player may have genocided green slimes after being infected */
+    if ((mvitals[PM_GREEN_SLIME].mvflags & G_GENOD) != 0) {
+        killer.format = KILLED_BY;
+        Strcpy(killer.name, "slimicide");
+        /* immediately follows "OK, so you don't die." */
+        pline("Yes, you do.  Green slime has been genocided...");
+        done(GENOCIDED);
+        /* could be life-saved again (only in explore or wizard mode)
+           but green slimes are gone; just stay in current form */
+    }
+    return;
 }
 
 /* Intrinsic Passes_walls is temporary when your god is trying to fix
@@ -346,8 +429,8 @@ burn_away_slime()
    move between things which are closely packed--like the substance of
    solid rock! */
 static NEARDATA const char *const phaze_texts[] = {
-    "你开始觉得胀了.",
-    "你感觉肌肉更松垂了.",
+    "You start to feel bloated.",
+    "You are feeling rather flabby.",
 };
 
 STATIC_OVL void
@@ -367,6 +450,7 @@ nh_timeout()
 {
     register struct prop *upp;
     struct kinfo *kptr;
+    boolean was_flying;
     int sleeptime;
     int m_idx;
     int baseluck = (flags.moonphase == FULL_MOON) ? 1 : 0;
@@ -421,16 +505,17 @@ nh_timeout()
             u.uspellprot--;
             find_ac();
             if (!Blind)
-                Norep("在你周围的%s烟雾%s.", hcolor(NH_GOLDEN),
-                      u.uspellprot ? "变得没有那么浓厚了" : "消失了");
+                Norep("The %s haze around you %s.", hcolor(NH_GOLDEN),
+                      u.uspellprot ? "becomes less dense" : "disappears");
         }
     }
 
     if (u.ugallop) {
         if (--u.ugallop == 0L && u.usteed)
-            pline("%s停止了飞驰.", Monnam(u.usteed));
+            pline("%s stops galloping.", Monnam(u.usteed));
     }
 
+    was_flying = Flying;
     for (upp = u.uprops; upp < u.uprops + SIZE(u.uprops); upp++)
         if ((upp->intrinsic & TIMEOUT) && !(--upp->intrinsic & TIMEOUT)) {
             kptr = find_delayed_killer((int) (upp - u.uprops));
@@ -441,30 +526,20 @@ nh_timeout()
                     Strcpy(killer.name, kptr->name);
                 } else {
                     killer.format = NO_KILLER_PREFIX;
-                    Strcpy(killer.name, "被石化所杀");
+                    Strcpy(killer.name, "killed by petrification");
                 }
                 dealloc_killer(kptr);
                 /* (unlike sliming, you aren't changing form here) */
                 done(STONING);
                 break;
             case SLIMED:
-                if (kptr && kptr->name[0]) {
-                    killer.format = kptr->format;
-                    Strcpy(killer.name, kptr->name);
-                } else {
-                    killer.format = NO_KILLER_PREFIX;
-                    Strcpy(killer.name, "变成了绿色粘液");
-                }
-                dealloc_killer(kptr);
-                /* involuntarily break "never changed form" conduct */
-                u.uconduct.polyselfs++;
-                done(TURNED_SLIME);
+                slimed_to_death(kptr); /* done(TURNED_SLIME) */
                 break;
             case VOMITING:
                 make_vomiting(0L, TRUE);
                 break;
             case SICK:
-                You("死于你的疾病.");
+                You("die from your illness.");
                 if (kptr && kptr->name[0]) {
                     killer.format = kptr->format;
                     Strcpy(killer.name, kptr->name);
@@ -487,8 +562,8 @@ nh_timeout()
                 break;
             case FAST:
                 if (!Very_fast)
-                    You_feel("你%s慢下来了.",
-                             Fast ? "有点" : "");
+                    You_feel("yourself slowing down%s.",
+                             Fast ? " a bit" : "");
                 break;
             case CONFUSION:
                 /* So make_confused works properly */
@@ -520,8 +595,8 @@ nh_timeout()
                 newsym(u.ux, u.uy);
                 if (!Invis && !BInvis && !Blind) {
                     You(!See_invisible
-                            ? "不再是隐形的."
-                            : "不再能看见透明的自己.");
+                            ? "are no longer invisible."
+                            : "can no longer see through yourself.");
                     stop_occupation();
                 }
                 break;
@@ -532,7 +607,7 @@ nh_timeout()
                 stop_occupation();
                 break;
             case WOUNDED_LEGS:
-                heal_legs();
+                heal_legs(0);
                 stop_occupation();
                 break;
             case HALLUC:
@@ -545,7 +620,7 @@ nh_timeout()
                 if (unconscious() || Sleep_resistance) {
                     incr_itimeout(&HSleepy, rnd(100));
                 } else if (Sleepy) {
-                    You("陷入了沉睡.");
+                    You("fall asleep.");
                     sleeptime = rnd(20);
                     fall_asleep(-sleeptime, TRUE);
                     incr_itimeout(&HSleepy, sleeptime + rnd(100));
@@ -554,24 +629,43 @@ nh_timeout()
             case LEVITATION:
                 (void) float_down(I_SPECIAL | TIMEOUT, 0L);
                 break;
+            case FLYING:
+                /* timed Flying is via #wizintrinsic only */
+                if (was_flying && !Flying) {
+                    context.botl = 1;
+                    You("land.");
+                    spoteffects(TRUE);
+                }
+                break;
+            case WARN_OF_MON:
+                /* timed Warn_of_mon is via #wizintrinsic only */
+                if (!Warn_of_mon) {
+                    context.warntype.speciesidx = NON_PM;
+                    if (context.warntype.species) {
+                        You("are no longer warned about %s.",
+                            makeplural(context.warntype.species->mname));
+                        context.warntype.species = (struct permonst *) 0;
+                    }
+                }
+                break;
             case PASSES_WALLS:
                 if (!Passes_walls) {
                     if (stuck_in_wall())
-                        You_feel("再次被包围.");
+                        You_feel("hemmed in again.");
                     else
-                        pline("你再次回到了%s自己.",
-                              !Upolyd ? "正常的" : "与众不同的");
+                        pline("You're back to your %s self again.",
+                              !Upolyd ? "normal" : "unusual");
                 }
                 break;
             case STRANGLED:
                 killer.format = KILLED_BY;
                 Strcpy(killer.name,
-                       (u.uburied) ? "窒息" : "绞窄");
+                       (u.uburied) ? "suffocation" : "strangulation");
                 done(DIED);
                 /* must be declining to die in explore|wizard mode;
                    treat like being cured of strangulation by prayer */
                 if (uamul && uamul->otyp == AMULET_OF_STRANGULATION) {
-                    Your("护身符消失了!");
+                    Your("amulet vanishes!");
                     useup(uamul);
                 }
                 break;
@@ -581,14 +675,14 @@ nh_timeout()
                 if (u.umoved && !Levitation) {
                     slip_or_trip();
                     nomul(-2);
-                    multi_reason = "笨拙的";
+                    multi_reason = "fumbling";
                     nomovemsg = "";
                     /* The more you are carrying the more likely you
                      * are to make noise when you fumble.  Adjustments
                      * to this number must be thoroughly play tested.
                      */
                     if ((inv_weight() > -500)) {
-                        You("制造出很多噪音!");
+                        You("make a lot of noise!");
                         wake_nearby();
                     }
                 }
@@ -614,7 +708,7 @@ boolean wakeup_msg;
 {
     stop_occupation();
     nomul(how_long);
-    multi_reason = "沉睡";
+    multi_reason = "sleeping";
     /* generally don't notice sounds while sleeping */
     if (wakeup_msg && multi == how_long) {
         /* caller can follow with a direct call to Hear_again() if
@@ -625,7 +719,7 @@ boolean wakeup_msg;
     }
     /* early wakeup from combat won't be possible until next monster turn */
     u.usleep = monstermoves;
-    nomovemsg = wakeup_msg ? "你醒了." : You_can_move_again;
+    nomovemsg = wakeup_msg ? "You wake up." : You_can_move_again;
 }
 
 /* Attach an egg hatch timeout to the given egg.
@@ -754,7 +848,7 @@ long timeout;
         if (cansee_hatchspot) {
             /* [bug?  m_monnam() yields accurate monster type
                regardless of hallucination] */
-            Sprintf(monnambuf, "%s%s", siblings ? "一些" : "",
+            Sprintf(monnambuf, "%s%s", siblings ? "some " : "",
                     siblings ? makeplural(m_monnam(mon)) : an(m_monnam(mon)));
             /* we don't learn the egg type here because learning
                an egg type requires either seeing the egg hatch
@@ -767,15 +861,15 @@ long timeout;
         case OBJ_INVENT:
             knows_egg = TRUE; /* true even if you are blind */
             if (!cansee_hatchspot)
-                You_feel("%s从你的背包%s!", something,
-                         locomotion(mon->data, "掉落"));
+                You_feel("%s %s from your pack!", something,
+                         locomotion(mon->data, "drop"));
             else
-                You_see("%s %s出你的背包!", monnambuf,
-                        locomotion(mon->data, "掉落"));
+                You_see("%s %s out of your pack!", monnambuf,
+                        locomotion(mon->data, "drop"));
             if (yours) {
-                pline("%s哭声听起来像在叫 \" %s%s\"",
-                      siblings ? "它们的" : "它的",
-                      flags.female ? "妈咪" : "爸爸", egg->spe ? "." : "?");
+                pline("%s cries sound like \"%s%s\"",
+                      siblings ? "Their" : "Its",
+                      flags.female ? "mommy" : "daddy", egg->spe ? "." : "?");
             } else if (mon->data->mlet == S_DRAGON && !Deaf) {
                 verbalize("Gleep!"); /* Mything eggs :-) */
             }
@@ -784,7 +878,7 @@ long timeout;
         case OBJ_FLOOR:
             if (cansee_hatchspot) {
                 knows_egg = TRUE;
-                You_see("%s 孵化.", monnambuf);
+                You_see("%s hatch.", monnambuf);
                 redraw = TRUE; /* update egg's map location */
             }
             break;
@@ -795,16 +889,16 @@ long timeout;
                 mon2 = egg->ocarry;
                 if (canseemon(mon2)
                     && (!mon2->wormno || cansee(mon2->mx, mon2->my))) {
-                    Sprintf(carriedby, "%s背包",
+                    Sprintf(carriedby, "%s pack",
                             s_suffix(a_monnam(mon2)));
                     knows_egg = TRUE;
                 } else if (is_pool(mon->mx, mon->my)) {
-                    Strcpy(carriedby, "空水");
+                    Strcpy(carriedby, "empty water");
                 } else {
-                    Strcpy(carriedby, "稀薄的空气");
+                    Strcpy(carriedby, "thin air");
                 }
-                You_see("%s %s出%s!", monnambuf,
-                        locomotion(mon->data, "掉落"), carriedby);
+                You_see("%s %s out of %s!", monnambuf,
+                        locomotion(mon->data, "drop"), carriedby);
             }
             break;
 #if 0
@@ -889,67 +983,67 @@ slip_or_trip()
           anonymous "something" if there aren't any rocks.
         */
         what = (iflags.last_msg == PLNMSG_ONE_ITEM_HERE)
-                ? ((otmp->quan == 1L) ? "它"
-                      : Hallucination ? "它们" : "它们")
+                ? ((otmp->quan == 1L) ? "it"
+                      : Hallucination ? "they" : "them")
                 : (otmp->dknown || !Blind)
                       ? doname(otmp)
                       : ((otmp2 = sobj_at(ROCK, u.ux, u.uy)) == 0
                              ? something
-                             : (otmp2->quan == 1L ? "一个岩石" : "一些岩石"));
+                             : (otmp2->quan == 1L ? "a rock" : "some rocks"));
         if (Hallucination) {
             what = strcpy(buf, what);
             buf[0] = highc(buf[0]);
-            pline("天呐!  %s咬了你的%s!", what,
-                  body_part(FOOT));
+            pline("Egads!  %s bite%s your %s!", what,
+                  (!otmp || otmp->quan == 1L) ? "s" : "", body_part(FOOT));
         } else {
-            You("被%s绊倒.", what);
+            You("trip over %s.", what);
         }
         if (!uarmf && otmp->otyp == CORPSE
             && touch_petrifies(&mons[otmp->corpsenm]) && !Stone_resistance) {
-            Sprintf(killer.name, "被%s尸体绊倒",
-                    mons[otmp->corpsenm].mname);
+            Sprintf(killer.name, "tripping over %s corpse",
+                    an(mons[otmp->corpsenm].mname));
             instapetrify(killer.name);
         }
     } else if (rn2(3) && is_ice(u.ux, u.uy)) {
-        pline("%s %s在冰上.",
+        pline("%s %s%s on the ice.",
               u.usteed ? upstart(x_monnam(u.usteed,
                                           (has_mname(u.usteed)) ? ARTICLE_NONE
                                                                 : ARTICLE_THE,
                                           (char *) 0, SUPPRESS_SADDLE, FALSE))
-                       : "你",
-              rn2(2) ? "滑倒" : "滑动");
+                       : "You",
+              rn2(2) ? "slip" : "slide", on_foot ? "" : "s");
     } else {
         if (on_foot) {
             switch (rn2(4)) {
             case 1:
-                You("被你自己的%s绊倒.",
-                    Hallucination ? "肘部" : makeplural(body_part(FOOT)));
+                You("trip over your own %s.",
+                    Hallucination ? "elbow" : makeplural(body_part(FOOT)));
                 break;
             case 2:
-                You("滑动%s.",
-                    Hallucination ? "在香蕉皮上" : "几乎要跌倒");
+                You("slip %s.",
+                    Hallucination ? "on a banana peel" : "and nearly fall");
                 break;
             case 3:
-                You("挣扎.");
+                You("flounder.");
                 break;
             default:
-                You("蹒跚.");
+                You("stumble.");
                 break;
             }
         } else {
             switch (rn2(4)) {
             case 1:
-                Your("%s 滑出了箍筋.",
+                Your("%s slip out of the stirrups.",
                      makeplural(body_part(FOOT)));
                 break;
             case 2:
-                You("放开了缰绳.");
+                You("let go of the reins.");
                 break;
             case 3:
-                You("砰的一声撞上了鞍.");
+                You("bang into the saddle-horn.");
                 break;
             default:
-                You("在鞍的一侧滑动.");
+                You("slide to one side of the saddle.");
                 break;
             }
             dismount_steed(DISMOUNT_FELL);
@@ -966,10 +1060,10 @@ const char *tailer;
     switch (obj->where) {
     case OBJ_INVENT:
     case OBJ_MINVENT:
-        pline("%s 闪烁%s.", Yname2(obj), tailer);
+        pline("%s flickers%s.", Yname2(obj), tailer);
         break;
     case OBJ_FLOOR:
-        You_see("%s 闪烁%s.", xname(obj), tailer);
+        You_see("%s flicker%s.", an(xname(obj)), tailer);
         break;
     }
 }
@@ -982,15 +1076,15 @@ struct obj *obj;
     /* from adventure */
     switch (obj->where) {
     case OBJ_INVENT:
-        Your("灯笼变得暗淡.");
+        Your("lantern is getting dim.");
         if (Hallucination)
-            pline("电池目前还没有发明.");
+            pline("Batteries have not been invented yet.");
         break;
     case OBJ_FLOOR:
-        You_see("一个灯笼变得暗淡.");
+        You_see("a lantern getting dim.");
         break;
     case OBJ_MINVENT:
-        pline("%s灯笼变得暗淡.", s_suffix(Monnam(obj->ocarry)));
+        pline("%s lantern is getting dim.", s_suffix(Monnam(obj->ocarry)));
         break;
     }
 }
@@ -1059,10 +1153,10 @@ long timeout;
                 need_invupdate = TRUE;
                 /*FALLTHRU*/
             case OBJ_MINVENT:
-                pline("%s油药水已经烧完了.", whose);
+                pline("%spotion of oil has burnt away.", whose);
                 break;
             case OBJ_FLOOR:
-                You_see("一瓶燃烧的油药水烧完了.");
+                You_see("a burning potion of oil go out.");
                 need_newsym = TRUE;
                 break;
             }
@@ -1092,7 +1186,7 @@ long timeout;
                     lantern_message(obj);
                 else
                     see_lamp_flicker(obj,
-                                     obj->age == 50L ? "得厉害" : "");
+                                     obj->age == 50L ? " considerably" : "");
             }
             break;
 
@@ -1104,10 +1198,10 @@ long timeout;
                     switch (obj->where) {
                     case OBJ_INVENT:
                     case OBJ_MINVENT:
-                        pline("%s 似乎要熄灭了.", Yname2(obj));
+                        pline("%s seems about to go out.", Yname2(obj));
                         break;
                     case OBJ_FLOOR:
-                        You_see("%s 快要熄灭了.", xname(obj));
+                        You_see("%s about to go out.", an(xname(obj)));
                         break;
                     }
                 }
@@ -1123,15 +1217,15 @@ long timeout;
                     /*FALLTHRU*/
                 case OBJ_MINVENT:
                     if (obj->otyp == BRASS_LANTERN)
-                        pline("%s灯笼烧完了.", whose);
+                        pline("%slantern has run out of power.", whose);
                     else
-                        pline("%s 烧完了.", Yname2(obj));
+                        pline("%s has gone out.", Yname2(obj));
                     break;
                 case OBJ_FLOOR:
                     if (obj->otyp == BRASS_LANTERN)
-                        You_see("一个灯笼烧完了.");
+                        You_see("a lantern run out of power.");
                     else
-                        You_see("%s 烧完了.", an(xname(obj)));
+                        You_see("%s go out.", an(xname(obj)));
                     break;
                 }
             }
@@ -1161,15 +1255,15 @@ long timeout;
                 switch (obj->where) {
                 case OBJ_INVENT:
                 case OBJ_MINVENT:
-                    pline("%s%s蜡烛%s在变短.", whose,
-                          menorah ? "烛台的" : "",
-                          many ? "" : "");
+                    pline("%s%scandle%s getting short.", whose,
+                          menorah ? "candelabrum's " : "",
+                          many ? "s are" : " is");
                     break;
                 case OBJ_FLOOR:
-                    You_see("%s蜡烛%s在变短.",
-                            menorah ? "烛台的" : many ? "一些"
-                                                                : "一支",
-                            many ? "" : "");
+                    You_see("%scandle%s getting short.",
+                            menorah ? "a candelabrum's " : many ? "some "
+                                                                : "a ",
+                            many ? "s" : "");
                     break;
                 }
             break;
@@ -1179,15 +1273,15 @@ long timeout;
                 switch (obj->where) {
                 case OBJ_INVENT:
                 case OBJ_MINVENT:
-                    pline("%s%s蜡烛%s火焰%s闪烁%s暗淡!", whose,
-                          menorah ? "烛台的" : "", many ? "的" : "的",
-                          many ? "" : "", many ? "" : "");
+                    pline("%s%scandle%s flame%s flicker%s low!", whose,
+                          menorah ? "candelabrum's " : "", many ? "s'" : "'s",
+                          many ? "s" : "", many ? "" : "s");
                     break;
                 case OBJ_FLOOR:
-                    You_see("%s蜡烛%s火焰%s闪烁暗淡!",
-                            menorah ? "烛台的" : many ? "一些"
-                                                                : "一支",
-                            many ? "的" : "的", many ? "" : "");
+                    You_see("%scandle%s flame%s flicker low!",
+                            menorah ? "a candelabrum's " : many ? "some "
+                                                                : "a ",
+                            many ? "s'" : "'s", many ? "s" : "");
                     break;
                 }
             break;
@@ -1201,12 +1295,12 @@ long timeout;
                         need_invupdate = TRUE;
                         /*FALLTHRU*/
                     case OBJ_MINVENT:
-                        pline("%s烛台的火焰%s.", whose,
-                              many ? "熄灭了" : "熄灭了");
+                        pline("%scandelabrum's flame%s.", whose,
+                              many ? "s die" : " dies");
                         break;
                     case OBJ_FLOOR:
-                        You_see("烛台的火焰%s熄灭了.",
-                                many ? "" : "");
+                        You_see("a candelabrum's flame%s die.",
+                                many ? "s" : "");
                         break;
                     }
                 } else {
@@ -1216,25 +1310,25 @@ long timeout;
                            useupall() -> freeinv() handles it */
                         /*FALLTHRU*/
                     case OBJ_MINVENT:
-                        pline("%s%s用光了!", Yname2(obj),
-                              many ? "" : "");
+                        pline("%s %s consumed!", Yname2(obj),
+                              many ? "are" : "is");
                         break;
                     case OBJ_FLOOR:
                         /*
-                        You see some wax candles consumed!
-                        You see a wax candle consumed!
-                        */
-                        You_see("%s%s用光了!", many ? "一些" : "",
-                                many ? xname(obj) : xname(obj));
+                          You see some wax candles consumed!
+                          You see a wax candle consumed!
+                         */
+                        You_see("%s%s consumed!", many ? "some " : "",
+                                many ? xname(obj) : an(xname(obj)));
                         need_newsym = TRUE;
                         break;
                     }
 
                     /* post message */
                     pline(Hallucination
-                              ? (many ? "它们尖叫!" : "它尖叫!")
-                              : Blind ? "" : (many ? "它们的火焰熄灭了."
-                                                   : "它的火焰熄灭了."));
+                              ? (many ? "They shriek!" : "It shrieks!")
+                              : Blind ? "" : (many ? "Their flames die."
+                                                   : "Its flame dies."));
                 }
             }
             end_burn(obj, FALSE);
@@ -1329,6 +1423,8 @@ boolean already_lit;
 
     case POT_OIL:
         turns = obj->age;
+        if (obj->odiluted)
+            turns = (3L * turns + 2L) / 4L;
         radius = 1; /* very dim light */
         break;
 
@@ -1481,17 +1577,17 @@ do_storms()
     if (levl[u.ux][u.uy].typ == CLOUD) {
         /* Inside a cloud during a thunder storm is deafening. */
         /* Even if already deaf, we sense the thunder's vibrations. */
-        pline("嘣!!!  嘣!!  嘣!!");
+        pline("Kaboom!!!  Boom!!  Boom!!");
         incr_itimeout(&HDeaf, rn1(20, 30));
         context.botl = TRUE;
         if (!u.uinvulnerable) {
             stop_occupation();
             nomul(-3);
-            multi_reason = "隐藏于雷暴";
+            multi_reason = "hiding from thunderstorm";
             nomovemsg = 0;
         }
     } else
-        You_hear("隆隆声.");
+        You_hear("a rumbling noise.");
 }
 
 /* -------------------------------------------------------------------------
@@ -1720,7 +1816,7 @@ timer_sanity_check()
             struct obj *obj = curr->arg.a_obj;
 
             if (obj->timed == 0) {
-                pline("timer sanity: untimed obj %s, timer %ld",
+                impossible("timer sanity: untimed obj %s, timer %ld",
                       fmt_ptr((genericptr_t) obj), curr->tid);
             }
         }

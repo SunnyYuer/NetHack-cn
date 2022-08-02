@@ -1,4 +1,4 @@
-/* NetHack 3.6	polyself.c	$NHDT-Date: 1520797126 2018/03/11 19:38:46 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.117 $ */
+/* NetHack 3.6	polyself.c	$NHDT-Date: 1556497911 2019/04/29 00:31:51 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.132 $ */
 /*      Copyright (C) 1987, 1988, 1989 by Ken Arromdee */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -25,13 +25,12 @@ STATIC_DCL void FDECL(check_strangling, (BOOLEAN_P));
 STATIC_DCL void FDECL(polyman, (const char *, const char *));
 STATIC_DCL void NDECL(break_armor);
 STATIC_DCL void FDECL(drop_weapon, (int));
-STATIC_DCL void NDECL(uunstick);
 STATIC_DCL int FDECL(armor_to_dragon, (int));
 STATIC_DCL void NDECL(newman);
 STATIC_DCL void NDECL(polysense);
 
 STATIC_VAR const char no_longer_petrify_resistant[] =
-    "不再石化抵抗, 你";
+    "No longer petrify-resistant, you";
 
 /* controls whether taking on new form or becoming new man can also
    change sex (ought to be an arg to polymon() and newman() instead) */
@@ -42,9 +41,8 @@ void
 set_uasmon()
 {
     struct permonst *mdat = &mons[u.umonnum];
-    int new_speed, old_speed = youmonst.data ? youmonst.data->mmove : 0;
 
-    set_mon_data(&youmonst, mdat, 0);
+    set_mon_data(&youmonst, mdat);
 
 #define PROPSET(PropIndx, ON)                          \
     do {                                               \
@@ -81,12 +79,16 @@ set_uasmon()
     PROPSET(HALLUC_RES, dmgtype(mdat, AD_HALU));
     PROPSET(SEE_INVIS, perceives(mdat));
     PROPSET(TELEPAT, telepathic(mdat));
-    PROPSET(INFRAVISION, infravision(mdat));
+    /* note that Infravision uses mons[race] rather than usual mons[role] */
+    PROPSET(INFRAVISION, infravision(Upolyd ? mdat : &mons[urace.malenum]));
     PROPSET(INVIS, pm_invisible(mdat));
     PROPSET(TELEPORT, can_teleport(mdat));
     PROPSET(TELEPORT_CONTROL, control_teleport(mdat));
     PROPSET(LEVITATION, is_floater(mdat));
-    PROPSET(FLYING, is_flyer(mdat));
+    /* floating eye is the only 'floater'; it is also flagged as a 'flyer';
+       suppress flying for it so that enlightenment doesn't confusingly
+       show latent flight capability always blocked by levitation */
+    PROPSET(FLYING, (is_flyer(mdat) && !is_floater(mdat)));
     PROPSET(SWIMMING, is_swimmer(mdat));
     /* [don't touch MAGICAL_BREATHING here; both Amphibious and Breathless
        key off of it but include different monster forms...] */
@@ -98,17 +100,9 @@ set_uasmon()
     float_vs_flight(); /* maybe toggle (BFlying & I_SPECIAL) */
     polysense();
 
-    if (youmonst.movement) {
-        new_speed = mdat->mmove;
-        /* prorate unused movement if new form is slower so that
-           it doesn't get extra moves leftover from previous form;
-           if new form is faster, leave unused movement as is */
-        if (new_speed < old_speed)
-            youmonst.movement = new_speed * youmonst.movement / old_speed;
-    }
-
 #ifdef STATUS_HILITES
-    status_initialize(REASSESS_ONLY);
+    if (VIA_WINDOWPORT())
+        status_initialize(REASSESS_ONLY);
 #endif
 }
 
@@ -116,12 +110,21 @@ set_uasmon()
 void
 float_vs_flight()
 {
-    /* floating overrides flight; normally float_up() and float_down()
-       handle this, but sometimes they're skipped */
-    if (HLevitation || ELevitation)
+    boolean stuck_in_floor = (u.utrap && u.utraptype != TT_PIT);
+
+    /* floating overrides flight; so does being trapped in the floor */
+    if ((HLevitation || ELevitation)
+        || ((HFlying || EFlying) && stuck_in_floor))
         BFlying |= I_SPECIAL;
     else
         BFlying &= ~I_SPECIAL;
+    /* being trapped on the ground (bear trap, web, molten lava survived
+       with fire resistance, former lava solidified via cold, tethered
+       to a buried iron ball) overrides floating--the floor is reachable */
+    if ((HLevitation || ELevitation) && stuck_in_floor)
+        BLevitation |= I_SPECIAL;
+    else
+        BLevitation &= ~I_SPECIAL;
     context.botl = TRUE;
 }
 
@@ -138,8 +141,8 @@ boolean on;
             && can_be_strangled(&youmonst)) {
             Strangled = 6L;
             context.botl = TRUE;
-            Your("%s %s 你的%s!", simpleonames(uamul),
-                 Strangled ? "仍然束紧了" : "开始束紧",
+            Your("%s %s your %s!", simpleonames(uamul),
+                 Strangled ? "still constricts" : "begins constricting",
                  body_part(NECK)); /* "throat" */
             makeknown(AMULET_OF_STRANGULATION);
         }
@@ -149,7 +152,7 @@ boolean on;
         if (Strangled && !can_be_strangled(&youmonst)) {
             Strangled = 0L;
             context.botl = TRUE;
-            You("不再被窒息了.");
+            You("are no longer being strangled.");
         }
     }
 }
@@ -160,7 +163,7 @@ polyman(fmt, arg)
 const char *fmt, *arg;
 {
     boolean sticky = (sticks(youmonst.data) && u.ustuck && !u.uswallow),
-            was_mimicking = (youmonst.m_ap_type == M_AP_OBJECT);
+            was_mimicking = (U_AP_TYPE == M_AP_OBJECT);
     boolean was_blind = !!Blind;
 
     if (Upolyd) {
@@ -198,7 +201,7 @@ const char *fmt, *arg;
             Strcpy(killer.name, kptr->name);
         } else {
             killer.format = KILLED_BY;
-            Strcpy(killer.name, "自我灭绝");
+            Strcpy(killer.name, "self-genocide");
         }
         dealloc_killer(kptr);
         done(GENOCIDED);
@@ -207,8 +210,8 @@ const char *fmt, *arg;
     if (u.twoweap && !could_twoweap(youmonst.data))
         untwoweapon();
 
-    if (u.utraptype == TT_PIT && u.utrap) {
-        u.utrap = rn1(6, 2); /* time to escape resets */
+    if (u.utrap && u.utraptype == TT_PIT) {
+        set_utrap(rn1(6, 2), TT_PIT); /* time to escape resets */
     }
     if (was_blind && !Blind) { /* reverting from eyeless */
         Blinded = 1L;
@@ -350,16 +353,16 @@ newman()
         } else {
         dead: /* we come directly here if their experience level went to 0 or
                  less */
-            Your("新外貌似乎不够健康来生存.");
+            Your("new form doesn't seem healthy enough to survive.");
             killer.format = KILLED_BY_AN;
-            Strcpy(killer.name, "不成功的变形");
+            Strcpy(killer.name, "unsuccessful polymorph");
             done(DIED);
             newuhs(FALSE);
             return; /* lifesaved */
         }
     }
     newuhs(FALSE);
-    polyman("感觉像一个新的 %s!",
+    polyman("feel like a new %s!",
             /* use saved gender we're about to revert to, not current */
             ((Upolyd ? u.mfemale : flags.female) && urace.individual.f)
                 ? urace.individual.f
@@ -367,7 +370,7 @@ newman()
                    ? urace.individual.m
                    : urace.noun);
     if (Slimed) {
-        Your("身体改变了, 但你身上仍然有粘液.");
+        Your("body transforms, but there is still slime on you.");
         make_slimed(10L, (const char *) 0);
     }
 
@@ -392,7 +395,7 @@ int psflags;
             controllable_poly = Polymorph_control && !(Stunned || Unaware);
 
     if (Unchanging) {
-        pline("你变换失败!");
+        pline("You fail to transform!");
         return;
     }
     /* being Stunned|Unaware doesn't negate this aspect of Poly_control */
@@ -400,7 +403,7 @@ int psflags;
         && !isvamp) {
         if (rn2(20) > ACURR(A_CON)) {
             You1(shudder_for_moment);
-            losehp(rnd(30), "系统冲击", KILLED_BY_AN);
+            losehp(rnd(30), "system shock", KILLED_BY_AN);
             exercise(A_CON, FALSE);
             return;
         }
@@ -415,7 +418,7 @@ int psflags;
         tryct = 5;
         do {
             mntmp = NON_PM;
-            getlin("变成哪种怪? [ 输入怪的名字]", buf);
+            getlin("Become what kind of monster? [type the name]", buf);
             (void) mungspaces(buf);
             if (*buf == '\033') {
                 /* user is cancelling controlled poly */
@@ -425,7 +428,7 @@ int psflags;
                 }
                 Strcpy(buf, "*"); /* resort to random */
             }
-            if (!strcmp(buf, "*") || !strcmp(buf, "随机")) {
+            if (!strcmp(buf, "*") || !strcmp(buf, "random")) {
                 /* explicitly requesting random result */
                 tryct = 0; /* will skip thats_enough_tries */
                 continue;  /* end do-while(--tryct > 0) loop */
@@ -440,9 +443,9 @@ int psflags;
             }
             if (mntmp < LOW_PM) {
                 if (!class)
-                    pline("游戏中没有这种怪.");
+                    pline("I've never heard of such monsters.");
                 else
-                    You_cant("变形为这些中的任何一个.");
+                    You_cant("polymorph into any of those.");
             } else if (iswere && (were_beastie(mntmp) == u.ulycn
                                   || mntmp == counter_were(u.ulycn)
                                   || (Upolyd && mntmp == PM_HUMAN))) {
@@ -471,7 +474,7 @@ int psflags;
                     pm_name = the(pm_name);
                 else if (!type_is_pname(&mons[mntmp]))
                     pm_name = an(pm_name);
-                You_cant("变形为 %s.", pm_name);
+                You_cant("polymorph into %s.", pm_name);
             } else
                 break;
         } while (--tryct > 0);
@@ -492,7 +495,7 @@ int psflags;
                 /* allow G_EXTINCT */
                 if (Is_dragon_scales(uarm)) {
                     /* dragon scales remain intact as uskin */
-                    You("和你的鳞甲融合了.");
+                    You("merge with your scaly armor.");
                 } else { /* dragon scale mail */
                     /* d.scale mail first reverts to scales */
                     char *p, *dsmail;
@@ -500,12 +503,12 @@ int psflags;
                     /* similar to noarmor(invent.c),
                        shorten to "<color> scale mail" */
                     dsmail = strcpy(buf, simpleonames(uarm));
-                    if ((p = strstri(dsmail, "龙")) != 0)
-                        while ((p[0] = p[3]) != '\0')
+                    if ((p = strstri(dsmail, " dragon ")) != 0)
+                        while ((p[1] = p[8]) != '\0')
                             ++p;
                     /* tricky phrasing; dragon scale mail
                        is singular, dragon scales are plural */
-                    Your("%s 恢复为鳞在你和它们融合的时候.",
+                    Your("%s reverts to scales as you merge with them.",
                          dsmail);
                     /* uarm->spe enchantment remains unchanged;
                        re-converting scales to mail poses risk
@@ -533,7 +536,7 @@ int psflags;
                             ? PM_WOLF
                             : !rn2(4) ? PM_FOG_CLOUD : PM_VAMPIRE_BAT;
             if (controllable_poly) {
-                Sprintf(buf, "变为 %s?", mons[mntmp].mname);
+                Sprintf(buf, "Become %s?", an(mons[mntmp].mname));
                 if (yn(buf) != 'y')
                     return;
             }
@@ -595,7 +598,7 @@ int mntmp;
     int mlvl;
 
     if (mvitals[mntmp].mvflags & G_GENOD) { /* allow G_EXTINCT */
-        You_feel("相当地 %s化.", mons[mntmp].mname);
+        You_feel("rather %s-ish.", mons[mntmp].mname);
         exercise(A_WIS, TRUE);
         return 0;
     }
@@ -623,7 +626,7 @@ int mntmp;
     }
 
     /* if stuck mimicking gold, stop immediately */
-    if (multi < 0 && youmonst.m_ap_type == M_AP_OBJECT
+    if (multi < 0 && U_AP_TYPE == M_AP_OBJECT
         && youmonst.data->mlet != S_MIMIC)
         unmul("");
     /* if becoming a non-mimic, stop mimicking anything */
@@ -642,19 +645,19 @@ int mntmp;
             dochange = TRUE;
     }
 
-    Strcpy(buf, (u.umonnum != mntmp) ? "" : "新的");
+    Strcpy(buf, (u.umonnum != mntmp) ? "" : "new ");
     if (dochange) {
         flags.female = !flags.female;
         Strcat(buf, (is_male(&mons[mntmp]) || is_female(&mons[mntmp]))
-                       ? "" : flags.female ? "女性" : "男性");
+                       ? "" : flags.female ? "female " : "male ");
     }
     Strcat(buf, mons[mntmp].mname);
-    You("%s%s!", (u.umonnum != mntmp) ? "变成了一个" : "感觉像一个", buf);
+    You("%s %s!", (u.umonnum != mntmp) ? "turn into" : "feel like", an(buf));
 
     if (Stoned && poly_when_stoned(&mons[mntmp])) {
         /* poly_when_stoned already checked stone golem genocide */
         mntmp = PM_STONE_GOLEM;
-        make_stoned(0L, "你变成了石头!", 0, (char *) 0);
+        make_stoned(0L, "You turn to stone!", 0, (char *) 0);
     }
 
     u.mtimedone = rn1(500, 500);
@@ -668,16 +671,16 @@ int mntmp;
         ABASE(A_STR) = AMAX(A_STR) = STR18(100);
 
     if (Stone_resistance && Stoned) { /* parnes@eniac.seas.upenn.edu */
-        make_stoned(0L, "你似乎不再石化.", 0,
+        make_stoned(0L, "You no longer seem to be petrifying.", 0,
                     (char *) 0);
     }
     if (Sick_resistance && Sick) {
         make_sick(0L, (char *) 0, FALSE, SICK_ALL);
-        You("不再感到生病.");
+        You("no longer feel sick.");
     }
     if (Slimed) {
         if (flaming(youmonst.data)) {
-            make_slimed(0L, "粘液烧掉了!");
+            make_slimed(0L, "The slime burns away!");
         } else if (mntmp == PM_GREEN_SLIME) {
             /* do it silently */
             make_slimed(0L, (char *) 0);
@@ -725,8 +728,8 @@ int mntmp;
     drop_weapon(1);
     (void) hideunder(&youmonst);
 
-    if (u.utraptype == TT_PIT && u.utrap) {
-        u.utrap = rn1(6, 2); /* time to escape resets */
+    if (u.utrap && u.utraptype == TT_PIT) {
+        set_utrap(rn1(6, 2), TT_PIT); /* time to escape resets */
     }
     if (was_blind && !Blind) { /* previous form was eyeless */
         Blinded = 1L;
@@ -734,15 +737,19 @@ int mntmp;
     }
     newsym(u.ux, u.uy); /* Change symbol */
 
+    /* [note:  this 'sticky' handling is only sufficient for changing from
+       grabber to engulfer or vice versa because engulfing by poly'd hero
+       always ends immediately so won't be in effect during a polymorph] */
     if (!sticky && !u.uswallow && u.ustuck && sticks(youmonst.data))
         u.ustuck = 0;
     else if (sticky && !sticks(youmonst.data))
         uunstick();
+
     if (u.usteed) {
         if (touch_petrifies(u.usteed->data) && !Stone_resistance && rnl(3)) {
-            pline("%s碰到%s.", no_longer_petrify_resistant,
+            pline("%s touch %s.", no_longer_petrify_resistant,
                   mon_nam(u.usteed));
-            Sprintf(buf, "骑着%s", u.usteed->data->mname);
+            Sprintf(buf, "riding %s", an(u.usteed->data->mname));
             instapetrify(buf);
         }
         if (!can_ride(u.usteed))
@@ -750,36 +757,40 @@ int mntmp;
     }
 
     if (flags.verbose) {
-        static const char use_thec[] = "使用命令 # %s  来 %s.";
-        static const char monsterc[] = "怪物能力";
+        static const char use_thec[] = "Use the command #%s to %s.";
+        static const char monsterc[] = "monster";
 
         if (can_breathe(youmonst.data))
-            pline(use_thec, monsterc, "使用你的呼吸武器");
+            pline(use_thec, monsterc, "use your breath weapon");
         if (attacktype(youmonst.data, AT_SPIT))
-            pline(use_thec, monsterc, "喷出毒液");
+            pline(use_thec, monsterc, "spit venom");
         if (youmonst.data->mlet == S_NYMPH)
-            pline(use_thec, monsterc, "移除铁球");
+            pline(use_thec, monsterc, "remove an iron ball");
         if (attacktype(youmonst.data, AT_GAZE))
-            pline(use_thec, monsterc, "凝视怪物");
+            pline(use_thec, monsterc, "gaze at monsters");
         if (is_hider(youmonst.data))
-            pline(use_thec, monsterc, "隐藏");
+            pline(use_thec, monsterc, "hide");
         if (is_were(youmonst.data))
-            pline(use_thec, monsterc, "召唤帮助");
+            pline(use_thec, monsterc, "summon help");
         if (webmaker(youmonst.data))
-            pline(use_thec, monsterc, "织网");
+            pline(use_thec, monsterc, "spin a web");
         if (u.umonnum == PM_GREMLIN)
-            pline(use_thec, monsterc, "在喷泉中繁殖");
+            pline(use_thec, monsterc, "multiply in a fountain");
         if (is_unicorn(youmonst.data))
-            pline(use_thec, monsterc, "使用你的角");
+            pline(use_thec, monsterc, "use your horn");
         if (is_mind_flayer(youmonst.data))
-            pline(use_thec, monsterc, "发出精神冲击");
+            pline(use_thec, monsterc, "emit a mental blast");
         if (youmonst.data->msound == MS_SHRIEK) /* worthless, actually */
-            pline(use_thec, monsterc, "尖叫");
+            pline(use_thec, monsterc, "shriek");
         if (is_vampire(youmonst.data))
-            pline(use_thec, monsterc, "改变形状");
+            pline(use_thec, monsterc, "change shape");
 
-        if (lays_eggs(youmonst.data) && flags.female)
-            pline(use_thec, "坐", "下一个蛋");
+        if (lays_eggs(youmonst.data) && flags.female &&
+            !(youmonst.data == &mons[PM_GIANT_EEL]
+                || youmonst.data == &mons[PM_ELECTRIC_EEL]))
+            pline(use_thec, "sit",
+                  eggs_in_water(youmonst.data) ?
+                      "spawn in the water" : "lay an egg");
     }
 
     /* you now know what an egg of your type looks like */
@@ -794,25 +805,25 @@ int mntmp;
         spoteffects(TRUE);
     if (Passes_walls && u.utrap
         && (u.utraptype == TT_INFLOOR || u.utraptype == TT_BURIEDBALL)) {
-        u.utrap = 0;
-        if (u.utraptype == TT_INFLOOR)
-            pline_The("岩石似乎不再困住你.");
-        else {
-            pline_The("掩埋的球不再束缚你.");
+        if (u.utraptype == TT_INFLOOR) {
+            pline_The("rock seems to no longer trap you.");
+        } else {
+            pline_The("buried ball is no longer bound to you.");
             buried_ball_to_freedom();
         }
+        reset_utrap(TRUE);
     } else if (likes_lava(youmonst.data) && u.utrap
                && u.utraptype == TT_LAVA) {
-        u.utrap = 0;
-        pline_The("现在感觉%s舒缓了.", hliquid("熔岩"));
+        pline_The("%s now feels soothing.", hliquid("lava"));
+        reset_utrap(TRUE);
     }
     if (amorphous(youmonst.data) || is_whirly(youmonst.data)
         || unsolid(youmonst.data)) {
         if (Punished) {
-            You("滑脱出了铁链.");
+            You("slip out of the iron chain.");
             unpunish();
         } else if (u.utrap && u.utraptype == TT_BURIEDBALL) {
-            You("滑脱出掩埋的球和链.");
+            You("slip free of the buried ball and chain.");
             buried_ball_to_freedom();
         }
     }
@@ -820,14 +831,14 @@ int mntmp;
         && (amorphous(youmonst.data) || is_whirly(youmonst.data)
             || unsolid(youmonst.data) || (youmonst.data->msize <= MZ_SMALL
                                           && u.utraptype == TT_BEARTRAP))) {
-        You("不再卡在 %s中.",
-            u.utraptype == TT_WEB ? "网" : "捕兽夹");
+        You("are no longer stuck in the %s.",
+            u.utraptype == TT_WEB ? "web" : "bear trap");
         /* probably should burn webs too if PM_FIRE_ELEMENTAL */
-        u.utrap = 0;
+        reset_utrap(TRUE);
     }
     if (webmaker(youmonst.data) && u.utrap && u.utraptype == TT_WEB) {
-        You("适应了在网中.");
-        u.utrap = 0;
+        You("orient yourself on the web.");
+        reset_utrap(TRUE);
     }
     check_strangling(TRUE); /* maybe start strangling */
 
@@ -854,47 +865,47 @@ break_armor()
         if ((otmp = uarm) != 0) {
             if (donning(otmp))
                 cancel_don();
-            You("冲破了你的盔甲!");
+            You("break out of your armor!");
             exercise(A_STR, FALSE);
             (void) Armor_gone();
             useup(otmp);
         }
         if ((otmp = uarmc) != 0) {
             if (otmp->oartifact) {
-                Your("%s 掉落了!", cloak_simple_name(otmp));
+                Your("%s falls off!", cloak_simple_name(otmp));
                 (void) Cloak_off();
                 dropx(otmp);
             } else {
-                Your("%s 分裂了!", cloak_simple_name(otmp));
+                Your("%s tears apart!", cloak_simple_name(otmp));
                 (void) Cloak_off();
                 useup(otmp);
             }
         }
         if (uarmu) {
-            Your("衬衫撕成了碎片!");
+            Your("shirt rips to shreds!");
             useup(uarmu);
         }
     } else if (sliparm(youmonst.data)) {
         if (((otmp = uarm) != 0) && (racial_exception(&youmonst, otmp) < 1)) {
             if (donning(otmp))
                 cancel_don();
-            Your("盔甲掉在你的旁边!");
+            Your("armor falls around you!");
             (void) Armor_gone();
             dropx(otmp);
         }
         if ((otmp = uarmc) != 0) {
             if (is_whirly(youmonst.data))
-                Your("%s 掉落, 无支撑的!", cloak_simple_name(otmp));
+                Your("%s falls, unsupported!", cloak_simple_name(otmp));
             else
-                You("缩小出你的 %s!", cloak_simple_name(otmp));
+                You("shrink out of your %s!", cloak_simple_name(otmp));
             (void) Cloak_off();
             dropx(otmp);
         }
         if ((otmp = uarmu) != 0) {
             if (is_whirly(youmonst.data))
-                You("渗出了你的衬衫!");
+                You("seep right through your shirt!");
             else
-                You("变得太小了对你的衬衫而言!");
+                You("become much too small for your shirt!");
             setworn((struct obj *) 0, otmp->owornmask & W_ARMU);
             dropx(otmp);
         }
@@ -905,13 +916,13 @@ break_armor()
                 char hornbuf[BUFSZ];
 
                 /* Future possibilities: This could damage/destroy helmet */
-                Sprintf(hornbuf, "角%s", plur(num_horns(youmonst.data)));
-                Your("%s%s过了%s.", hornbuf, vtense(hornbuf, "钻"),
+                Sprintf(hornbuf, "horn%s", plur(num_horns(youmonst.data)));
+                Your("%s %s through %s.", hornbuf, vtense(hornbuf, "pierce"),
                      yname(otmp));
             } else {
                 if (donning(otmp))
                     cancel_don();
-                Your("%s 掉落到 %s上!", helm_simple_name(otmp),
+                Your("%s falls to the %s!", helm_simple_name(otmp),
                      surface(u.ux, u.uy));
                 (void) Helmet_off();
                 dropx(otmp);
@@ -923,20 +934,20 @@ break_armor()
             if (donning(otmp))
                 cancel_don();
             /* Drop weapon along with gloves */
-            You("扔掉了你的手套%s!", uwep ? " 和武器" : "");
+            You("drop your gloves%s!", uwep ? " and weapon" : "");
             drop_weapon(0);
             (void) Gloves_off();
             dropx(otmp);
         }
         if ((otmp = uarms) != 0) {
-            You("不能够再拿着你的盾!");
+            You("can no longer hold your shield!");
             (void) Shield_off();
             dropx(otmp);
         }
         if ((otmp = uarmh) != 0) {
             if (donning(otmp))
                 cancel_don();
-            Your("%s 掉落到 %s上!", helm_simple_name(otmp),
+            Your("%s falls to the %s!", helm_simple_name(otmp),
                  surface(u.ux, u.uy));
             (void) Helmet_off();
             dropx(otmp);
@@ -948,10 +959,10 @@ break_armor()
             if (donning(otmp))
                 cancel_don();
             if (is_whirly(youmonst.data))
-                Your("鞋子掉落了!");
+                Your("boots fall away!");
             else
-                Your("鞋子%s 你的脚!",
-                     verysmall(youmonst.data) ? "滑出" : "离开了");
+                Your("boots %s off your feet!",
+                     verysmall(youmonst.data) ? "slide" : "are pushed");
             (void) Boots_off();
             dropx(otmp);
         }
@@ -975,19 +986,19 @@ int alone;
             candropwep = canletgo(uwep, "");
             candropswapwep = !u.twoweap || canletgo(uswapwep, "");
             if (alone) {
-                what = (candropwep && candropswapwep) ? "扔掉" : "释放";
-                which = is_sword(uwep) ? "剑" : weapon_descr(uwep);
+                what = (candropwep && candropswapwep) ? "drop" : "release";
+                which = is_sword(uwep) ? "sword" : weapon_descr(uwep);
                 if (u.twoweap) {
                     whichtoo =
-                        is_sword(uswapwep) ? "剑" : weapon_descr(uswapwep);
+                        is_sword(uswapwep) ? "sword" : weapon_descr(uswapwep);
                     if (strcmp(which, whichtoo))
-                        which = "武器";
+                        which = "weapon";
                 }
                 if (uwep->quan != 1L || u.twoweap)
                     which = makeplural(which);
 
-                You("发现你必须%s%s%s!", what,
-                    the_your[!!cnstrcmp(which, "尸体")], which);
+                You("find you must %s %s %s!", what,
+                    the_your[!!strncmp(which, "corpse", 6)], which);
             }
             /* if either uwep or wielded uswapwep is flagged as 'in_use'
                then don't drop it or explicitly update inventory; leave
@@ -1018,14 +1029,16 @@ int alone;
 void
 rehumanize()
 {
+    boolean was_flying = (Flying != 0);
+
     /* You can't revert back while unchanging */
     if (Unchanging) {
         if (u.mh < 1) {
             killer.format = NO_KILLER_PREFIX;
-            Strcpy(killer.name, "在被困在生物外貌中时被杀死了");
+            Strcpy(killer.name, "killed while stuck in creature form");
             done(DIED);
         } else if (uamul && uamul->otyp == AMULET_OF_UNCHANGING) {
-            Your("%s %s了!", simpleonames(uamul), otense(uamul, "失败"));
+            Your("%s %s!", simpleonames(uamul), otense(uamul, "fail"));
             uamul->dknown = 1;
             makeknown(AMULET_OF_UNCHANGING);
         }
@@ -1033,13 +1046,13 @@ rehumanize()
 
     if (emits_light(youmonst.data))
         del_light_source(LS_MONSTER, monst_to_any(&youmonst));
-    polyman("变回 %s 外貌!", urace.adj);
+    polyman("return to %s form!", urace.adj);
 
     if (u.uhp < 1) {
         /* can only happen if some bit of code reduces u.uhp
            instead of u.mh while poly'd */
-        Your("旧外貌不够健康来生存.");
-        Sprintf(killer.name, "恢复到不健康的%s外貌", urace.adj);
+        Your("old form was not healthy enough to survive.");
+        Sprintf(killer.name, "reverting to unhealthy %s form", urace.adj);
         killer.format = KILLED_BY;
         done(DIED);
     }
@@ -1048,7 +1061,9 @@ rehumanize()
     context.botl = 1;
     vision_full_recalc = 1;
     (void) encumber_msg();
-
+    if (was_flying && !Flying && u.usteed)
+        You("and %s return gently to the %s.",
+            mon_nam(u.usteed), surface(u.ux, u.uy));
     retouch_equipment(2);
     if (!uarmg)
         selftouch(no_longer_petrify_resistant);
@@ -1060,11 +1075,11 @@ dobreathe()
     struct attack *mattk;
 
     if (Strangled) {
-        You_cant("呼吸.  抱歉.");
+        You_cant("breathe.  Sorry.");
         return 0;
     }
     if (u.uen < 15) {
-        You("没有足够的能量来呼吸!");
+        You("don't have enough energy to breathe!");
         return 0;
     }
     u.uen -= 15;
@@ -1103,7 +1118,7 @@ dospit()
             break;
         default:
             impossible("bad attack type in dospit");
-        /* fall through */
+            /*FALLTHRU*/
         case AD_ACID:
             otmp = mksobj(ACID_VENOM, TRUE, FALSE);
             break;
@@ -1119,11 +1134,11 @@ doremove()
 {
     if (!Punished) {
         if (u.utrap && u.utraptype == TT_BURIEDBALL) {
-            pline_The("球和链被坚固地埋在%s里.",
+            pline_The("ball and chain are buried firmly in the %s.",
                       surface(u.ux, u.uy));
             return 0;
         }
-        You("没有被拴着任何东西!");
+        You("are not chained to anything!");
         return 0;
     }
     unpunish();
@@ -1137,11 +1152,11 @@ dospinweb()
 
     if (Levitation || Is_airlevel(&u.uz) || Underwater
         || Is_waterlevel(&u.uz)) {
-        You("必须在地面上织网.");
+        You("must be on the ground to spin a web.");
         return 0;
     }
     if (u.uswallow) {
-        You("释放出网液体在%s里面.", mon_nam(u.ustuck));
+        You("release web fluid inside %s.", mon_nam(u.ustuck));
         if (is_animal(u.ustuck->data)) {
             expels(u.ustuck, u.ustuck->data, TRUE);
             return 0;
@@ -1160,24 +1175,24 @@ dospinweb()
                 sweep[0] = '\0';
                 switch (u.ustuck->data->mattk[i].adtyp) {
                 case AD_FIRE:
-                    Strcpy(sweep, "燃烧并 ");
+                    Strcpy(sweep, "ignites and ");
                     break;
                 case AD_ELEC:
-                    Strcpy(sweep, "被电并 ");
+                    Strcpy(sweep, "fries and ");
                     break;
                 case AD_COLD:
-                    Strcpy(sweep, "冻结, 粉碎并 ");
+                    Strcpy(sweep, "freezes, shatters and ");
                     break;
                 }
-                pline_The("网 %s清除了!", sweep);
+                pline_The("web %sis swept away!", sweep);
             }
             return 0;
         } /* default: a nasty jelly-like creature */
-        pline_The("网溶解进 %s里.", mon_nam(u.ustuck));
+        pline_The("web dissolves into %s.", mon_nam(u.ustuck));
         return 0;
     }
     if (u.utrap) {
-        You("不能在陷入陷阱时来织网.");
+        You("cannot spin webs while stuck in a trap.");
         return 0;
     }
     exercise(A_DEX, TRUE);
@@ -1185,13 +1200,13 @@ dospinweb()
         switch (ttmp->ttyp) {
         case PIT:
         case SPIKED_PIT:
-            You("织了一张网, 盖住了坑.");
+            You("spin a web, covering up the pit.");
             deltrap(ttmp);
             bury_objs(u.ux, u.uy);
             newsym(u.ux, u.uy);
             return 1;
         case SQKY_BOARD:
-            pline_The("尖板被隔住了.");
+            pline_The("squeaky board is muffled.");
             deltrap(ttmp);
             newsym(u.ux, u.uy);
             return 1;
@@ -1199,20 +1214,20 @@ dospinweb()
         case LEVEL_TELEP:
         case MAGIC_PORTAL:
         case VIBRATING_SQUARE:
-            Your("网消失了!");
+            Your("webbing vanishes!");
             return 0;
         case WEB:
-            You("让网变得更厚.");
+            You("make the web thicker.");
             return 1;
         case HOLE:
         case TRAPDOOR:
-            You("把网织在 %s上.",
-                (ttmp->ttyp == TRAPDOOR) ? "陷阱门" : "洞");
+            You("web over the %s.",
+                (ttmp->ttyp == TRAPDOOR) ? "trap door" : "hole");
             deltrap(ttmp);
             newsym(u.ux, u.uy);
             return 1;
         case ROLLING_BOULDER_TRAP:
-            You("织了一张网, 干扰了触发器.");
+            You("spin a web, jamming the trigger.");
             deltrap(ttmp);
             newsym(u.ux, u.uy);
             return 1;
@@ -1227,7 +1242,7 @@ dospinweb()
         case MAGIC_TRAP:
         case ANTI_MAGIC:
         case POLY_TRAP:
-            You("触发了一个陷阱!");
+            You("have triggered a trap!");
             dotrap(ttmp, 0);
             return 1;
         default:
@@ -1236,8 +1251,8 @@ dospinweb()
         }
     } else if (On_stairs(u.ux, u.uy)) {
         /* cop out: don't let them hide the stairs */
-        Your("网未能妨碍去%s的路.",
-             (levl[u.ux][u.uy].typ == STAIRS) ? "楼梯" : "梯子");
+        Your("web fails to impede access to the %s.",
+             (levl[u.ux][u.uy].typ == STAIRS) ? "stairs" : "ladder");
         return 1;
     }
     ttmp = maketrap(u.ux, u.uy, WEB);
@@ -1253,16 +1268,16 @@ dosummon()
 {
     int placeholder;
     if (u.uen < 10) {
-        You("缺乏能量来发出求救的呼唤!");
+        You("lack the energy to send forth a call for help!");
         return 0;
     }
     u.uen -= 10;
     context.botl = 1;
 
-    You("呼唤你的同胞寻求帮助!");
+    You("call upon your brethren for help!");
     exercise(A_WIS, TRUE);
     if (!were_summon(youmonst.data, TRUE, &placeholder, (char *) 0))
-        pline("但是什么都没来.");
+        pline("But none arrive.");
     return 1;
 }
 
@@ -1287,14 +1302,14 @@ dogaze()
     }
 
     if (Blind) {
-        You_cant("看见任何东西来凝视.");
+        You_cant("see anything to gaze at.");
         return 0;
     } else if (Hallucination) {
-        You_cant("凝视任何你能看到的东西.");
+        You_cant("gaze at anything you can see.");
         return 0;
     }
     if (u.uen < 15) {
-        You("缺乏能量来使用你的特殊凝视!");
+        You("lack the energy to use your special gaze!");
         return 0;
     }
     u.uen -= 15;
@@ -1306,19 +1321,19 @@ dogaze()
         if (canseemon(mtmp) && couldsee(mtmp->mx, mtmp->my)) {
             looked++;
             if (Invis && !perceives(mtmp->data)) {
-                pline("%s 似乎没有注意到你的凝视.", Monnam(mtmp));
+                pline("%s seems not to notice your gaze.", Monnam(mtmp));
             } else if (mtmp->minvis && !See_invisible) {
-                You_cant("你看不到哪里去凝视 %s.", Monnam(mtmp));
-            } else if (mtmp->m_ap_type == M_AP_FURNITURE
-                       || mtmp->m_ap_type == M_AP_OBJECT) {
+                You_cant("see where to gaze at %s.", Monnam(mtmp));
+            } else if (M_AP_TYPE(mtmp) == M_AP_FURNITURE
+                       || M_AP_TYPE(mtmp) == M_AP_OBJECT) {
                 looked--;
                 continue;
             } else if (flags.safe_dog && mtmp->mtame && !Confusion) {
-                You("避免凝视 %s.", y_monnam(mtmp));
+                You("avoid gazing at %s.", y_monnam(mtmp));
             } else {
                 if (flags.confirm && mtmp->mpeaceful && !Confusion) {
-                    Sprintf(qbuf, "确定 %s %s?",
-                            (adtyp == AD_CONF) ? "混乱" : "攻击",
+                    Sprintf(qbuf, "Really %s %s?",
+                            (adtyp == AD_CONF) ? "confuse" : "attack",
                             mon_nam(mtmp));
                     if (yn(qbuf) != 'y')
                         continue;
@@ -1334,17 +1349,17 @@ dogaze()
                  */
                 if (adtyp == AD_CONF) {
                     if (!mtmp->mconf)
-                        Your("凝视混乱了 %s!", mon_nam(mtmp));
+                        Your("gaze confuses %s!", mon_nam(mtmp));
                     else
-                        pline("%s 越来越混乱了.",
+                        pline("%s is getting more and more confused.",
                               Monnam(mtmp));
                     mtmp->mconf = 1;
                 } else if (adtyp == AD_FIRE) {
                     int dmg = d(2, 6), lev = (int) u.ulevel;
 
-                    You("用一种炽热的凝视攻击 %s!", mon_nam(mtmp));
+                    You("attack %s with a fiery gaze!", mon_nam(mtmp));
                     if (resists_fire(mtmp)) {
-                        pline_The("火没有燃烧 %s!", mon_nam(mtmp));
+                        pline_The("fire doesn't burn %s!", mon_nam(mtmp));
                         dmg = 0;
                     }
                     if (lev > rn2(20))
@@ -1355,7 +1370,7 @@ dogaze()
                         (void) destroy_mitem(mtmp, SPBOOK_CLASS, AD_FIRE);
                     if (dmg)
                         mtmp->mhp -= dmg;
-                    if (mtmp->mhp <= 0)
+                    if (DEADMONSTER(mtmp))
                         killed(mtmp);
                 }
                 /* For consistency with passive() in uhitm.c, this only
@@ -1366,17 +1381,17 @@ dogaze()
 
                 if (mtmp->data == &mons[PM_FLOATING_EYE] && !mtmp->mcan) {
                     if (!Free_action) {
-                        You("被%s 凝视所冰冻!",
+                        You("are frozen by %s gaze!",
                             s_suffix(mon_nam(mtmp)));
                         nomul((u.ulevel > 6 || rn2(4))
                                   ? -d((int) mtmp->m_lev + 1,
                                        (int) mtmp->data->mattk[0].damd)
                                   : -200);
-                        multi_reason = "被怪物的凝视所冰冻";
+                        multi_reason = "frozen by a monster's gaze";
                         nomovemsg = 0;
                         return 1;
                     } else
-                        You("在 %s 凝视下立即变得僵硬.",
+                        You("stiffen momentarily under %s gaze.",
                             s_suffix(mon_nam(mtmp)));
                 }
                 /* Technically this one shouldn't affect you at all because
@@ -1385,19 +1400,19 @@ dogaze()
                  * effect would be too weird.
                  */
                 if (mtmp->data == &mons[PM_MEDUSA] && !mtmp->mcan) {
-                    pline("凝视醒着的 %s 不是一个非常好的主意.",
+                    pline("Gazing at the awake %s is not a very good idea.",
                           l_monnam(mtmp));
                     /* as if gazing at a sleeping anything is fruitful... */
-                    You("变成了石头...");
+                    You("turn to stone...");
                     killer.format = KILLED_BY;
-                    Strcpy(killer.name, "故意正视美杜莎的凝视");
+                    Strcpy(killer.name, "deliberately meeting Medusa's gaze");
                     done(STONING);
                 }
             }
         }
     }
     if (!looked)
-        You("尤其凝视不到任何地方.");
+        You("gaze at no place in particular.");
     return 1;
 }
 
@@ -1410,15 +1425,15 @@ dohide()
     /* can't hide while being held (or holding) or while trapped
        (except for floor hiders [trapper or mimic] in pits) */
     if (u.ustuck || (u.utrap && (u.utraptype != TT_PIT || on_ceiling))) {
-        You_cant("在你%s的时候隐藏.",
-                 !u.ustuck ? "受困"
-                   : u.uswallow ? (is_animal(u.ustuck->data) ? "被吞咽"
-                                                             : "被吞噬")
-                     : !sticks(youmonst.data) ? "被牵制"
-                       : (humanoid(u.ustuck->data) ? "牵制某人"
-                                                   : "牵制那个生物"));
+        You_cant("hide while you're %s.",
+                 !u.ustuck ? "trapped"
+                   : u.uswallow ? (is_animal(u.ustuck->data) ? "swallowed"
+                                                             : "engulfed")
+                     : !sticks(youmonst.data) ? "being held"
+                       : (humanoid(u.ustuck->data) ? "holding someone"
+                                                   : "holding that creature"));
         if (u.uundetected
-            || (ismimic && youmonst.m_ap_type != M_AP_NOTHING)) {
+            || (ismimic && U_AP_TYPE != M_AP_NOTHING)) {
             u.uundetected = 0;
             youmonst.m_ap_type = M_AP_NOTHING;
             newsym(u.ux, u.uy);
@@ -1429,26 +1444,26 @@ dohide()
        such critters aren't offered the option of hiding via #monster */
     if (youmonst.data->mlet == S_EEL && !is_pool(u.ux, u.uy)) {
         if (IS_FOUNTAIN(levl[u.ux][u.uy].typ))
-            The("喷泉不够深来藏入.");
+            The("fountain is not deep enough to hide in.");
         else
-            There("没有%s来藏入.", hliquid("水"));
+            There("is no %s to hide in here.", hliquid("water"));
         u.uundetected = 0;
         return 0;
     }
     if (hides_under(youmonst.data) && !level.objects[u.ux][u.uy]) {
-        There("没有东西来藏下.");
+        There("is nothing to hide under here.");
         u.uundetected = 0;
         return 0;
     }
     /* Planes of Air and Water */
     if (on_ceiling && !has_ceiling(&u.uz)) {
-        There("无处可藏在上面.");
+        There("is nowhere to hide above you.");
         u.uundetected = 0;
         return 0;
     }
     if ((is_hider(youmonst.data) && !Flying) /* floor hider */
         && (Is_airlevel(&u.uz) || Is_waterlevel(&u.uz))) {
-        There("无处可藏在下面.");
+        There("is nowhere to hide beneath you.");
         u.uundetected = 0;
         return 0;
     }
@@ -1456,7 +1471,7 @@ dohide()
      * else make youhiding() give smarter messages at such spots.
      */
 
-    if (u.uundetected || (ismimic && youmonst.m_ap_type != M_AP_NOTHING)) {
+    if (u.uundetected || (ismimic && U_AP_TYPE != M_AP_NOTHING)) {
         youhiding(FALSE, 1); /* "you are already hiding" */
         return 0;
     }
@@ -1480,7 +1495,7 @@ dopoly()
     if (is_vampire(youmonst.data)) {
         polyself(2);
         if (savedat != youmonst.data) {
-            You("转变成 %s.", youmonst.data->mname);
+            You("transform into %s.", an(youmonst.data->mname));
             newsym(u.ux, u.uy);
         }
     }
@@ -1493,14 +1508,14 @@ domindblast()
     struct monst *mtmp, *nmon;
 
     if (u.uen < 10) {
-        You("集中注意力但要保持这么做却缺乏能量.");
+        You("concentrate but lack the energy to maintain doing so.");
         return 0;
     }
     u.uen -= 10;
     context.botl = 1;
 
-    You("集中注意力.");
-    pline("一股精神能量涌了出来.");
+    You("concentrate.");
+    pline("A wave of psychic energy pours out.");
     for (mtmp = fmon; mtmp; mtmp = nmon) {
         int u_sen;
 
@@ -1513,21 +1528,25 @@ domindblast()
             continue;
         u_sen = telepathic(mtmp->data) && !mtmp->mcansee;
         if (u_sen || (telepathic(mtmp->data) && rn2(2)) || !rn2(10)) {
-            You("锁定%s %s.", s_suffix(mon_nam(mtmp)),
-                u_sen ? "感知力"
-                      : telepathic(mtmp->data) ? "潜在的感知力" : "精神");
+            You("lock in on %s %s.", s_suffix(mon_nam(mtmp)),
+                u_sen ? "telepathy"
+                      : telepathic(mtmp->data) ? "latent telepathy" : "mind");
             mtmp->mhp -= rnd(15);
-            if (mtmp->mhp <= 0)
+            if (DEADMONSTER(mtmp))
                 killed(mtmp);
         }
     }
     return 1;
 }
 
-STATIC_OVL void
+void
 uunstick()
 {
-    pline("%s不再被你抓住.", Monnam(u.ustuck));
+    if (!u.ustuck) {
+        impossible("uunstick: no ustuck?");
+        return;
+    }
+    pline("%s is no longer in your clutches.", Monnam(u.ustuck));
     u.ustuck = 0;
 }
 
@@ -1537,7 +1556,7 @@ boolean silently;
 {
     if (uskin) {
         if (!silently)
-            Your("皮肤变回原来的样子.");
+            Your("skin returns to its original form.");
         uarm = uskin;
         uskin = (struct obj *) 0;
         /* undo save/restore hack */
@@ -1551,74 +1570,74 @@ struct monst *mon;
 int part;
 {
     static NEARDATA const char
-        *humanoid_parts[] = { "胳膊",       "眼睛",  "脸",         "手指",
-                              "指尖", "脚", "手",         "手",
-                              "头",      "腿",  "头晕", "脖子",
-                              "脊椎",     "脚趾",  "头发",         "血液",
-                              "肺",      "鼻子", "胃" },
-        *jelly_parts[] = { "伪足", "黑点", "正面",
-                           "延长的伪足", "伪足末端",
-                           "伪足根", "控制", "控制",
-                           "脑区", "下伪足", "粘性",
-                           "中部", "表面", "伪足末端",
-                           "波纹", "汁液", "表面", "感官",
-                           "胃" },
-        *animal_parts[] = { "前肢",  "眼睛",           "脸",
-                            "前爪",  "爪尖",      "后爪",
-                            "前爪",  "爪",        "头",
-                            "后肢", "头晕",  "脖子",
-                            "脊椎",     "后爪尖", "毛",
-                            "血液",     "肺",          "鼻子",
-                            "胃" },
-        *bird_parts[] = { "翅膀",     "眼睛",  "脸",         "翅膀",
-                          "翼梢", "脚", "翅膀",         "翅膀",
-                          "头",     "腿",  "头晕", "脖子",
-                          "脊椎",    "脚趾",  "羽毛",     "血液",
-                          "肺",     "喙", "胃" },
-        *horse_parts[] = { "前腿",  "眼睛",           "脸",
-                           "前蹄", "蹄尖",      "后蹄",
-                           "前蹄", "蹄",        "头",
-                           "后腿", "头晕",  "脖子",
-                           "脊骨", "后蹄尖", "鬃毛",
-                           "血液",    "肺",          "鼻子",
-                           "胃" },
-        *sphere_parts[] = { "附肢", "视神经", "身体", "触手",
-                            "触手尖", "下附肢", "触手",
-                            "触手", "身体", "下触手",
-                            "旋转", "赤道面", "身体",
-                            "下触手尖", "纤毛", "生命力",
-                            "视网膜", "嗅神经", "内部" },
-        *fungus_parts[] = { "菌丝", "视觉中枢", "正面",
-                            "菌丝",    "菌丝",       "根",
-                            "纤维",   "纤维",    "盖区",
-                            "根茎",  "孢子",  "茎",
-                            "根",     "根茎尖", "孢子",
-                            "汁液",   "菌褶",        "菌褶",
-                            "内部" },
-        *vortex_parts[] = { "部位",        "眼睛",           "正面",
-                            "小流动", "小流动", "下流动",
-                            "漩涡",         "漩涡",       "中心核",
-                            "下流动", "混乱",        "中心",
-                            "流动",      "边缘",          "流动",
-                            "生命力",    "中心",        "前缘",
-                            "内部" },
-        *snake_parts[] = { "退化的脚", "眼睛", "脸", "大鳞片",
-                           "大鳞片尖", "尾部区域", "鳞间隙",
-                           "鳞间隙", "头", "尾部区域",
-                           "头晕", "脖子", "长体", "尾部鳞片",
-                           "鳞片", "血液", "肺", "分叉舌",
-                           "胃" },
-        *worm_parts[] = { "前体节", "感光细胞",
-                          "环带", "茸毛", "茸毛", "后体节",
-                          "体节", "体节", "前体节",
-                          "后端", "过度拉伸", "环带",
-                          "长体", "后茸毛", "茸毛", "血液",
-                          "皮肤", "口前叶", "胃" },
-        *fish_parts[] = { "鳍", "眼睛", "前颌骨", "骨盆腋",
-                          "腹鳍", "臀鳍", "胸鳍", "鳍",
-                          "头", "梗节", "衰竭", "鳃",
-                          "背鳍", "尾鳍", "鳞", "血液",
-                          "鳃", "鼻孔", "胃" };
+        *humanoid_parts[] = { "arm",       "eye",  "face",         "finger",
+                              "fingertip", "foot", "hand",         "handed",
+                              "head",      "leg",  "light headed", "neck",
+                              "spine",     "toe",  "hair",         "blood",
+                              "lung",      "nose", "stomach" },
+        *jelly_parts[] = { "pseudopod", "dark spot", "front",
+                           "pseudopod extension", "pseudopod extremity",
+                           "pseudopod root", "grasp", "grasped",
+                           "cerebral area", "lower pseudopod", "viscous",
+                           "middle", "surface", "pseudopod extremity",
+                           "ripples", "juices", "surface", "sensor",
+                           "stomach" },
+        *animal_parts[] = { "forelimb",  "eye",           "face",
+                            "foreclaw",  "claw tip",      "rear claw",
+                            "foreclaw",  "clawed",        "head",
+                            "rear limb", "light headed",  "neck",
+                            "spine",     "rear claw tip", "fur",
+                            "blood",     "lung",          "nose",
+                            "stomach" },
+        *bird_parts[] = { "wing",     "eye",  "face",         "wing",
+                          "wing tip", "foot", "wing",         "winged",
+                          "head",     "leg",  "light headed", "neck",
+                          "spine",    "toe",  "feathers",     "blood",
+                          "lung",     "bill", "stomach" },
+        *horse_parts[] = { "foreleg",  "eye",           "face",
+                           "forehoof", "hoof tip",      "rear hoof",
+                           "forehoof", "hooved",        "head",
+                           "rear leg", "light headed",  "neck",
+                           "backbone", "rear hoof tip", "mane",
+                           "blood",    "lung",          "nose",
+                           "stomach" },
+        *sphere_parts[] = { "appendage", "optic nerve", "body", "tentacle",
+                            "tentacle tip", "lower appendage", "tentacle",
+                            "tentacled", "body", "lower tentacle",
+                            "rotational", "equator", "body",
+                            "lower tentacle tip", "cilia", "life force",
+                            "retina", "olfactory nerve", "interior" },
+        *fungus_parts[] = { "mycelium", "visual area", "front",
+                            "hypha",    "hypha",       "root",
+                            "strand",   "stranded",    "cap area",
+                            "rhizome",  "sporulated",  "stalk",
+                            "root",     "rhizome tip", "spores",
+                            "juices",   "gill",        "gill",
+                            "interior" },
+        *vortex_parts[] = { "region",        "eye",           "front",
+                            "minor current", "minor current", "lower current",
+                            "swirl",         "swirled",       "central core",
+                            "lower current", "addled",        "center",
+                            "currents",      "edge",          "currents",
+                            "life force",    "center",        "leading edge",
+                            "interior" },
+        *snake_parts[] = { "vestigial limb", "eye", "face", "large scale",
+                           "large scale tip", "rear region", "scale gap",
+                           "scale gapped", "head", "rear region",
+                           "light headed", "neck", "length", "rear scale",
+                           "scales", "blood", "lung", "forked tongue",
+                           "stomach" },
+        *worm_parts[] = { "anterior segment", "light sensitive cell",
+                          "clitellum", "setae", "setae", "posterior segment",
+                          "segment", "segmented", "anterior segment",
+                          "posterior", "over stretched", "clitellum",
+                          "length", "posterior setae", "setae", "blood",
+                          "skin", "prostomium", "stomach" },
+        *fish_parts[] = { "fin", "eye", "premaxillary", "pelvic axillary",
+                          "pelvic fin", "anal fin", "pectoral fin", "finned",
+                          "head", "peduncle", "played out", "gills",
+                          "dorsal fin", "caudal fin", "scales", "blood",
+                          "gill", "nostril", "stomach" };
     /* claw attacks are overloaded in mons[]; most humanoids with
        such attacks should still reference hands rather than claws */
     static const char not_claws[] = {
@@ -1633,11 +1652,11 @@ int part;
         || mptr->mlet == S_RODENT || mptr == &mons[PM_OWLBEAR]) {
         switch (part) {
         case HAND:
-            return "爪子";
+            return "paw";
         case HANDED:
-            return "爪子";
+            return "pawed";
         case FOOT:
-            return "后爪";
+            return "rear paw";
         case ARM:
         case LEG:
             return horse_parts[part]; /* "foreleg", "rear leg" */
@@ -1652,18 +1671,18 @@ int part;
         && (humanoid(mptr) && attacktype(mptr, AT_CLAW)
             && !index(not_claws, mptr->mlet) && mptr != &mons[PM_STONE_GOLEM]
             && mptr != &mons[PM_INCUBUS] && mptr != &mons[PM_SUCCUBUS]))
-        return (part == HAND) ? "爪" : "爪";
+        return (part == HAND) ? "claw" : "clawed";
     if ((mptr == &mons[PM_MUMAK] || mptr == &mons[PM_MASTODON])
         && part == NOSE)
-        return "象鼻";
+        return "trunk";
     if (mptr == &mons[PM_SHARK] && part == HAIR)
-        return "皮肤"; /* sharks don't have scales */
+        return "skin"; /* sharks don't have scales */
     if ((mptr == &mons[PM_JELLYFISH] || mptr == &mons[PM_KRAKEN])
         && (part == ARM || part == FINGER || part == HAND || part == FOOT
             || part == TOE))
-        return "触手";
+        return "tentacle";
     if (mptr == &mons[PM_FLOATING_EYE] && part == EYE)
-        return "角膜";
+        return "cornea";
     if (humanoid(mptr) && (part == ARM || part == FINGER || part == FINGERTIP
                            || part == HAND || part == HANDED))
         return humanoid_parts[part];
@@ -1674,15 +1693,15 @@ int part;
         return horse_parts[part];
     if (mptr->mlet == S_LIGHT) {
         if (part == HANDED)
-            return "光线";
+            return "rayed";
         else if (part == ARM || part == FINGER || part == FINGERTIP
                  || part == HAND)
-            return "光线";
+            return "ray";
         else
-            return "光束";
+            return "beam";
     }
     if (mptr == &mons[PM_STALKER] && part == HEAD)
-        return "头";
+        return "head";
     if (mptr->mlet == S_EEL && mptr != &mons[PM_JELLYFISH])
         return fish_parts[part];
     if (mptr->mlet == S_WORM)
@@ -1748,7 +1767,7 @@ int damtype, dam;
         if (u.mh > u.mhmax)
             u.mh = u.mhmax;
         context.botl = 1;
-        pline("奇怪的是, 你觉得比以前好些了.");
+        pline("Strangely, you feel better than before.");
         exercise(A_STR, TRUE);
     }
 }
@@ -1844,10 +1863,10 @@ udeadinside()
        monkilled() distinguishes between living (killed) and non (destroyed)
        for monster death message; we refine the nonliving aspect a bit */
     return !nonliving(youmonst.data)
-             ? "已死"          /* living, including demons */
+             ? "dead"          /* living, including demons */
              : !weirdnonliving(youmonst.data)
-                 ? "被判了死刑" /* undead plus manes */
-                 : "空荡荡";    /* golems plus vortices */
+                 ? "condemned" /* undead plus manes */
+                 : "empty";    /* golems plus vortices */
 }
 
 /*polyself.c*/

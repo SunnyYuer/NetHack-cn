@@ -1,4 +1,4 @@
-/* NetHack 3.6	region.c	$NHDT-Date: 1496087244 2017/05/29 19:47:24 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.40 $ */
+/* NetHack 3.6	region.c	$NHDT-Date: 1543455828 2018/11/29 01:43:48 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.43 $ */
 /* Copyright (c) 1996 by Jean-Christophe Collet  */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -408,7 +408,7 @@ run_regions()
                 struct monst *mtmp =
                     find_mid(regions[i]->monsters[j], FM_FMON);
 
-                if (!mtmp || mtmp->mhp <= 0
+                if (!mtmp || DEADMONSTER(mtmp)
                     || (*callbacks[f_indx])(regions[i], mtmp)) {
                     /* The monster died, remove it from list */
                     k = (regions[i]->n_monst -= 1);
@@ -857,7 +857,7 @@ genericptr_t p2;
 
     if (p2 == (genericptr_t) 0) { /* That means the player */
         if (!Blind)
-            You("bump into %s. Ouch!",
+            You("bump into %s.  Ouch!",
                 Hallucination ? "an invisible tree"
                               : "some kind of invisible wall");
         else
@@ -947,23 +947,29 @@ genericptr_t p2;
     struct monst *mtmp;
     int dam;
 
+    /*
+     * Gas clouds can't be targetted at water locations, but they can
+     * start next to water and spread over it.
+     */
+
     reg = (NhRegion *) p1;
     dam = reg->arg.a_int;
     if (p2 == (genericptr_t) 0) { /* This means *YOU* Bozo! */
-        if (u.uinvulnerable || nonliving(youmonst.data) || Breathless)
+        if (u.uinvulnerable || nonliving(youmonst.data) || Breathless
+            || Underwater)
             return FALSE;
         if (!Blind) {
-            Your("%s 刺痛.", makeplural(body_part(EYE)));
+            Your("%s sting.", makeplural(body_part(EYE)));
             make_blinded(1L, FALSE);
         }
         if (!Poison_resistance) {
-            pline("%s 在烧你的 %s!", Something,
+            pline("%s is burning your %s!", Something,
                   makeplural(body_part(LUNG)));
-            You("咳嗽并咳出了血!");
-            losehp(Maybe_Half_Phys(rnd(dam) + 5), "气体云", KILLED_BY_AN);
+            You("cough and spit blood!");
+            losehp(Maybe_Half_Phys(rnd(dam) + 5), "gas cloud", KILLED_BY_AN);
             return FALSE;
         } else {
-            You("咳嗽!");
+            You("cough!");
             return FALSE;
         }
     } else { /* A monster is inside the cloud */
@@ -973,13 +979,18 @@ genericptr_t p2;
            adult green dragon is not affected by gas cloud, baby one is */
         if (!(nonliving(mtmp->data) || is_vampshifter(mtmp))
             && !breathless(mtmp->data)
+            /* not is_swimmer(); assume that non-fish are swimming on
+               the surface and breathing the air above it periodically
+               unless located at water spot on plane of water */
+            && !((mtmp->data->mlet == S_EEL || Is_waterlevel(&u.uz))
+                 && is_pool(mtmp->mx, mtmp->my))
             /* exclude monsters with poison gas breath attack:
                adult green dragon and Chromatic Dragon (and iron golem,
                but nonliving() and breathless() tests also catch that) */
             && !(attacktype_fordmg(mtmp->data, AT_BREA, AD_DRST)
                  || attacktype_fordmg(mtmp->data, AT_BREA, AD_RBRE))) {
             if (cansee(mtmp->mx, mtmp->my))
-                pline("%s 咳嗽!", Monnam(mtmp));
+                pline("%s coughs!", Monnam(mtmp));
             if (heros_fault(reg))
                 setmangry(mtmp, TRUE);
             if (haseyes(mtmp->data) && mtmp->mcansee) {
@@ -989,12 +1000,12 @@ genericptr_t p2;
             if (resists_poison(mtmp))
                 return FALSE;
             mtmp->mhp -= rnd(dam) + 5;
-            if (mtmp->mhp <= 0) {
+            if (DEADMONSTER(mtmp)) {
                 if (heros_fault(reg))
                     killed(mtmp);
                 else
-                    monkilled(mtmp, "气体云", AD_DRST);
-                if (mtmp->mhp <= 0) { /* not lifesaved */
+                    monkilled(mtmp, "gas cloud", AD_DRST);
+                if (DEADMONSTER(mtmp)) { /* not lifesaved */
                     return TRUE;
                 }
             }
@@ -1090,10 +1101,10 @@ region_safety()
         safe_teleds(FALSE);
     } else if (r) {
         remove_region(r);
-        pline_The("笼罩你的气体云消散了.");
+        pline_The("gas cloud enveloping you dissipates.");
     } else {
         /* cloud dissipated on its own, so nothing needs to be done */
-        pline_The("气体云消散了.");
+        pline_The("gas cloud has dissipated.");
     }
     /* maybe cure blindness too */
     if ((Blinded & TIMEOUT) == 1L)

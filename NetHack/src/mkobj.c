@@ -1,4 +1,4 @@
-/* NetHack 3.6	mkobj.c	$NHDT-Date: 1518053380 2018/02/08 01:29:40 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.130 $ */
+/* NetHack 3.6	mkobj.c	$NHDT-Date: 1548978605 2019/01/31 23:50:05 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.142 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Derek S. Ray, 2015. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -6,6 +6,7 @@
 #include "hack.h"
 
 STATIC_DCL void FDECL(mkbox_cnts, (struct obj *));
+STATIC_DCL unsigned FDECL(nextoid, (struct obj *, struct obj *));
 STATIC_DCL void FDECL(maybe_adjust_light, (struct obj *, int));
 STATIC_DCL void FDECL(obj_timer_checks, (struct obj *,
                                          XCHAR_P, XCHAR_P, int));
@@ -70,7 +71,7 @@ newoextra()
 {
     struct oextra *oextra;
 
-    oextra = (struct oextra *) alloc(sizeof(struct oextra));
+    oextra = (struct oextra *) alloc(sizeof (struct oextra));
     oextra->oname = 0;
     oextra->omonst = 0;
     oextra->omid = 0;
@@ -224,6 +225,23 @@ boolean init, artif;
     return otmp;
 }
 
+struct obj *
+mksobj_migr_to_species(otyp, mflags2, init, artif)
+int otyp;
+unsigned mflags2;
+boolean init, artif;
+{
+    struct obj *otmp;
+
+    otmp = mksobj(otyp, init, artif);
+    if (otmp) {
+        add_to_migration(otmp);
+        otmp->owornmask = (long) MIGR_TO_SPECIES;
+        otmp->corpsenm = mflags2;
+    }
+    return otmp;
+}
+
 /* mkobj(): select a type of item from a class, use mksobj() to create it */
 struct obj *
 mkobj(oclass, artif)
@@ -373,7 +391,7 @@ struct obj *obj2, *obj1;
         if (!OMONST(obj2))
             newomonst(obj2);
         (void) memcpy((genericptr_t) OMONST(obj2),
-                      (genericptr_t) OMONST(obj1), sizeof(struct monst));
+                      (genericptr_t) OMONST(obj1), sizeof (struct monst));
         OMONST(obj2)->mextra = (struct mextra *) 0;
         OMONST(obj2)->nmon = (struct monst *) 0;
 #if 0
@@ -388,13 +406,13 @@ struct obj *obj2, *obj1;
         if (!OMID(obj2))
             newomid(obj2);
         (void) memcpy((genericptr_t) OMID(obj2), (genericptr_t) OMID(obj1),
-                      sizeof(unsigned));
+                      sizeof (unsigned));
     }
     if (has_olong(obj1)) {
         if (!OLONG(obj2))
             newolong(obj2);
         (void) memcpy((genericptr_t) OLONG(obj2), (genericptr_t) OLONG(obj1),
-                      sizeof(long));
+                      sizeof (long));
     }
     if (has_omailcmd(obj1)) {
         new_omailcmd(obj2, OMAILCMD(obj1));
@@ -419,9 +437,7 @@ long num;
     otmp = newobj();
     *otmp = *obj; /* copies whole structure */
     otmp->oextra = (struct oextra *) 0;
-    otmp->o_id = context.ident++;
-    if (!otmp->o_id)
-        otmp->o_id = context.ident++; /* ident overflowed */
+    otmp->o_id = nextoid(obj, otmp);
     otmp->timed = 0;                  /* not timed, yet */
     otmp->lamplit = 0;                /* ditto */
     otmp->owornmask = 0L;             /* new object isn't worn */
@@ -447,6 +463,26 @@ long num;
     if (obj_sheds_light(obj))
         obj_split_light_source(obj, otmp);
     return otmp;
+}
+
+/* when splitting a stack that has o_id-based shop prices, pick an
+   o_id value for the new stack that will maintain the same price */
+STATIC_OVL unsigned
+nextoid(oldobj, newobj)
+struct obj *oldobj, *newobj;
+{
+    int olddif, newdif, trylimit = 256; /* limit of 4 suffices at present */
+    unsigned oid = context.ident - 1; /* loop increment will reverse -1 */
+
+    olddif = oid_price_adjustment(oldobj, oldobj->o_id);
+    do {
+        ++oid;
+        if (!oid) /* avoid using 0 (in case value wrapped) */
+            ++oid;
+        newdif = oid_price_adjustment(newobj, oid);
+    } while (newdif != olddif && --trylimit >= 0);
+    context.ident = oid + 1; /* ready for next new object */
+    return oid;
 }
 
 /* try to find the stack obj was split from, then merge them back together;
@@ -648,9 +684,9 @@ register struct obj *otmp;
 
 /* alteration types; must match COST_xxx macros in hack.h */
 static const char *const alteration_verbs[] = {
-    "取消", "喝光", "放电", "取消祝福", "取消诅咒", "解魔",
-    "降级", "稀释", "擦除", "燃烧", "中和", "破坏", "溅泼",
-    "咬", "打开", "打破锁", "腐蚀", "腐烂", "玷污"
+    "cancel", "drain", "uncharge", "unbless", "uncurse", "disenchant",
+    "degrade", "dilute", "erase", "burn", "neutralize", "destroy", "splatter",
+    "bite", "open", "break the lock on", "rust", "rot", "tarnish"
 };
 
 /* possibly bill for an object which the player has just modified */
@@ -694,9 +730,9 @@ int alter_type;
     }
 
     if (obj->quan == 1L)
-        those = "那个", them = "它";
+        those = "that", them = "it";
     else
-        those = "那些", them = "它们";
+        those = "those", them = "them";
 
     /* when shopkeeper describes the object as being uncursed or unblessed
        hero will know that it is now uncursed; will also make the feedback
@@ -708,7 +744,7 @@ int alter_type;
     case OBJ_INVENT:
         if (set_bknown)
             obj->bknown = 1;
-        verbalize("你 %s了%s %s, 你要为%s付钱!",
+        verbalize("You %s %s %s, you pay for %s!",
                   alteration_verbs[alter_type], those, simpleonames(obj),
                   them);
         bill_dummy_object(obj);
@@ -717,7 +753,7 @@ int alter_type;
         if (set_bknown)
             obj->bknown = 1;
         if (costly_spot(u.ux, u.uy) && objroom == *u.ushops) {
-            verbalize("你 %s了%s, 你要为%s付钱!",
+            verbalize("You %s %s, you pay for %s!",
                       alteration_verbs[alter_type], those, them);
             bill_dummy_object(obj);
         } else {
@@ -1204,7 +1240,7 @@ int old_range;
             *buf = '\0';
             if (iflags.last_msg == PLNMSG_OBJ_GLOWS)
                 /* we just saw "The <obj> glows <color>." from dipping */
-                Strcpy(buf, (obj->quan == 1L) ? "它" : "它们");
+                Strcpy(buf, (obj->quan == 1L) ? "It" : "They");
             else if (carried(obj) || cansee(ox, oy))
                 Strcpy(buf, Yname2(obj));
             if (*buf) {
@@ -1213,9 +1249,9 @@ int old_range;
                    when changing intensity, using "less brightly" is
                    straightforward for dimming, but we need "brighter"
                    rather than "more brightly" for brightening; ugh */
-                pline("%s %s得 %s%s了.", buf, otense(obj, "闪耀"),
-                      (abs(delta) > 1) ? "非常 " : "",
-                      (delta > 0) ? "更明亮" : "不那么明亮");
+                pline("%s %s %s%s.", buf, otense(obj, "shine"),
+                      (abs(delta) > 1) ? "much " : "",
+                      (delta > 0) ? "brighter" : "less brightly");
             }
         }
     }
@@ -1371,8 +1407,6 @@ register struct obj *obj;
        when we assume this is a brand new glob so use objects[].oc_weight */
     if (obj->globby && obj->owt > 0)
         wt = obj->owt;
-    if (SchroedingersBox(obj))
-        wt += mons[PM_HOUSECAT].cwt;
     if (Is_container(obj) || obj->otyp == STATUE) {
         struct obj *contents;
         register int cwt = 0;
@@ -1861,7 +1895,7 @@ discard_minvent(mtmp)
 struct monst *mtmp;
 {
     struct obj *otmp, *mwep = MON_WEP(mtmp);
-    boolean keeping_mon = (mtmp->mhp > 0);
+    boolean keeping_mon = (!DEADMONSTER(mtmp));
 
     while ((otmp = mtmp->minvent) != 0) {
         /* this has now become very similar to m_useupall()... */
@@ -1907,12 +1941,14 @@ struct obj *obj;
     case OBJ_CONTAINED:
         extract_nobj(obj, &obj->ocontainer->cobj);
         container_weight(obj->ocontainer);
+        obj->ocontainer = (struct obj *) 0; /* clear stale back-link */
         break;
     case OBJ_INVENT:
         freeinv(obj);
         break;
     case OBJ_MINVENT:
         extract_nobj(obj, &obj->ocarry->minvent);
+        obj->ocarry = (struct monst *) 0; /* clear stale back-link */
         break;
     case OBJ_MIGRATING:
         extract_nobj(obj, &migrating_objs);
@@ -1949,7 +1985,7 @@ struct obj *obj, **head_ptr;
     if (!curr)
         panic("extract_nobj: object lost");
     obj->where = OBJ_FREE;
-    obj->nobj = NULL;
+    obj->nobj = (struct obj *) 0;
 }
 
 /*
@@ -1976,6 +2012,7 @@ struct obj *obj, **head_ptr;
     }
     if (!curr)
         panic("extract_nexthere: object lost");
+    obj->nexthere = (struct obj *) 0;
 }
 
 /*
@@ -2038,6 +2075,10 @@ struct obj *obj;
 {
     if (obj->where != OBJ_FREE)
         panic("add_to_migration: obj not free");
+
+    /* lock picking context becomes stale if it's for this object */
+    if (Is_container(obj))
+        maybe_reset_pick(obj);
 
     obj->where = OBJ_MIGRATING;
     obj->nobj = migrating_objs;
@@ -2133,15 +2174,15 @@ boolean tipping; /* caller emptying entire contents; affects shop handling */
                 do {
                     obj->otyp = rnd_class(POT_BOOZE, POT_WATER);
                 } while (obj->otyp == POT_SICKNESS);
-            what = (obj->quan > 1L) ? "一些药水" : "一瓶药水";
+            what = (obj->quan > 1L) ? "Some potions" : "A potion";
         } else {
             obj = mkobj(FOOD_CLASS, FALSE);
             if (obj->otyp == FOOD_RATION && !rn2(7))
                 obj->otyp = LUMP_OF_ROYAL_JELLY;
-            what = "一些食物";
+            what = "Some food";
         }
         ++objcount;
-        pline("%s %s了出来.", what, vtense(what, "溢"));
+        pline("%s %s out.", what, vtense(what, "spill"));
         obj->blessed = horn->blessed;
         obj->cursed = horn->cursed;
         obj->owt = weight(obj);
@@ -2153,24 +2194,27 @@ boolean tipping; /* caller emptying entire contents; affects shop handling */
            being included in its formatted name during next message */
         iflags.suppress_price++;
         if (!tipping) {
-            obj = hold_another_object(
-                obj, u.uswallow ? "哎哟!  %s出了你的范围!"
-                                : (Is_airlevel(&u.uz) || Is_waterlevel(&u.uz)
-                                   || levl[u.ux][u.uy].typ < IRONBARS
-                                   || levl[u.ux][u.uy].typ >= ICE)
-                                      ? "哎哟!  %s远了!"
-                                      : "哎哟!  %s到地板上!",
-                The(aobjnam(obj, "滑")), (const char *) 0);
+            obj = hold_another_object(obj,
+                                      u.uswallow
+                                        ? "Oops!  %s out of your reach!"
+                                        : (Is_airlevel(&u.uz)
+                                           || Is_waterlevel(&u.uz)
+                                           || levl[u.ux][u.uy].typ < IRONBARS
+                                           || levl[u.ux][u.uy].typ >= ICE)
+                                          ? "Oops!  %s away from you!"
+                                          : "Oops!  %s to the floor!",
+                                      The(aobjnam(obj, "slip")), (char *) 0);
+            nhUse(obj);
         } else {
             /* assumes this is taking place at hero's location */
             if (!can_reach_floor(TRUE)) {
-                hitfloor(obj); /* does altar check, message, drop */
+                hitfloor(obj, TRUE); /* does altar check, message, drop */
             } else {
                 if (IS_ALTAR(levl[u.ux][u.uy].typ))
                     doaltarobj(obj); /* does its own drop message */
                 else
-                    pline("%s %s到%s上.", Doname2(obj),
-                          otense(obj, "掉"), surface(u.ux, u.uy));
+                    pline("%s %s to the %s.", Doname2(obj),
+                          otense(obj, "drop"), surface(u.ux, u.uy));
                 dropy(obj);
             }
         }
@@ -2234,7 +2278,7 @@ obj_sanity_check()
     /* monsters temporarily in transit;
        they should have arrived with hero by the time we get called */
     if (mydogs) {
-        pline("mydogs sanity [not empty]");
+        impossible("mydogs sanity [not empty]");
         mon_obj_sanity(mydogs, "mydogs minvent sanity");
     }
 
@@ -2373,10 +2417,10 @@ struct monst *mon;
         Strcat(strcpy(altfmt, fmt), " held by mon %s (%s)");
         if (mon)
             monnm = x_monnam(mon, ARTICLE_A, (char *) 0, EXACT_NAME, TRUE);
-        pline(altfmt, mesg, fmt_ptr((genericptr_t) obj), where_name(obj),
+        impossible(altfmt, mesg, fmt_ptr((genericptr_t) obj), where_name(obj),
               objnm, fmt_ptr((genericptr_t) mon), monnm);
     } else {
-        pline(fmt, mesg, fmt_ptr((genericptr_t) obj), where_name(obj), objnm);
+        impossible(fmt, mesg, fmt_ptr((genericptr_t) obj), where_name(obj), objnm);
     }
 }
 
@@ -2404,7 +2448,7 @@ const char *mesg;
         if (obj->where != OBJ_CONTAINED)
             insane_object(obj, "%s obj %s %s: %s", mesg, (struct monst *) 0);
         else if (obj->ocontainer != container)
-            pline("%s obj %s in container %s, not %s", mesg,
+            impossible("%s obj %s in container %s, not %s", mesg,
                   fmt_ptr((genericptr_t) obj),
                   fmt_ptr((genericptr_t) obj->ocontainer),
                   fmt_ptr((genericptr_t) container));
@@ -2776,19 +2820,19 @@ struct obj *otmp2;
     if ((!Blind && visible) || inpack) {
         if (Hallucination) {
             if (onfloor) {
-                You_see("地板的一部分融化了!");
+                You_see("parts of the floor melting!");
             } else if (inpack) {
-                Your("背包伸出手抓住了什么东西!");
+                Your("pack reaches out and grabs something!");
             }
             /* even though we can see where they should be,
              * they'll be out of our view (minvent or container)
              * so don't actually show anything */
         } else if (onfloor || inpack) {
-            pline("%s %s合并了.", makeplural(obj_typename(otmp->otyp)),
-                  inpack ? "在你的背包里" : "");
+            pline("The %s coalesce%s.", makeplural(obj_typename(otmp->otyp)),
+                  inpack ? " inside your pack" : "");
         }
     } else {
-        You_hear("轻微的晃动声.");
+        You_hear("a faint sloshing sound.");
     }
 }
 

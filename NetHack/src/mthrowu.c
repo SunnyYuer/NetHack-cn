@@ -1,4 +1,4 @@
-/* NetHack 3.6	mthrowu.c	$NHDT-Date: 1514152830 2017/12/24 22:00:30 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.73 $ */
+/* NetHack 3.6	mthrowu.c	$NHDT-Date: 1542765360 2018/11/21 01:56:00 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.78 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Pasi Kallinen, 2016. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -21,9 +21,9 @@ STATIC_DCL boolean FDECL(m_lined_up, (struct monst *, struct monst *));
  * Keep consistent with breath weapons in zap.c, and AD_* in monattk.h.
  */
 STATIC_OVL NEARDATA const char *breathwep[] = {
-    "碎片", "火", "霜", "催眠气体", "分解爆炸",
-    "闪电", "毒气", "酸", "奇怪的呼吸 #8",
-    "奇怪的呼吸 #9"
+    "fragments", "fire", "frost", "sleep gas", "a disintegration blast",
+    "lightning", "poison gas", "acid", "strange breath #8",
+    "strange breath #9"
 };
 
 extern boolean notonhead; /* for long worms */
@@ -58,28 +58,28 @@ const char *name; /* if null, then format `*objp' */
     }
     onm = (obj && obj_is_pname(obj)) ? the(name)
           : (obj && obj->quan > 1L) ? name
-            : name;
+            : an(name);
     is_acid = (obj && obj->otyp == ACID_VENOM);
 
     if (u.uac + tlev <= (dieroll = rnd(20))) {
         ++mesg_given;
         if (Blind || !flags.verbose) {
-            pline("它没打中.");
+            pline("It misses.");
         } else if (u.uac + tlev <= dieroll - 2) {
             if (onm != onmbuf)
                 Strcpy(onmbuf, onm); /* [modifiable buffer for upstart()] */
-            pline("%s %s你.", upstart(onmbuf), vtense(onmbuf, "没打中"));
+            pline("%s %s you.", upstart(onmbuf), vtense(onmbuf, "miss"));
         } else
-            You("几乎要被%s 打中.", onm);
+            You("are almost hit by %s.", onm);
         return 0;
     } else {
         if (Blind || !flags.verbose)
-            You("被打中了%s", exclam(dam));
+            You("are hit%s", exclam(dam));
         else
-            You("被%s打中了%s", onm, exclam(dam));
+            You("are hit by %s%s", onm, exclam(dam));
 
         if (is_acid && Acid_resistance) {
-            pline("它似乎没有伤到你.");
+            pline("It doesn't seem to hurt you.");
         } else if (obj && obj->oclass == POTION_CLASS) {
             /* an explosion which scatters objects might hit hero with one
                (potions deliberately thrown at hero are handled by m_throw) */
@@ -89,11 +89,11 @@ const char *name; /* if null, then format `*objp' */
             if (obj && objects[obj->otyp].oc_material == SILVER
                 && Hate_silver) {
                 /* extra damage already applied by dmgval() */
-                pline_The("银灼伤了你的身体!");
+                pline_The("silver sears your flesh!");
                 exercise(A_CON, FALSE);
             }
             if (is_acid)
-                pline("它灼烧!");
+                pline("It burns!");
             losehp(dam, knm, kprefix); /* acid damage */
             exercise(A_STR, FALSE);
         }
@@ -126,13 +126,13 @@ int x, y;
 
     if (create && !((mtmp = m_at(x, y)) != 0 && mtmp->mtrapped
                     && (t = t_at(x, y)) != 0
-                    && (t->ttyp == PIT || t->ttyp == SPIKED_PIT))) {
+                    && is_pit(t->ttyp))) {
         int objgone = 0;
 
         if (down_gate(x, y) != -1)
             objgone = ship_object(obj, x, y, FALSE);
         if (!objgone) {
-            if (!flooreffects(obj, x, y, "掉落")) {
+            if (!flooreffects(obj, x, y, "fall")) {
                 place_object(obj, x, y);
                 if (!mtmp && x == u.ux && y == u.uy)
                     mtmp = &youmonst;
@@ -265,15 +265,15 @@ struct obj *otmp, *mwep;
         } else {
             /* "an arrow" */
             onm = singular(otmp, xname);
-            onm = obj_is_pname(otmp) ? the(onm) : onm;
+            onm = obj_is_pname(otmp) ? the(onm) : an(onm);
         }
         m_shot.s = ammo_and_launcher(otmp, mwep) ? TRUE : FALSE;
         Strcpy(trgbuf, mtarg ? mon_nam(mtarg) : "");
-        if (!strcmp(trgbuf, "它"))
-            Strcpy(trgbuf, humanoid(mtmp->data) ? "某人" : something);
-        pline("%s %s%s%s%s!", Monnam(mtmp),
-              mtarg ? "向" : "", trgbuf,
-              m_shot.s ? "射击" : "投掷", onm);
+        if (!strcmp(trgbuf, "it"))
+            Strcpy(trgbuf, humanoid(mtmp->data) ? "someone" : something);
+        pline("%s %s %s%s%s!", Monnam(mtmp),
+              m_shot.s ? "shoots" : "throws", onm,
+              mtarg ? " at " : "", trgbuf);
         m_shot.o = otmp->otyp;
     } else {
         m_shot.o = STRANGE_OBJECT; /* don't give multishot feedback */
@@ -285,7 +285,7 @@ struct obj *otmp, *mwep;
            if mtmp gets killed (shot kills adjacent gas spore and
            triggers explosion, perhaps), inventory will be dropped
            and otmp might go away via merging into another stack */
-        if (mtmp->mhp <= 0 && m_shot.i < m_shot.n)
+        if (DEADMONSTER(mtmp) && m_shot.i < m_shot.n)
             /* cancel pending shots (perhaps ought to give a message here
                since we gave one above about throwing/shooting N missiles) */
             break; /* endmultishot(FALSE); */
@@ -313,7 +313,7 @@ boolean verbose;    /* give message(s) even when you can't see what happened */
     struct obj *mon_launcher = archer ? MON_WEP(archer) : NULL;
 
     notonhead = (bhitpos.x != mtmp->mx || bhitpos.y != mtmp->my);
-    ismimic = mtmp->m_ap_type && mtmp->m_ap_type != M_AP_MONSTER;
+    ismimic = M_AP_TYPE(mtmp) && M_AP_TYPE(mtmp) != M_AP_MONSTER;
     vis = cansee(bhitpos.x, bhitpos.y);
 
     tmp = 5 + find_mac(mtmp) + omon_adj(mtmp, otmp, FALSE);
@@ -331,7 +331,7 @@ boolean verbose;    /* give message(s) even when you can't see what happened */
             if (vis)
                 miss(distant_name(otmp, mshot_xname), mtmp);
             else if (verbose && !target)
-                pline("它没打中.");
+                pline("It is missed.");
         }
         if (!range) { /* Last position; object drops */
             (void) drop_throw(otmp, 0, mtmp->mx, mtmp->my);
@@ -356,25 +356,25 @@ boolean verbose;    /* give message(s) even when you can't see what happened */
         mtmp->msleeping = 0;
         if (vis) {
             if (otmp->otyp == EGG)
-                pline("啪嗒! %s 被%s蛋打中!", Monnam(mtmp),
-                      otmp->known ? mons[otmp->corpsenm].mname : "一个");
+                pline("Splat!  %s is hit with %s egg!", Monnam(mtmp),
+                      otmp->known ? an(mons[otmp->corpsenm].mname) : "an");
             else
                 hit(distant_name(otmp, mshot_xname), mtmp, exclam(damage));
         } else if (verbose && !target)
-            pline("%s%s 被打中了%s", (otmp->otyp == EGG) ? "啪嗒! " : "",
+            pline("%s%s is hit%s", (otmp->otyp == EGG) ? "Splat!  " : "",
                   Monnam(mtmp), exclam(damage));
 
         if (otmp->opoisoned && is_poisonable(otmp)) {
             if (resists_poison(mtmp)) {
                 if (vis)
-                    pline_The("毒似乎没有影响 %s.",
+                    pline_The("poison doesn't seem to affect %s.",
                               mon_nam(mtmp));
             } else {
                 if (rn2(30)) {
                     damage += rnd(6);
                 } else {
                     if (vis)
-                        pline_The("毒是致命的...");
+                        pline_The("poison was deadly...");
                     damage = mtmp->mhp;
                 }
             }
@@ -382,19 +382,19 @@ boolean verbose;    /* give message(s) even when you can't see what happened */
         if (objects[otmp->otyp].oc_material == SILVER
             && mon_hates_silver(mtmp)) {
             if (vis)
-                pline_The("银灼伤了%s身体!", s_suffix(mon_nam(mtmp)));
+                pline_The("silver sears %s flesh!", s_suffix(mon_nam(mtmp)));
             else if (verbose && !target)
-                pline("它的身体被灼伤了!");
+                pline("Its flesh is seared!");
         }
         if (otmp->otyp == ACID_VENOM && cansee(mtmp->mx, mtmp->my)) {
             if (resists_acid(mtmp)) {
                 if (vis || (verbose && !target))
-                    pline("%s 不受影响.", Monnam(mtmp));
+                    pline("%s is unaffected.", Monnam(mtmp));
             } else {
                 if (vis)
-                    pline_The("%s 烧伤了%s!", hliquid("酸"), mon_nam(mtmp));
+                    pline_The("%s burns %s!", hliquid("acid"), mon_nam(mtmp));
                 else if (verbose && !target)
-                    pline("它被烧伤了!");
+                    pline("It is burned!");
             }
         }
         if (otmp->otyp == EGG && touch_petrifies(&mons[otmp->corpsenm])) {
@@ -404,13 +404,13 @@ boolean verbose;    /* give message(s) even when you can't see what happened */
                 damage = 0;
         }
 
-        if (mtmp->mhp > 0) { /* might already be dead (if petrified) */
+        if (!DEADMONSTER(mtmp)) { /* might already be dead (if petrified) */
             mtmp->mhp -= damage;
-            if (mtmp->mhp < 1) {
+            if (DEADMONSTER(mtmp)) {
                 if (vis || (verbose && !target))
-                    pline("%s 被%s!", Monnam(mtmp),
+                    pline("%s is %s!", Monnam(mtmp),
                           (nonliving(mtmp->data) || is_vampshifter(mtmp)
-                           || !canspotmon(mtmp)) ? "消灭了" : "杀死了");
+                           || !canspotmon(mtmp)) ? "destroyed" : "killed");
                 /* don't blame hero for unknown rolling boulder trap */
                 if (!context.mon_moving && (otmp->otyp != BOULDER
                                             || range >= 0 || otmp->otrapped))
@@ -422,13 +422,13 @@ boolean verbose;    /* give message(s) even when you can't see what happened */
 
         /* blinding venom and cream pie do 0 damage, but verify
            that the target is still alive anyway */
-        if (mtmp->mhp > 0
+        if (!DEADMONSTER(mtmp)
             && can_blnd((struct monst *) 0, mtmp,
                         (uchar) ((otmp->otyp == BLINDING_VENOM) ? AT_SPIT
                                                                 : AT_WEAP),
                         otmp)) {
             if (vis && mtmp->mcansee)
-                pline("%s 被%s 致失明.", Monnam(mtmp), the(xname(otmp)));
+                pline("%s is blinded by %s.", Monnam(mtmp), the(xname(otmp)));
             mtmp->mcansee = 0;
             tmp = (int) mtmp->mblinded + rnd(25) + 20;
             if (tmp > 127)
@@ -507,9 +507,9 @@ struct obj *obj;         /* missile (or stack providing it) */
     if ((singleobj->cursed || singleobj->greased) && (dx || dy) && !rn2(7)) {
         if (canseemon(mon) && flags.verbose) {
             if (is_ammo(singleobj))
-                pline("%s 没发射出来!", Monnam(mon));
+                pline("%s misfires!", Monnam(mon));
             else
-                pline("%s了当%s投掷它时!", Tobjnam(singleobj, "滑落"),
+                pline("%s as %s throws it!", Tobjnam(singleobj, "slip"),
                       mon_nam(mon));
         }
         dx = rn2(3) - 1;
@@ -532,7 +532,7 @@ struct obj *obj;         /* missile (or stack providing it) */
      * be careful not to use either one after it's been freed.
      */
     if (sym)
-        tmp_at(DISP_FLASH, obj_to_glyph(singleobj));
+        tmp_at(DISP_FLASH, obj_to_glyph(singleobj, rn2_on_display_rng));
     while (range-- > 0) { /* Actually the loop is always exited by break */
         bhitpos.x += dx;
         bhitpos.y += dy;
@@ -547,19 +547,19 @@ struct obj *obj;         /* missile (or stack providing it) */
                 && singleobj->otyp <= LAST_GEM + 9 /* 9 glass colors */
                 && is_unicorn(youmonst.data)) {
                 if (singleobj->otyp > LAST_GEM) {
-                    You("抓住了 %s.", xname(singleobj));
-                    You("对%s垃圾不感兴趣.",
+                    You("catch the %s.", xname(singleobj));
+                    You("are not interested in %s junk.",
                         s_suffix(mon_nam(mon)));
                     makeknown(singleobj->otyp);
                     dropy(singleobj);
                 } else {
                     You(
-                     "在有意的精神上接受了%s礼物.",
+                     "accept %s gift in the spirit in which it was intended.",
                         s_suffix(mon_nam(mon)));
                     (void) hold_another_object(singleobj,
-                                               "你抓住, 但扔掉了, %s.",
+                                               "You catch, but drop, %s.",
                                                xname(singleobj),
-                                               "你抓住:");
+                                               "You catch:");
                 }
                 break;
             }
@@ -622,9 +622,9 @@ struct obj *obj;         /* missile (or stack providing it) */
                 blindinc = rnd(25);
                 if (singleobj->otyp == CREAM_PIE) {
                     if (!Blind)
-                        pline("哟!  你脸上被沾满奶油.");
+                        pline("Yecch!  You've been creamed.");
                     else
-                        pline("有%s粘你一%s.",
+                        pline("There's %s sticky all over your %s.",
                               something, body_part(FACE));
                 } else if (singleobj->otyp == BLINDING_VENOM) {
                     const char *eyes = body_part(EYE);
@@ -633,9 +633,9 @@ struct obj *obj;         /* missile (or stack providing it) */
                         eyes = makeplural(eyes);
                     /* venom in the eyes */
                     if (!Blind)
-                        pline_The("毒液使你失明.");
+                        pline_The("venom blinds you.");
                     else
-                        Your("%s %s.", eyes, vtense(eyes, "刺痛"));
+                        Your("%s %s.", eyes, vtense(eyes, "sting"));
                 }
             }
             if (hitu && singleobj->otyp == EGG) {
@@ -658,7 +658,7 @@ struct obj *obj;         /* missile (or stack providing it) */
                     && (!mesg_given || bhitpos.x != u.ux || bhitpos.y != u.uy)
                     && (cansee(bhitpos.x, bhitpos.y)
                         || (archer && canseemon(archer))))
-                    pline("%s 没打中.", The(mshot_xname(singleobj)));
+                    pline("%s misses.", The(mshot_xname(singleobj)));
                 (void) drop_throw(singleobj, 0, bhitpos.x, bhitpos.y);
             }
             break;
@@ -739,7 +739,7 @@ struct attack *mattk;
 
     if (mtmp->mcan) {
         if (!Deaf)
-            pline("%s喉咙发出干的嘎嘎声.",
+            pline("A dry rattle comes from %s throat.",
                   s_suffix(mon_nam(mtmp)));
         return 0;
     }
@@ -758,7 +758,7 @@ struct attack *mattk;
         }
         if (!rn2(BOLT_LIM-distmin(mtmp->mx,mtmp->my,mtarg->mx,mtarg->my))) {
             if (canseemon(mtmp))
-                pline("%s 吐出毒液!", Monnam(mtmp));
+                pline("%s spits venom!", Monnam(mtmp));
             target = mtarg;
             m_throw(mtmp, mtmp->mx, mtmp->my, sgn(tbx), sgn(tby),
                     distmin(mtmp->mx,mtmp->my,mtarg->mx,mtarg->my), otmp);
@@ -794,17 +794,17 @@ struct attack  *mattk;
         if (mtmp->mcan) {
             if (!Deaf) {
                 if (canseemon(mtmp))
-                    pline("%s 咳嗽.", Monnam(mtmp));
+                    pline("%s coughs.", Monnam(mtmp));
                 else
-                    You_hear("咳嗽声.");
+                    You_hear("a cough.");
             }
             return 0;
         }
         if (!mtmp->mspec_used && rn2(3)) {
             if ((typ >= AD_MAGM) && (typ <= AD_ACID)) {
                 if (canseemon(mtmp))
-                    pline("%s 呼吸%s!", Monnam(mtmp), breathwep[typ - 1]);
-                dobuzz((int) (-20 - (typ - 1)), (int)mattk->damn,
+                    pline("%s breathes %s!", Monnam(mtmp), breathwep[typ - 1]);
+                dobuzz((int) (-20 - (typ - 1)), (int) mattk->damn,
                        mtmp->mx, mtmp->my, sgn(tbx), sgn(tby), FALSE);
                 nomul(0);
                 /* breath runs out sometimes. Also, give monster some
@@ -894,8 +894,8 @@ struct monst *mtmp;
 
         if (canseemon(mtmp)) {
             onm = xname(otmp);
-            pline("%s 猛推 %s.", Monnam(mtmp),
-                  obj_is_pname(otmp) ? the(onm) : onm);
+            pline("%s thrusts %s.", Monnam(mtmp),
+                  obj_is_pname(otmp) ? the(onm) : an(onm));
         }
 
         dam = dmgval(otmp, &youmonst);
@@ -940,7 +940,7 @@ struct attack *mattk;
 
     if (mtmp->mcan) {
         if (!Deaf)
-            pline("从%s喉咙传来干燥的痰咳声.",
+            pline("A dry rattle comes from %s throat.",
                   s_suffix(mon_nam(mtmp)));
         return 0;
     }
@@ -960,7 +960,7 @@ struct attack *mattk;
         if (!rn2(BOLT_LIM
                  - distmin(mtmp->mx, mtmp->my, mtmp->mux, mtmp->muy))) {
             if (canseemon(mtmp))
-                pline("%s 吐出了毒液!", Monnam(mtmp));
+                pline("%s spits venom!", Monnam(mtmp));
             m_throw(mtmp, mtmp->mx, mtmp->my, sgn(tbx), sgn(tby),
                     distmin(mtmp->mx, mtmp->my, mtmp->mux, mtmp->muy), otmp);
             nomul(0);
@@ -986,16 +986,16 @@ struct attack *mattk;
         if (mtmp->mcan) {
             if (!Deaf) {
                 if (canseemon(mtmp))
-                    pline("%s 咳嗽.", Monnam(mtmp));
+                    pline("%s coughs.", Monnam(mtmp));
                 else
-                    You_hear("咳嗽声.");
+                    You_hear("a cough.");
             }
             return 0;
         }
         if (!mtmp->mspec_used && rn2(3)) {
             if ((typ >= AD_MAGM) && (typ <= AD_ACID)) {
                 if (canseemon(mtmp))
-                    pline("%s 呼吸 %s!", Monnam(mtmp),
+                    pline("%s breathes %s!", Monnam(mtmp),
                           breathwep[typ - 1]);
                 buzz((int) (-20 - (typ - 1)), (int) mattk->damn, mtmp->mx,
                      mtmp->my, sgn(tbx), sgn(tby));
@@ -1073,8 +1073,8 @@ register struct monst *mtmp;
 
     /* hero concealment usually trumps monst awareness of being lined up */
     if (Upolyd && rn2(25)
-        && (u.uundetected || (youmonst.m_ap_type != M_AP_NOTHING
-                              && youmonst.m_ap_type != M_AP_MONSTER)))
+        && (u.uundetected || (U_AP_TYPE != M_AP_NOTHING
+                              && U_AP_TYPE != M_AP_MONSTER)))
         return FALSE;
 
     ignore_boulders = (throws_rocks(mtmp->data)
@@ -1114,21 +1114,21 @@ boolean your_fault, from_invent;
         /* breakage makes its own noises */
         if (obj_type == POT_ACID) {
             if (cansee(barsx, barsy) && !unbreakable)
-                pline_The("铁栏杆溶化了!");
+                pline_The("iron bars are dissolved!");
             else
-                You_hear(Hallucination ? "生气的蛇!" : "嘶嘶声.");
+                You_hear(Hallucination ? "angry snakes!" : "a hissing noise.");
             if (!unbreakable)
                 dissolve_bars(barsx, barsy);
         }
     }
     else if (obj_type == BOULDER || obj_type == HEAVY_IRON_BALL)
-        pline("重击声!");
+        pline("Whang!");
     else if (otmp->oclass == COIN_CLASS
              || objects[obj_type].oc_material == GOLD
              || objects[obj_type].oc_material == SILVER)
-        pline("叮当!");
+        pline("Clink!");
     else
-        pline("哐当!");
+        pline("Clonk!");
 }
 
 /* TRUE iff thrown/kicked/rolled object doesn't pass through iron bars */

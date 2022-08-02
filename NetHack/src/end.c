@@ -1,4 +1,4 @@
-/* NetHack 3.6	end.c	$NHDT-Date: 1512803167 2017/12/09 07:06:07 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.137 $ */
+/* NetHack 3.6	end.c	$NHDT-Date: 1557094801 2019/05/05 22:20:01 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.170 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2012. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -11,7 +11,9 @@
 #include <signal.h>
 #endif
 #include <ctype.h>
+#ifndef LONG_MAX
 #include <limits.h>
+#endif
 #include "dlb.h"
 
 /* add b to long a, convert wraparound to max value */
@@ -49,7 +51,6 @@ STATIC_DCL void FDECL(get_valuables, (struct obj *));
 STATIC_DCL void FDECL(sort_valuables, (struct valuable_data *, int));
 STATIC_DCL void FDECL(artifact_score, (struct obj *, BOOLEAN_P, winid));
 STATIC_DCL void FDECL(really_done, (int)) NORETURN;
-STATIC_DCL boolean FDECL(odds_and_ends, (struct obj *, int));
 STATIC_DCL void FDECL(savelife, (int));
 STATIC_PTR int FDECL(CFDECLSPEC vanqsort_cmp, (const genericptr,
                                                const genericptr));
@@ -63,7 +64,7 @@ STATIC_DCL void NDECL(dump_plines);
 STATIC_DCL void FDECL(dump_everything, (int, time_t));
 STATIC_DCL int NDECL(num_extinct);
 
-#if defined(__BEOS__) || defined(MICRO) || defined(WIN32) || defined(OS2)
+#if defined(__BEOS__) || defined(MICRO) || defined(OS2)
 extern void FDECL(nethack_exit, (int));
 #else
 #define nethack_exit exit
@@ -127,14 +128,18 @@ static boolean NDECL(NH_panictrace_libc);
 static boolean NDECL(NH_panictrace_gdb);
 
 #ifndef NO_SIGNAL
-/*ARGSUSED*/
-void panictrace_handler(
-    sig_unused) /* called as signal() handler, so sent at least one arg */
+/* called as signal() handler, so sent at least one arg */
+/*ARGUSED*/
+void
+panictrace_handler(sig_unused)
 int sig_unused UNUSED;
 {
 #define SIG_MSG "\nSignal received.\n"
-    (void) write(2, SIG_MSG, sizeof(SIG_MSG) - 1);
-    NH_abort();
+    int f2;
+    
+    f2 = (int) write(2, SIG_MSG, sizeof SIG_MSG - 1);
+    nhUse(f2);  /* what could we do if write to fd#2 (stderr) fails  */
+    NH_abort(); /* ... and we're already in the process of quitting? */
 }
 
 void
@@ -200,7 +205,7 @@ NH_abort()
        traceback and exit; 2 = show traceback and stay in debugger */
     /* if (wizard && gdb_prio == 1) gdb_prio = 2; */
     vms_traceback(gdb_prio);
-    (void) libc_prio; /* half-hearted attempt at lint suppression */
+    nhUse(libc_prio);
 
 #endif /* ?VMS */
 
@@ -285,23 +290,21 @@ NH_panictrace_gdb()
  */
 static NEARDATA const char *deaths[] = {
     /* the array of death */
-    //只有最后5个使用了，使用在killer.name
-    "死", "噎死", "毒死", "饥饿", "淹死", "烧死",
-    "溶化于热量和压力", "压死", "变成了石头",
-    "变成了粘液", "灭绝", "panic", "作弊", "退出",
+    "died", "choked", "poisoned", "starvation", "drowning", "burning",
+    "dissolving under the heat and pressure", "crushed", "turned to stone",
+    "turned into slime", "genocided", "panic", "trickery", "quit",
     "escaped", "ascended"
 };
 
 static NEARDATA const char *ends[] = {
     /* "when you %s" */
-    //用在坟墓下边的文字里
-    "死亡", "噎死", "被毒死",
-    "饿死", "淹死", "烧死",
-    "溶化于熔岩",
-    "被压死", "变成了石头",
-    "变成了粘液", "被灭绝",
-    "panic 结束", "作弊", "退出游戏",
-    "逃离", "升仙"
+    "died", "choked", "were poisoned",
+    "starved", "drowned", "burned",
+    "dissolved in the lava",
+    "were crushed", "turned to stone",
+    "turned into slime", "were genocided",
+    "panicked", "were tricked", "quit",
+    "escaped", "ascended"
 };
 
 static boolean Schroedingers_cat = FALSE;
@@ -332,7 +335,9 @@ int sig_unused UNUSED;
 int
 done2()
 {
-    if (!paranoid_query(ParanoidQuit, "确定退出?")) {
+    if (iflags.debug_fuzzer)
+        return 0;
+    if (!paranoid_query(ParanoidQuit, "Really quit?")) {
 #ifndef NO_SIGNAL
         (void) signal(SIGINT, (SIG_RET_TYPE) done1);
 #endif
@@ -358,7 +363,7 @@ done2()
 #ifdef LATTICE
         c = ynq("Create SnapShot?");
 #else
-        c = ynq("切断进程?( 用作调试)");
+        c = ynq("Dump core?");
 #endif
 #endif
         if (c == 'y') {
@@ -416,10 +421,10 @@ int how;
                                    ? &mons[mtmp->cham]
                                    : mptr);
     boolean distorted = (boolean) (Hallucination && canspotmon(mtmp)),
-            mimicker = (mtmp->m_ap_type == M_AP_MONSTER),
+            mimicker = (M_AP_TYPE(mtmp) == M_AP_MONSTER),
             imitator = (mptr != champtr || mimicker);
 
-    You((how == STONING) ? "变成了石头..." : "死了...");
+    You((how == STONING) ? "turn to stone..." : "die...");
     mark_synch(); /* flush buffered screen output */
     buf[0] = '\0';
     killer.format = KILLED_BY_AN;
@@ -428,18 +433,18 @@ int how;
     if ((mptr->geno & G_UNIQ) != 0 && !(imitator && !mimicker)
         && !(mptr == &mons[PM_HIGH_PRIEST] && !mtmp->ispriest)) {
         if (!type_is_pname(mptr))
-            Strcat(buf, "");
+            Strcat(buf, "the ");
         killer.format = KILLED_BY;
     }
     /* _the_ <invisible> <distorted> ghost of Dudley */
     if (mptr == &mons[PM_GHOST] && has_mname(mtmp)) {
-        Strcat(buf, "");
+        Strcat(buf, "the ");
         killer.format = KILLED_BY;
     }
     if (mtmp->minvis)
-        Strcat(buf, "隐形的");
+        Strcat(buf, "invisible ");
     if (distorted)
-        Strcat(buf, "迷幻扭曲的");
+        Strcat(buf, "hallucinogen-distorted ");
 
     if (imitator) {
         char shape[BUFSZ];
@@ -451,11 +456,11 @@ int how;
                set up fake mptr for type_is_pname/the_unique_pm */
             mptr = &mons[mtmp->mappearance];
             fakenm = mptr->mname;
-        } else if (alt && strstri(realnm, "吸血")
-                   && !strcmp(fakenm, "吸血蝙蝠")) {
+        } else if (alt && strstri(realnm, "vampire")
+                   && !strcmp(fakenm, "vampire bat")) {
             /* special case: use "vampire in bat form" in preference
                to redundant looking "vampire in vampire bat form" */
-            fakenm = "蝙蝠";
+            fakenm = "bat";
         }
         /* for the alternate format, always suppress any article;
            pname and the_unique should also have s_suffix() applied,
@@ -463,26 +468,26 @@ int how;
         if (alt || type_is_pname(mptr)) /* no article */
             Strcpy(shape, fakenm);
         else if (the_unique_pm(mptr)) /* "the"; don't use the() here */
-            Sprintf(shape, "%s", fakenm);
+            Sprintf(shape, "the %s", fakenm);
         else /* "a"/"an" */
-            Strcpy(shape, fakenm);
+            Strcpy(shape, an(fakenm));
         /* omit "called" to avoid excessive verbosity */
         Sprintf(eos(buf),
-                alt ? "%s是%s的形态"
-                    : mimicker ? "%s伪装为%s"
-                               : "%s模仿%s",
+                alt ? "%s in %s form"
+                    : mimicker ? "%s disguised as %s"
+                               : "%s imitating %s",
                 realnm, shape);
         mptr = mtmp->data; /* reset for mimicker case */
     } else if (mptr == &mons[PM_GHOST]) {
-        Strcat(buf, "鬼魂");
+        Strcat(buf, "ghost");
         if (has_mname(mtmp))
-            Sprintf(eos(buf), "之%s", MNAME(mtmp));
+            Sprintf(eos(buf), " of %s", MNAME(mtmp));
     } else if (mtmp->isshk) {
         const char *shknm = shkname(mtmp),
                    *honorific = shkname_is_pname(mtmp) ? ""
                                    : mtmp->female ? "Ms. " : "Mr. ";
 
-        Sprintf(eos(buf), "%s%s 店主", honorific, shknm);
+        Sprintf(eos(buf), "%s%s, the shopkeeper", honorific, shknm);
         killer.format = KILLED_BY;
     } else if (mtmp->ispriest || mtmp->isminion) {
         /* m_monnam() suppresses "the" prefix plus "invisible", and
@@ -491,10 +496,19 @@ int how;
     } else {
         Strcat(buf, mptr->mname);
         if (has_mname(mtmp))
-            Sprintf(eos(buf), "叫做 %s", MNAME(mtmp));
+            Sprintf(eos(buf), " called %s", MNAME(mtmp));
     }
 
     Strcpy(killer.name, buf);
+    /*
+     * Chicken and egg issue:
+     *  Ordinarily Unchanging ought to override something like this,
+     *  but the transformation occurs at death.  With the current code,
+     *  the effectiveness of Unchanging stops first, but a case could
+     *  be made that it should last long enough to prevent undead
+     *  transformation.  (Turning to slime isn't an issue here because
+     *  Unchanging prevents that from happening.)
+     */
     if (mptr->mlet == S_WRAITH)
         u.ugrave_arise = PM_WRAITH;
     else if (mptr->mlet == S_MUMMY && urace.mummynum != NON_PM)
@@ -521,11 +535,11 @@ static const struct {
     /* "petrified by <foo>, while getting stoned" -- "while getting stoned"
        prevented any last-second recovery, but it was not the cause of
        "petrified by <foo>" */
-    { STONING, 1, "变成石头", (char *) 0 },
+    { STONING, 1, "getting stoned", (char *) 0 },
     /* "died of starvation, while fainted from lack of food" is accurate
        but sounds a fairly silly (and doesn't actually appear unless you
        splice together death and while-helpless from xlogfile) */
-    { STARVING, 0, "缺乏食物昏倒", "昏倒" },
+    { STARVING, 0, "fainted from lack of food", "fainted" },
 };
 
 /* clear away while-helpless when the cause of death caused that
@@ -578,13 +592,13 @@ VA_DECL(const char *, str)
                         ? "Program initialization has failed."
                         : "Suddenly, the dungeon collapses.");
 #ifndef MICRO
-#if defined(NOTIFY_NETHACK_BUGS)
+#ifdef NOTIFY_NETHACK_BUGS
     if (!wizard)
         raw_printf("Report the following error to \"%s\" or at \"%s\".",
                    DEVTEAM_EMAIL, DEVTEAM_URL);
     else if (program_state.something_worth_saving)
         raw_print("\nError save file being written.\n");
-#else
+#else /* !NOTIFY_NETHACK_BUGS */
     if (!wizard) {
         const char *maybe_rebuild = !program_state.something_worth_saving
                                      ? "."
@@ -600,11 +614,11 @@ VA_DECL(const char *, str)
             raw_printf("Report error to \"%s\"%s", WIZARD_NAME,
                        maybe_rebuild);
     }
-#endif
+#endif /* ?NOTIFY_NETHACK_BUGS */
     /* XXX can we move this above the prints?  Then we'd be able to
      * suppress "it may be possible to rebuild" based on dosave0()
      * or say it's NOT possible to rebuild. */
-    if (program_state.something_worth_saving) {
+    if (program_state.something_worth_saving && !iflags.debug_fuzzer) {
         set_error_savefile();
         if (dosave0()) {
             /* os/win port specific recover instructions */
@@ -612,7 +626,7 @@ VA_DECL(const char *, str)
                 raw_printf("%s", sysopt.recover);
         }
     }
-#endif
+#endif /* !MICRO */
     {
         char buf[BUFSZ];
 
@@ -750,7 +764,7 @@ time_t when; /* date+time at end of game */
     dump_plines();
     putstr(0, 0, "");
     putstr(0, 0, "Inventory:");
-    display_inventory((char *) 0, TRUE);
+    (void) display_inventory((char *) 0, TRUE);
     container_contents(invent, TRUE, TRUE, FALSE);
     enlightenment((BASICENLIGHTENMENT | MAGICENLIGHTENMENT),
                   (how >= PANICKED) ? ENL_GAMEOVERALIVE : ENL_GAMEOVERDEAD);
@@ -781,10 +795,10 @@ boolean taken;
 
     if (invent && !done_stopprint) {
         if (taken)
-            Sprintf(qbuf, "你想查看在你%s时本来有什么吗?",
-                    (how == QUIT) ? "退出" : "死亡");
+            Sprintf(qbuf, "Do you want to see what you had when you %s?",
+                    (how == QUIT) ? "quit" : "died");
         else
-            Strcpy(qbuf, "你想鉴明你的全部物品吗?");
+            Strcpy(qbuf, "Do you want your possessions identified?");
 
         ask = should_query_disclose_option('i', &defquery);
         c = ask ? yn_function(qbuf, ynqchars, defquery) : defquery;
@@ -799,7 +813,7 @@ boolean taken;
 
     if (!done_stopprint) {
         ask = should_query_disclose_option('a', &defquery);
-        c = ask ? yn_function("你想查看下你的各项属性吗?", ynqchars,
+        c = ask ? yn_function("Do you want to see your attributes?", ynqchars,
                               defquery)
                 : defquery;
         if (c == 'y')
@@ -822,7 +836,7 @@ boolean taken;
 
     if (!done_stopprint) {
         ask = should_query_disclose_option('c', &defquery);
-        c = ask ? yn_function("你想看下你的行为吗?", ynqchars,
+        c = ask ? yn_function("Do you want to see your conduct?", ynqchars,
                               defquery)
                 : defquery;
         if (c == 'y')
@@ -833,7 +847,7 @@ boolean taken;
 
     if (!done_stopprint) {
         ask = should_query_disclose_option('o', &defquery);
-        c = ask ? yn_function("你想看下地牢概述吗?",
+        c = ask ? yn_function("Do you want to see the dungeon overview?",
                               ynqchars, defquery)
                 : defquery;
         if (c == 'y')
@@ -853,32 +867,39 @@ int how;
     if (u.uhpmax < uhpmin)
         u.uhpmax = uhpmin;
     u.uhp = u.uhpmax;
-    u.uswldtim = 0;
-    if (u.uhunger < 500) {
-        u.uhunger = 500;
-        newuhs(FALSE);
+    if (Upolyd) /* Unchanging, or death which bypasses losing hit points */
+        u.mh = u.mhmax;
+    if (u.uhunger < 500 || how == CHOKING) {
+        init_uhunger();
     }
     /* cure impending doom of sickness hero won't have time to fix */
     if ((Sick & TIMEOUT) == 1L) {
-        u.usick_type = 0;
-        set_itimeout(&Sick, 0L);
+        make_sick(0L, (char *) 0, FALSE, SICK_ALL);
     }
-    if (how == CHOKING)
-        init_uhunger();
-    nomovemsg = "你活了下来.";
+    nomovemsg = "You survived that attempt on your life.";
     context.move = 0;
     if (multi > 0)
         multi = 0;
     else
         multi = -1;
     if (u.utrap && u.utraptype == TT_LAVA)
-        u.utrap = 0;
+        reset_utrap(FALSE);
     context.botl = 1;
     u.ugrave_arise = NON_PM;
     HUnchanging = 0L;
     curs_on_u();
     if (!context.mon_moving)
         endmultishot(FALSE);
+    if (u.uswallow) {
+        /* might drop hero onto a trap that kills her all over again */
+        expels(u.ustuck, u.ustuck->data, TRUE);
+    } else if (u.ustuck) {
+        if (Upolyd && sticks(youmonst.data))
+            You("release %s.", mon_nam(u.ustuck));
+        else
+            pline("%s releases you.", Monnam(u.ustuck));
+        unstuck(u.ustuck);
+    }
 }
 
 /*
@@ -944,6 +965,13 @@ int size; /* max value is less than 20 */
     return;
 }
 
+#if 0
+/*
+ * odds_and_ends() was used for 3.6.0 and 3.6.1.
+ * Schroedinger's Cat is handled differently starting with 3.6.2.
+ */
+STATIC_DCL boolean FDECL(odds_and_ends, (struct obj *, int));
+
 #define CAT_CHECK 2
 
 STATIC_OVL boolean
@@ -952,6 +980,7 @@ struct obj *list;
 int what;
 {
     struct obj *otmp;
+
     for (otmp = list; otmp; otmp = otmp->nobj) {
         switch (what) {
         case CAT_CHECK: /* Schroedinger's Cat */
@@ -965,6 +994,7 @@ int what;
     }
     return FALSE;
 }
+#endif
 
 /* called twice; first to calculate total, then to list relevant items */
 STATIC_OVL void
@@ -987,11 +1017,11 @@ winid endwin;
             if (counting) {
                 nowrap_add(u.urexp, points);
             } else {
-                makeknown(otmp->otyp);
+                discover_object(otmp->otyp, TRUE, FALSE);
                 otmp->known = otmp->dknown = otmp->bknown = otmp->rknown = 1;
                 /* assumes artifacts don't have quan > 1 */
-                Sprintf(pbuf, "%s%s ( 价值%ld %s 和%ld 分数)",
-                        the_unique_obj(otmp) ? "" : "",
+                Sprintf(pbuf, "%s%s (worth %ld %s and %ld points)",
+                        the_unique_obj(otmp) ? "The " : "",
                         otmp->oartifact ? artifact_name(xname(otmp), &dummy)
                                         : OBJ_NAME(objects[otmp->otyp]),
                         value, currency(value), points);
@@ -1008,13 +1038,16 @@ void
 done(how)
 int how;
 {
+    boolean survive = FALSE;
+
     if (how == TRICKED) {
         if (killer.name[0]) {
             paniclog("trickery", killer.name);
-            killer.name[0] = 0;
+            killer.name[0] = '\0';
         }
         if (wizard) {
             You("are a very tricky wizard, it seems.");
+            killer.format = KILLED_BY_AN; /* reset to 0 */
             return;
         }
     }
@@ -1024,13 +1057,33 @@ int how;
 #endif
         ) {
         /* skip status update if panicking or disconnected */
-        context.botl = context.botlx = FALSE;
+        context.botl = context.botlx = iflags.time_botl = FALSE;
     } else {
         /* otherwise force full status update */
         context.botlx = TRUE;
         bot();
     }
 
+    if (iflags.debug_fuzzer) {
+        if (!(program_state.panicking || how == PANICKED)) {
+            savelife(how);
+            /* periodically restore characteristics and lost exp levels
+               or cure lycanthropy */
+            if (!rn2(10)) {
+                struct obj *potion = mksobj((u.ulycn > LOW_PM && !rn2(3))
+                                            ? POT_WATER : POT_RESTORE_ABILITY,
+                                            TRUE, FALSE);
+
+                bless(potion);
+                (void) peffects(potion); /* always -1 for restore ability */
+                /* not useup(); we haven't put this potion into inventory */
+                obfree(potion, (struct obj *) 0);
+            }
+            killer.name[0] = '\0';
+            killer.format = 0;
+            return;
+        }
+    } else
     if (how == ASCENDED || (!killer.name[0] && how == GENOCIDED))
         killer.format = NO_KILLER_PREFIX;
     /* Avoid killed by "a" burning or "a" starvation */
@@ -1039,38 +1092,52 @@ int how;
     if (!killer.name[0] || how >= PANICKED)
         Strcpy(killer.name, deaths[how]);
 
-    if (how < PANICKED)
+    if (how < PANICKED) {
         u.umortality++;
+        /* in case caller hasn't already done this */
+        if (u.uhp != 0 || (Upolyd && u.mh != 0)) {
+            /* force HP to zero in case it is still positive (some
+               deaths aren't triggered by loss of hit points), or
+               negative (-1 is used as a flag in some circumstances
+               which don't apply when actually dying due to HP loss) */
+            u.uhp = u.mh = 0;
+            context.botl = 1;
+        }
+    }
     if (Lifesaved && (how <= GENOCIDED)) {
-        pline("但是等等...");
+        pline("But wait...");
         makeknown(AMULET_OF_LIFE_SAVING);
-        Your("挂饰 %s!", !Blind ? "开始发光" : "感觉很温暖");
+        Your("medallion %s!", !Blind ? "begins to glow" : "feels warm");
         if (how == CHOKING)
-            You("吐了 ...");
-        You_feel("好多了!");
-        pline_The("挂饰破碎了!");
+            You("vomit ...");
+        You_feel("much better!");
+        pline_The("medallion crumbles to dust!");
         if (uamul)
             useup(uamul);
 
         (void) adjattrib(A_CON, -1, TRUE);
         savelife(how);
         if (how == GENOCIDED) {
-            pline("不幸的是你仍然被灭绝了...");
+            pline("Unfortunately you are still genocided...");
         } else {
-            killer.name[0] = 0;
-            killer.format = 0;
-            return;
+            survive = TRUE;
         }
     }
-    if ((wizard || discover) && (how <= GENOCIDED)
-        && !paranoid_query(ParanoidDie, "死亡?")) {
-        pline("好, 你不会%s了.", (how == CHOKING) ? "窒息" : "死");
+    /* explore and wizard modes offer player the option to keep playing */
+    if (!survive && (wizard || discover) && how <= GENOCIDED
+        && !paranoid_query(ParanoidDie, "Die?")) {
+        pline("OK, so you don't %s.", (how == CHOKING) ? "choke" : "die");
         savelife(how);
-        killer.name[0] = 0;
-        killer.format = 0;
+        survive = TRUE;
+    }
+
+    if (survive) {
+        killer.name[0] = '\0';
+        killer.format = KILLED_BY_AN; /* reset to 0 */
         return;
     }
     really_done(how);
+    /*NOTREACHED*/
 }
 
 /* separated from done() in order to specify the __noreturn__ attribute */
@@ -1093,6 +1160,10 @@ int how;
     program_state.gameover = 1;
     /* in case of a subsequent panic(), there's no point trying to save */
     program_state.something_worth_saving = 0;
+#ifdef HANGUPHANDLING
+    if (program_state.done_hup)
+        done_stopprint++;
+#endif
     /* render vision subsystem inoperative */
     iflags.vision_inited = 0;
 
@@ -1117,8 +1188,8 @@ int how;
      * On those rare occasions you get hosed immediately, go out
      * smiling... :-)  -3.
      */
-    if (moves <= 1 && how < PANICKED) /* You die... --More-- */
-        pline("Do not pass go.  Do not collect 200 %s.", currency(200L));
+    if (moves <= 1 && how < PANICKED && !done_stopprint)
+        pline("Do not pass Go.  Do not collect 200 %s.", currency(200L));
 
     if (have_windows)
         wait_synch(); /* flush screen output */
@@ -1142,7 +1213,12 @@ int how;
         u.ugrave_arise = (NON_PM - 2); /* leave no corpse */
     else if (how == STONING)
         u.ugrave_arise = (NON_PM - 1); /* statue instead of corpse */
-    else if (how == TURNED_SLIME)
+    else if (how == TURNED_SLIME
+             /* it's possible to turn into slime even though green slimes
+                have been genocided:  genocide could occur after hero is
+                already infected or hero could eat a glob of one created
+                before genocide; don't try to arise as one if they're gone */
+             && !(mvitals[PM_GREEN_SLIME].mvflags & G_GENOD))
         u.ugrave_arise = PM_GREEN_SLIME;
 
     if (how == QUIT) {
@@ -1150,7 +1226,7 @@ int how;
         if (u.uhp < 1) {
             how = DIED;
             u.umortality++; /* skipped above when how==QUIT */
-            Strcpy(killer.name, "退出了卡隆的小船");
+            Strcpy(killer.name, "quit while already on Charon's boat");
         }
     }
     if (how == ESCAPED || how == PANICKED)
@@ -1159,9 +1235,11 @@ int how;
     fixup_death(how); /* actually, fixup multi_reason */
 
     if (how != PANICKED) {
+        boolean silently = done_stopprint ? TRUE : FALSE;
+
         /* these affect score and/or bones, but avoid them during panic */
-        taken = paybill((how == ESCAPED) ? -1 : (how != QUIT));
-        paygd();
+        taken = paybill((how == ESCAPED) ? -1 : (how != QUIT), silently);
+        paygd(silently);
         clearpriests();
     } else
         taken = FALSE; /* lint; assert( !bones_ok ); */
@@ -1180,10 +1258,24 @@ int how;
          * it in both of those places.
          */
         for (obj = invent; obj; obj = obj->nobj) {
-            makeknown(obj->otyp);
+            discover_object(obj->otyp, TRUE, FALSE);
             obj->known = obj->bknown = obj->dknown = obj->rknown = 1;
             if (Is_container(obj) || obj->otyp == STATUE)
                 obj->cknown = obj->lknown = 1;
+            /* we resolve Schroedinger's cat now in case of both
+               disclosure and dumplog, where the 50:50 chance for
+               live cat has to be the same both times */
+            if (SchroedingersBox(obj)) {
+                if (!Schroedingers_cat) {
+                    /* tell observe_quantum_cat() not to create a cat; if it
+                       chooses live cat in this situation, it will leave the
+                       SchroedingersBox flag set (for container_contents()) */
+                    observe_quantum_cat(obj, FALSE, FALSE);
+                    if (SchroedingersBox(obj))
+                        Schroedingers_cat = TRUE;
+                } else
+                    obj->spe = 0; /* ordinary box with cat corpse in it */
+            }
         }
 
         if (strcmp(flags.end_disclose, "none"))
@@ -1194,7 +1286,7 @@ int how;
 
     /* if pets will contribute to score, populate mydogs list now
        (bones creation isn't a factor, but pline() messaging is; used to
-       be done ever sooner, but we need it to come after dump_everything()
+       be done even sooner, but we need it to come after dump_everything()
        so that any accompanying pets are still on the map during dump) */
     if (how == ESCAPED || how == ASCENDED)
         keepdogs(TRUE);
@@ -1254,17 +1346,20 @@ int how;
         }
     }
 
-    if (u.ugrave_arise >= LOW_PM && u.ugrave_arise != PM_GREEN_SLIME) {
+    if (u.ugrave_arise >= LOW_PM && !done_stopprint) {
         /* give this feedback even if bones aren't going to be created,
            so that its presence or absence doesn't tip off the player to
            new bones or their lack; it might be a lie if makemon fails */
-        Your("身体死而复生作为%s...",
-             mons[u.ugrave_arise].mname);
+        Your("%s as %s...",
+             (u.ugrave_arise != PM_GREEN_SLIME)
+                 ? "body rises from the dead"
+                 : "revenant persists",
+             an(mons[u.ugrave_arise].mname));
         display_nhwindow(WIN_MESSAGE, FALSE);
     }
 
     if (bones_ok) {
-        if (!wizard || paranoid_query(ParanoidBones, "保存bones 文件?"))
+        if (!wizard || paranoid_query(ParanoidBones, "Save bones?"))
             savebones(how, endtime, corpse);
         /* corpse may be invalid pointer now so
             ensure that it isn't used again */
@@ -1282,13 +1377,12 @@ int how;
         if (WIN_INVEN != WIN_ERR) {
             destroy_nhwindow(WIN_INVEN),  WIN_INVEN = WIN_ERR;
             /* precaution in case any late update_inventory() calls occur */
-            flags.perm_invent = 0;
+            iflags.perm_invent = 0;
         }
         display_nhwindow(WIN_MESSAGE, TRUE);
         destroy_nhwindow(WIN_MAP),  WIN_MAP = WIN_ERR;
-#ifndef STATUS_HILITES
-        destroy_nhwindow(WIN_STATUS),  WIN_STATUS = WIN_ERR;
-#endif
+        if (WIN_STATUS != WIN_ERR)
+            destroy_nhwindow(WIN_STATUS),  WIN_STATUS = WIN_ERR;
         destroy_nhwindow(WIN_MESSAGE),  WIN_MESSAGE = WIN_ERR;
 
         if (!done_stopprint || flags.tombstone)
@@ -1310,24 +1404,21 @@ int how;
     }
 #endif
     if (u.uhave.amulet) {
-        char tbuf[BUFSZ];
-        Strcpy(tbuf, killer.name);
-        Strcpy(killer.name, "带着护身符被");
-        Strcat(killer.name, tbuf);
+        Strcat(killer.name, " (with the Amulet)");
     } else if (how == ESCAPED) {
         if (Is_astralevel(&u.uz)) /* offered Amulet to wrong deity */
-            Strcat(killer.name, " ( 在神的耻辱中)");
+            Strcat(killer.name, " (in celestial disgrace)");
         else if (carrying(FAKE_AMULET_OF_YENDOR))
-            Strcat(killer.name, " ( 带着伪造的护身符)");
+            Strcat(killer.name, " (with a fake Amulet)");
         /* don't bother counting to see whether it should be plural */
     }
 
-    Sprintf(pbuf, "%s %s %s...", Goodbye(), plname,
+    Sprintf(pbuf, "%s %s the %s...", Goodbye(), plname,
             (how != ASCENDED)
                 ? (const char *) ((flags.female && urole.name.f)
                     ? urole.name.f
                     : urole.name.m)
-                : (const char *) (flags.female ? "女半神" : "半神"));
+                : (const char *) (flags.female ? "Demigoddess" : "Demigod"));
     dump_forward_putstr(endwin, 0, pbuf, done_stopprint);
     dump_forward_putstr(endwin, 0, "", done_stopprint);
 
@@ -1357,32 +1448,32 @@ int how;
 
         viz_array[0][0] |= IN_SIGHT; /* need visibility for naming */
         mtmp = mydogs;
-        Strcpy(pbuf, "你");
-        if (!Schroedingers_cat) /* check here in case disclosure was off */
-            Schroedingers_cat = odds_and_ends(invent, CAT_CHECK);
-        if (Schroedingers_cat) {
-            int mhp, m_lev = adj_lev(&mons[PM_HOUSECAT]);
-
-            mhp = d(m_lev, 8);
-            nowrap_add(u.urexp, mhp);
-            Strcat(eos(pbuf), "和薛定谔的猫");
-        }
-        if (mtmp) {
+        Strcpy(pbuf, "You");
+        if (mtmp || Schroedingers_cat) {
             while (mtmp) {
-                Sprintf(eos(pbuf), "和%s", mon_nam(mtmp));
+                Sprintf(eos(pbuf), " and %s", mon_nam(mtmp));
                 if (mtmp->mtame)
                     nowrap_add(u.urexp, mtmp->mhp);
                 mtmp = mtmp->nmon;
+            }
+            /* [it might be more robust to create a housecat and add it to
+               mydogs; it doesn't have to be placed on the map for that] */
+            if (Schroedingers_cat) {
+                int mhp, m_lev = adj_lev(&mons[PM_HOUSECAT]);
+
+                mhp = d(m_lev, 8);
+                nowrap_add(u.urexp, mhp);
+                Strcat(eos(pbuf), " and Schroedinger's cat");
             }
             dump_forward_putstr(endwin, 0, pbuf, done_stopprint);
             pbuf[0] = '\0';
         } else {
             Strcat(pbuf, " ");
         }
-        Sprintf(eos(pbuf), "%s, 有%ld 分数,",
-                how == ASCENDED ? "得到了回报"
-                                 : "逃离了地牢",
-                u.urexp);
+        Sprintf(eos(pbuf), "%s with %ld point%s,",
+                how == ASCENDED ? "went to your reward"
+                                 : "escaped from the dungeon",
+                u.urexp, plur(u.urexp));
         dump_forward_putstr(endwin, 0, pbuf, done_stopprint);
 
         if (!done_stopprint)
@@ -1405,19 +1496,19 @@ int how;
                     continue;
                 if (objects[typ].oc_class != GEM_CLASS || typ <= LAST_GEM) {
                     otmp = mksobj(typ, FALSE, FALSE);
-                    makeknown(otmp->otyp);
+                    discover_object(otmp->otyp, TRUE, FALSE);
                     otmp->known = 1;  /* for fake amulets */
                     otmp->dknown = 1; /* seen it (blindness fix) */
                     if (has_oname(otmp))
                         free_oname(otmp);
                     otmp->quan = count;
-                    Sprintf(pbuf, "%8ld %s ( 价值 %ld %s),", count,
+                    Sprintf(pbuf, "%8ld %s (worth %ld %s),", count,
                             xname(otmp), count * (long) objects[typ].oc_cost,
                             currency(2L));
                     obfree(otmp, (struct obj *) 0);
                 } else {
-                    Sprintf(pbuf, "%8ld 毫无价值的有色玻璃碎片,",
-                            count);
+                    Sprintf(pbuf, "%8ld worthless piece%s of colored glass,",
+                            count, plur(count));
                 }
                 dump_forward_putstr(endwin, 0, pbuf, 0);
             }
@@ -1428,30 +1519,30 @@ int how;
         if (u.uz.dnum == 0 && u.uz.dlevel <= 0) {
             /* level teleported out of the dungeon; `how' is DIED,
                due to falling or to "arriving at heaven prematurely" */
-            Sprintf(pbuf, "你因超越了地牢的界限而 %s",
-                    (u.uz.dlevel < 0) ? "去世" : ends[how]);
+            Sprintf(pbuf, "You %s beyond the confines of the dungeon",
+                    (u.uz.dlevel < 0) ? "passed away" : ends[how]);
         } else {
             /* more conventional demise */
             const char *where = dungeons[u.uz.dnum].dname;
 
             if (Is_astralevel(&u.uz))
-                where = "星界";
-            Sprintf(pbuf, "你在%s %s,", where, ends[how]);
+                where = "The Astral Plane";
+            Sprintf(pbuf, "You %s in %s", ends[how], where);
             if (!In_endgame(&u.uz) && !Is_knox(&u.uz))
-                Sprintf(eos(pbuf), " 地牢%d 层,",
+                Sprintf(eos(pbuf), " on dungeon level %d",
                         In_quest(&u.uz) ? dunlev(&u.uz) : depth(&u.uz));
         }
 
-        Sprintf(eos(pbuf), "有%ld 分数,", u.urexp);
+        Sprintf(eos(pbuf), " with %ld point%s,", u.urexp, plur(u.urexp));
         dump_forward_putstr(endwin, 0, pbuf, done_stopprint);
     }
 
-    Sprintf(pbuf, "%ld 金币, 移动了%ld 步.", umoney,
-            moves);
+    Sprintf(pbuf, "and %ld piece%s of gold, after %ld move%s.", umoney,
+            plur(umoney), moves, plur(moves));
     dump_forward_putstr(endwin, 0, pbuf, done_stopprint);
     Sprintf(pbuf,
-            "在你%s 的时候你的等级为%d 生命值最大为%d.",
-            ends[how], u.ulevel, u.uhpmax);
+            "You were level %d with a maximum of %d hit point%s when you %s.",
+            u.ulevel, u.uhpmax, plur(u.uhpmax), ends[how]);
     dump_forward_putstr(endwin, 0, pbuf, done_stopprint);
     dump_forward_putstr(endwin, 0, "", done_stopprint);
     if (!done_stopprint)
@@ -1482,61 +1573,65 @@ boolean identified, all_containers, reportempty;
 {
     register struct obj *box, *obj;
     char buf[BUFSZ];
-    boolean cat, deadcat;
+    boolean cat, dumping = iflags.in_dumplog;
 
     for (box = list; box; box = box->nobj) {
         if (Is_container(box) || box->otyp == STATUE) {
             box->cknown = 1; /* we're looking at the contents now */
             if (identified)
                 box->lknown = 1;
-            cat = deadcat = FALSE;
-            if (SchroedingersBox(box) && !Schroedingers_cat) {
-                /* Schroedinger's Cat? */
-                cat = odds_and_ends(box, CAT_CHECK);
-                if (cat)
-                    Schroedingers_cat = TRUE;
-                else
-                    deadcat = TRUE;
-                box->spe = 0;
-            }
             if (box->otyp == BAG_OF_TRICKS) {
                 continue; /* wrong type of container */
             } else if (box->cobj) {
                 winid tmpwin = create_nhwindow(NHW_MENU);
+                Loot *sortedcobj, *srtc;
+                unsigned sortflags;
 
-                sortloot(&box->cobj,
-                         (((flags.sortloot == 'l' || flags.sortloot == 'f')
-                           ? SORTLOOT_LOOT : 0)
-                          | (flags.sortpack ? SORTLOOT_PACK : 0)),
-                         FALSE);
-                Sprintf(buf, "%s里面有:", the(xname(box)));
+                /* at this stage, the SchroedingerBox() flag is only set
+                   if the cat inside the box is alive; the box actually
+                   contains a cat corpse that we'll pretend is not there;
+                   for dead cat, the flag will be clear and there'll be
+                   a cat corpse inside the box; either way, inventory
+                   reports the box as containing "1 item" */
+                cat = SchroedingersBox(box);
+
+                Sprintf(buf, "Contents of %s:", the(xname(box)));
                 putstr(tmpwin, 0, buf);
-                putstr(tmpwin, 0, "");
-                for (obj = box->cobj; obj; obj = obj->nobj) {
-                    if (identified) {
-                        makeknown(obj->otyp);
-                        obj->known = obj->bknown = obj->dknown
-                            = obj->rknown = 1;
-                        if (Is_container(obj) || obj->otyp == STATUE)
-                            obj->cknown = obj->lknown = 1;
+                if (!dumping)
+                    putstr(tmpwin, 0, "");
+                buf[0] = buf[1] = ' '; /* two leading spaces */
+                if (box->cobj && !cat) {
+                    sortflags = (((flags.sortloot == 'l'
+                                   || flags.sortloot == 'f')
+                                     ? SORTLOOT_LOOT : 0)
+                                 | (flags.sortpack ? SORTLOOT_PACK : 0));
+                    sortedcobj = sortloot(&box->cobj, sortflags, FALSE,
+                                          (boolean FDECL((*), (OBJ_P))) 0);
+                    for (srtc = sortedcobj; ((obj = srtc->obj) != 0); ++srtc) {
+                        if (identified) {
+                            discover_object(obj->otyp, TRUE, FALSE);
+                            obj->known = obj->bknown = obj->dknown
+                                = obj->rknown = 1;
+                            if (Is_container(obj) || obj->otyp == STATUE)
+                                obj->cknown = obj->lknown = 1;
+                        }
+                        Strcpy(&buf[2], doname_with_price(obj));
+                        putstr(tmpwin, 0, buf);
                     }
-                    putstr(tmpwin, 0, doname(obj));
+                    unsortloot(&sortedcobj);
+                } else if (cat) {
+                    Strcpy(&buf[2], "Schroedinger's cat!");
+                    putstr(tmpwin, 0, buf);
                 }
-                if (cat)
-                    putstr(tmpwin, 0, "薛定谔的猫");
-                else if (deadcat)
-                    putstr(tmpwin, 0, "薛定谔的死猫");
+                if (dumping)
+                    putstr(0, 0, "");
                 display_nhwindow(tmpwin, TRUE);
                 destroy_nhwindow(tmpwin);
                 if (all_containers)
                     container_contents(box->cobj, identified, TRUE,
                                        reportempty);
-            } else if (cat || deadcat) {
-                pline("%s 薛定谔的%s猫!", Tobjnam(box, "里面有"),
-                      deadcat ? "死 " : "");
-                display_nhwindow(WIN_MESSAGE, FALSE);
             } else if (reportempty) {
-                pline("%s 是空的.", upstart(thesimpleoname(box)));
+                pline("%s is empty.", upstart(thesimpleoname(box)));
                 display_nhwindow(WIN_MESSAGE, FALSE);
             }
         }
@@ -1576,8 +1671,6 @@ int status;
     nethack_exit(status);
 }
 
-extern const int monstr[];
-
 enum vanq_order_modes {
     VANQ_MLVL_MNDX = 0,
     VANQ_MSTR_MNDX,
@@ -1592,14 +1685,14 @@ enum vanq_order_modes {
 };
 
 static const char *vanqorders[NUM_VANQ_ORDER_MODES] = {
-    "传统: 按怪物等级, 按内部怪物索引",
-    "按怪物难度, 按内部怪物索引",
-    "字母顺序, 首先独特的怪物, 然后其它",
-    "字母顺序, 独特的怪物和其它混合",
-    "按怪物类别, 类别的高到低",
-    "按怪物类别, 类别的低到高",
-    "按数量, 高到低, 按绑定计数中的内部索引",
-    "按数量, 低到高, 按绑定计数中的内部索引",
+    "traditional: by monster level, by internal monster index",
+    "by monster toughness, by internal monster index",
+    "alphabetically, first unique monsters, then others",
+    "alphabetically, unique monsters and others intermixed",
+    "by monster class, high to low level within class",
+    "by monster class, low to high level within class",
+    "by count, high to low, by internal index within tied count",
+    "by count, low to high, by internal index within tied count",
 };
 static int vanq_sortmode = VANQ_MLVL_MNDX;
 
@@ -1622,7 +1715,7 @@ const genericptr vptr2;
         break;
     case VANQ_MSTR_MNDX:
         /* sort by monster toughness */
-        mstr1 = monstr[indx1], mstr2 = monstr[indx2];
+        mstr1 = mons[indx1].difficulty, mstr2 = mons[indx2].difficulty;
         res = mstr2 - mstr1; /* monstr high to low */
         break;
     case VANQ_ALPHA_SEP:
@@ -1702,7 +1795,7 @@ set_vanq_order()
         add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, vanqorders[i],
                  (i == vanq_sortmode) ? MENU_SELECTED : MENU_UNSELECTED);
     }
-    end_menu(tmpwin, "被击败的怪物数量排序");
+    end_menu(tmpwin, "Sort order for vanquished monster counts");
 
     n = select_menu(tmpwin, PICK_ONE, &selected);
     destroy_nhwindow(tmpwin);
@@ -1764,7 +1857,7 @@ boolean ask;
         boolean class_header, uniq_header, was_uniq = FALSE;
 
         c = ask ? yn_function(
-                            "你想看下你打败的生物吗?",
+                            "Do you want an account of creatures vanquished?",
                               ynaqchars, defquery)
                 : defquery;
         if (c == 'q')
@@ -1781,7 +1874,7 @@ boolean ask;
                             || vanq_sortmode == VANQ_MCLS_HTOL);
 
             klwin = create_nhwindow(NHW_MENU);
-            putstr(klwin, 0, "打败的生物:");
+            putstr(klwin, 0, "Vanquished creatures:");
             if (!dumping)
                 putstr(klwin, 0, "");
 
@@ -1798,12 +1891,18 @@ boolean ask;
                 }
                 if (UniqCritterIndx(i)) {
                     Sprintf(buf, "%s%s",
-                            !type_is_pname(&mons[i]) ? "" : "",
+                            !type_is_pname(&mons[i]) ? "the " : "",
                             mons[i].mname);
                     if (nkilled > 1) {
                         switch (nkilled) {
+                        case 2:
+                            Sprintf(eos(buf), " (twice)");
+                            break;
+                        case 3:
+                            Sprintf(eos(buf), " (thrice)");
+                            break;
                         default:
-                            Sprintf(eos(buf), " (%d 次)", nkilled);
+                            Sprintf(eos(buf), " (%d times)", nkilled);
                             break;
                         }
                     }
@@ -1816,7 +1915,7 @@ boolean ask;
                     /* trolls or undead might have come back,
                        but we don't keep track of that */
                     if (nkilled == 1)
-                        Strcpy(buf, mons[i].mname);
+                        Strcpy(buf, an(mons[i].mname));
                     else
                         Sprintf(buf, "%3d %s", nkilled,
                                 makeplural(mons[i].mname));
@@ -1838,7 +1937,7 @@ boolean ask;
             if (ntypes > 1) {
                 if (!dumping)
                     putstr(klwin, 0, "");
-                Sprintf(buf, "%ld 生物被打败.", total_killed);
+                Sprintf(buf, "%ld creatures vanquished.", total_killed);
                 putstr(klwin, 0, buf);
             }
             display_nhwindow(klwin, TRUE);
@@ -1846,7 +1945,7 @@ boolean ask;
         }
     } else if (defquery == 'a') {
         /* #dovanquished rather than final disclosure, so pline() is ok */
-        pline("还没有消灭怪物.");
+        pline("No creatures have been vanquished.");
 #ifdef DUMPLOG
     } else if (dumping) {
         putstr(0, 0, "No creatures were vanquished."); /* not pline() */
@@ -1906,18 +2005,18 @@ boolean ask;
 
     /* genocided or extinct species list */
     if (ngenocided != 0 || nextinct != 0) {
-        Sprintf(buf, "你想要查看%s物种%s%s列表吗?",
-                (nextinct && !ngenocided) ? "绝种的 " : "",
-                (ngenocided) ? " 灭绝的" : "",
-                (nextinct && ngenocided) ? " 和绝种的" : "");
+        Sprintf(buf, "Do you want a list of %sspecies%s%s?",
+                (nextinct && !ngenocided) ? "extinct " : "",
+                (ngenocided) ? " genocided" : "",
+                (nextinct && ngenocided) ? " and extinct" : "");
         c = ask ? yn_function(buf, ynqchars, defquery) : defquery;
         if (c == 'q')
             done_stopprint++;
         if (c == 'y') {
             klwin = create_nhwindow(NHW_MENU);
-            Sprintf(buf, "%s%s 物种:",
-                    (ngenocided) ? "灭绝的" : "绝种的",
-                    (nextinct && ngenocided) ? " 或绝种的" : "");
+            Sprintf(buf, "%s%s species:",
+                    (ngenocided) ? "Genocided" : "Extinct",
+                    (nextinct && ngenocided) ? " or extinct" : "");
             putstr(klwin, 0, buf);
             if (!dumping)
                 putstr(klwin, 0, "");
@@ -1936,18 +2035,18 @@ boolean ask;
                      * alive, contradicting the meaning of the word.
                      */
                     if ((mvitals[i].mvflags & G_GONE) == G_EXTINCT)
-                        Strcat(buf, " ( 绝种的)");
+                        Strcat(buf, " (extinct)");
                     putstr(klwin, 0, buf);
                 }
             }
             if (!dumping)
                 putstr(klwin, 0, "");
             if (ngenocided > 0) {
-                Sprintf(buf, "%d 物种灭绝的.", ngenocided);
+                Sprintf(buf, "%d species genocided.", ngenocided);
                 putstr(klwin, 0, buf);
             }
             if (nextinct > 0) {
-                Sprintf(buf, "%d 物种绝种的.", nextinct);
+                Sprintf(buf, "%d species extinct.", nextinct);
                 putstr(klwin, 0, buf);
             }
 
@@ -1970,10 +2069,10 @@ const char *killername;
 {
     struct kinfo *k = find_delayed_killer(id);
 
-    if (k == (struct kinfo *) 0) {
+    if (!k) {
         /* no match, add a new delayed killer to the list */
-        k = (struct kinfo *) alloc(sizeof(struct kinfo));
-        (void) memset((genericptr_t)k, 0, sizeof(struct kinfo));
+        k = (struct kinfo *) alloc(sizeof (struct kinfo));
+        (void) memset((genericptr_t) k, 0, sizeof (struct kinfo));
         k->id = id;
         k->next = killer.next;
         killer.next = k;
@@ -2012,10 +2111,11 @@ struct kinfo *kptr;
     }
 
     if (k == (struct kinfo *) 0) {
-        impossible("dealloc_killer not on list");
+        impossible("dealloc_killer (#%d) not on list", kptr->id);
     } else {
         prev->next = k->next;
         free((genericptr_t) k);
+        debugpline1("freed delayed killer #%d", kptr->id);
     }
 }
 
@@ -2028,7 +2128,7 @@ int mode;
 
     if (perform_bwrite(mode)) {
         for (kptr = &killer; kptr != (struct kinfo *) 0; kptr = kptr->next) {
-            bwrite(fd, (genericptr_t) kptr, sizeof(struct kinfo));
+            bwrite(fd, (genericptr_t) kptr, sizeof (struct kinfo));
         }
     }
     if (release_data(mode)) {
@@ -2047,9 +2147,9 @@ int fd;
     struct kinfo *kptr;
 
     for (kptr = &killer; kptr != (struct kinfo *) 0; kptr = kptr->next) {
-        mread(fd, (genericptr_t) kptr, sizeof(struct kinfo));
+        mread(fd, (genericptr_t) kptr, sizeof (struct kinfo));
         if (kptr->next) {
-            kptr->next = (struct kinfo *) alloc(sizeof(struct kinfo));
+            kptr->next = (struct kinfo *) alloc(sizeof (struct kinfo));
         }
     }
 }

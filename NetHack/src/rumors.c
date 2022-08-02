@@ -1,4 +1,4 @@
-/* NetHack 3.6	rumors.c	$NHDT-Date: 1446713640 2015/11/05 08:54:00 $  $NHDT-Branch: master $:$NHDT-Revision: 1.27 $ */
+/* NetHack 3.6	rumors.c	$NHDT-Date: 1545132266 2018/12/18 11:24:26 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.34 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2012. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -43,6 +43,7 @@
 
 STATIC_DCL void FDECL(init_rumors, (dlb *));
 STATIC_DCL void FDECL(init_oracles, (dlb *));
+STATIC_DCL void FDECL(couldnt_open_file, (const char *));
 
 /* rumor size variables are signed so that value -1 can be used as a flag */
 static long true_rumor_size = 0L, false_rumor_size;
@@ -124,12 +125,12 @@ boolean exclude_cookie;
             case 2: /*(might let a bogus input arg sneak thru)*/
             case 1:
                 beginning = (long) true_rumor_start;
-                tidbit = Rand() % true_rumor_size;
+                tidbit = rn2(true_rumor_size);
                 break;
             case 0: /* once here, 0 => false rather than "either"*/
             case -1:
                 beginning = (long) false_rumor_start;
-                tidbit = Rand() % false_rumor_size;
+                tidbit = rn2(false_rumor_size);
                 break;
             default:
                 impossible("strange truth value for rumor");
@@ -148,16 +149,14 @@ boolean exclude_cookie;
             Strcat(rumor_buf, xcrypt(line, xbuf));
         } while (
             count++ < 50 && exclude_cookie
-            && (strstri(rumor_buf, "fortune") || strstri(rumor_buf, "pity")
-            || strstri(rumor_buf, "幸运") || strstri(rumor_buf, "命运")
-            || strstri(rumor_buf, "可惜")));
+            && (strstri(rumor_buf, "fortune") || strstri(rumor_buf, "pity")));
         (void) dlb_fclose(rumors);
         if (count >= 50)
             impossible("Can't find non-cookie rumor?");
         else if (!in_mklev) /* avoid exercizing wisdom for graffiti */
             exercise(A_WIS, (adjtruth > 0));
     } else {
-        pline("Can't open rumors file!");
+        couldnt_open_file(RUMORFILE);
         true_rumor_size = -1; /* don't try to open it again */
     }
 /* this is safe either way, so do it always since we can't get the definition
@@ -184,13 +183,15 @@ boolean exclude_cookie;
 void
 rumor_check()
 {
-    dlb *rumors;
+    dlb *rumors = 0;
     winid tmpwin;
     char *endp, line[BUFSZ], xbuf[BUFSZ], rumor_buf[BUFSZ];
 
     if (true_rumor_size < 0L) { /* we couldn't open RUMORFILE */
     no_rumors:
         pline("rumors not accessible.");
+        if (rumors)
+            (void) dlb_fclose(rumors);
         return;
     }
 
@@ -274,16 +275,18 @@ rumor_check()
         display_nhwindow(tmpwin, TRUE);
         destroy_nhwindow(tmpwin);
     } else {
-        impossible("Can't open rumors file!");
+        couldnt_open_file(RUMORFILE);
         true_rumor_size = -1; /* don't try to open it again */
     }
 }
 
-/* Gets a random line of text from file 'fname', and returns it. */
+/* Gets a random line of text from file 'fname', and returns it.
+   rng is the random number generator to use, and should act like rn2 does. */
 char *
-get_rnd_text(fname, buf)
+get_rnd_text(fname, buf, rng)
 const char *fname;
 char *buf;
+int FDECL((*rng), (int));
 {
     dlb *fh;
 
@@ -304,7 +307,7 @@ char *buf;
         (void) dlb_fseek(fh, 0L, SEEK_END);
         endtxt = dlb_ftell(fh);
         sizetxt = endtxt - starttxt;
-        tidbit = Rand() % sizetxt;
+        tidbit = rng(sizetxt);
 
         (void) dlb_fseek(fh, starttxt + tidbit, SEEK_SET);
         (void) dlb_fgets(line, sizeof line, fh);
@@ -316,8 +319,10 @@ char *buf;
             *endp = 0;
         Strcat(buf, xcrypt(line, xbuf));
         (void) dlb_fclose(fh);
-    } else
-        impossible("Can't open file %s!", fname);
+    } else {
+        couldnt_open_file(fname);
+    }
+
     return buf;
 }
 
@@ -327,7 +332,7 @@ int truth; /* 1=true, -1=false, 0=either */
 int mechanism;
 {
     static const char fortune_msg[] =
-        "这个饼干里面有一张废纸.";
+        "This cookie has a scrap of paper inside.";
     const char *line;
     char buf[BUFSZ];
     boolean reading = (mechanism == BY_COOKIE || mechanism == BY_PAPER);
@@ -339,7 +344,7 @@ int mechanism;
         else if (Blind) {
             if (mechanism == BY_COOKIE)
                 pline(fortune_msg);
-            pline("真遗憾你无法阅读它!");
+            pline("What a pity that you cannot read it!");
             return;
         }
     }
@@ -349,10 +354,10 @@ int mechanism;
     switch (mechanism) {
     case BY_ORACLE:
         /* Oracle delivers the rumor */
-        pline("不背其言, 神谕 %s说: ",
-              (!rn2(4) ? "随口 "
-                       : (!rn2(3) ? "胡乱 "
-                                  : (rn2(2) ? "平静的 " : ""))));
+        pline("True to her word, the Oracle %ssays: ",
+              (!rn2(4) ? "offhandedly "
+                       : (!rn2(3) ? "casually "
+                                  : (rn2(2) ? "nonchalantly " : ""))));
         verbalize1(line);
         /* [WIS exercized by getrumor()] */
         return;
@@ -360,7 +365,7 @@ int mechanism;
         pline(fortune_msg);
     /* FALLTHRU */
     case BY_PAPER:
-        pline("上面写着:");
+        pline("It reads:");
         break;
     }
     pline1(line);
@@ -422,11 +427,10 @@ outoracle(special, delphi)
 boolean special;
 boolean delphi;
 {
-    char line[COLNO];
-    char *endp;
+    winid tmpwin;
     dlb *oracles;
     int oracle_idx;
-    char xbuf[BUFSZ];
+    char *endp, line[COLNO], xbuf[BUFSZ];
 
     /* early return if we couldn't open ORACLEFILE on previous attempt,
        or if all the oracularities are already exhausted */
@@ -436,17 +440,16 @@ boolean delphi;
     oracles = dlb_fopen(ORACLEFILE, "r");
 
     if (oracles) {
-        winid tmpwin;
         if (oracle_flg == 0) { /* if this is the first outoracle() */
             init_oracles(oracles);
             oracle_flg = 1;
             if (oracle_cnt == 0)
-                return;
+                goto close_oracles;
         }
         /* oracle_loc[0] is the special oracle;
            oracle_loc[1..oracle_cnt-1] are normal ones */
         if (oracle_cnt <= 1 && !special)
-            return; /*(shouldn't happen)*/
+            goto close_oracles; /*(shouldn't happen)*/
         oracle_idx = special ? 0 : rnd((int) oracle_cnt - 1);
         (void) dlb_fseek(oracles, (long) oracle_loc[oracle_idx], SEEK_SET);
         if (!special) /* move offset of very last one into this slot */
@@ -456,10 +459,10 @@ boolean delphi;
         if (delphi)
             putstr(tmpwin, 0,
                    special
-                     ? "神谕轻蔑地拿走了你所有的钱然后说:"
-                     : "神谕沉思片刻然后吟诵:");
+                     ? "The Oracle scornfully takes all your money and says:"
+                     : "The Oracle meditates for a moment and then intones:");
         else
-            putstr(tmpwin, 0, "消息显示:");
+            putstr(tmpwin, 0, "The message reads:");
         putstr(tmpwin, 0, "");
 
         while (dlb_fgets(line, COLNO, oracles) && strcmp(line, "---\n")) {
@@ -469,9 +472,10 @@ boolean delphi;
         }
         display_nhwindow(tmpwin, TRUE);
         destroy_nhwindow(tmpwin);
+ close_oracles:
         (void) dlb_fclose(oracles);
     } else {
-        pline("Can't open oracles file!");
+        couldnt_open_file(ORACLEFILE);
         oracle_flg = -1; /* don't try to open it again */
     }
 }
@@ -489,17 +493,17 @@ struct monst *oracl;
     umoney = money_cnt(invent);
 
     if (!oracl) {
-        There("没有人来咨询.");
+        There("is no one here to consult.");
         return 0;
     } else if (!oracl->mpeaceful) {
-        pline("%s 没有心情让你咨询.", Monnam(oracl));
+        pline("%s is in no mood for consultations.", Monnam(oracl));
         return 0;
     } else if (!umoney) {
-        You("没有钱.");
+        You("have no money.");
         return 0;
     }
 
-    Sprintf(qbuf, "\" 汝欲小咨询否?\" (%d %s)",
+    Sprintf(qbuf, "\"Wilt thou settle for a minor consultation?\" (%d %s)",
             minor_cost, currency((long) minor_cost));
     switch (ynq(qbuf)) {
     default:
@@ -507,7 +511,7 @@ struct monst *oracl;
         return 0;
     case 'y':
         if (umoney < (long) minor_cost) {
-            You("没有足够的钱咨询!");
+            You("don't even have enough money for that!");
             return 0;
         }
         u_pay = minor_cost;
@@ -516,7 +520,7 @@ struct monst *oracl;
         if (umoney <= (long) minor_cost /* don't even ask */
             || (oracle_cnt == 1 || oracle_flg < 0))
             return 0;
-        Sprintf(qbuf, "\" 则汝欲大咨询耶?\" (%d %s)",
+        Sprintf(qbuf, "\"Then dost thou desire a major one?\" (%d %s)",
                 major_cost, currency((long) major_cost));
         if (yn(qbuf) != 'y')
             return 0;
@@ -547,6 +551,22 @@ struct monst *oracl;
         newexplevel();
     }
     return 1;
+}
+
+STATIC_OVL void
+couldnt_open_file(filename)
+const char *filename;
+{
+    int save_something = program_state.something_worth_saving;
+
+    /* most likely the file is missing, so suppress impossible()'s
+       "saving and restoring might fix this" (unless the fuzzer,
+       which escalates impossible to panic, is running) */
+    if (!iflags.debug_fuzzer)
+        program_state.something_worth_saving = 0;
+
+    impossible("Can't open '%s' file.", filename);
+    program_state.something_worth_saving = save_something;
 }
 
 /*rumors.c*/

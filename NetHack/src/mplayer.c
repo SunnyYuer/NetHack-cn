@@ -1,4 +1,4 @@
-/* NetHack 3.6	mplayer.c	$NHDT-Date: 1458949461 2016/03/25 23:44:21 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.21 $ */
+/* NetHack 3.6	mplayer.c	$NHDT-Date: 1550524564 2019/02/18 21:16:04 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.26 $ */
 /*      Copyright (c) Izchak Miller, 1992.                        */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -270,7 +270,8 @@ register boolean special;
             if (special && rn2(2))
                 otmp = mk_artifact(otmp, A_NONE);
             /* usually increase stack size if stackable weapon */
-            if (objects[otmp->otyp].oc_merge && !otmp->oartifact)
+            if (objects[otmp->otyp].oc_merge && !otmp->oartifact
+                && monmightthrowwep(otmp))
                 otmp->quan += (long) rn2(is_spear(otmp) ? 4 : 8);
             /* mplayers knew better than to overenchant Magicbane */
             if (otmp->oartifact == ART_MAGICBANE)
@@ -340,7 +341,7 @@ boolean special;
 
         /* roll for character class */
         pm = rn1(PM_WIZARD - PM_ARCHEOLOGIST + 1, PM_ARCHEOLOGIST);
-        set_mon_data(&fakemon, &mons[pm], -1);
+        set_mon_data(&fakemon, &mons[pm]);
 
         /* roll for an available location */
         do {
@@ -363,20 +364,20 @@ register struct monst *mtmp;
 {
     static const char
         *same_class_msg[3] = {
-            "我不能赢, 你也不能!",
-            "你不配赢!",
-            "这是我的荣誉, 不是你的!",
+            "I can't win, and neither will you!",
+            "You don't deserve to win!",
+            "Mine should be the honor, not yours!",
         },
         *other_class_msg[3] = {
-            "低贱的人想和我说话, 啊?",
-            "战斗, 人渣!",
-            "这就是我要说的!",
+            "The low-life wants to talk, eh?",
+            "Fight, scum!",
+            "Here is what I have to say!",
         };
 
     if (mtmp->mpeaceful)
         return; /* will drop to humanoid talk */
 
-    pline("交谈? -- %s", (mtmp->data == &mons[urole.malenum]
+    pline("Talk? -- %s", (mtmp->data == &mons[urole.malenum]
                           || mtmp->data == &mons[urole.femalenum])
                              ? same_class_msg[rn2(3)]
                              : other_class_msg[rn2(3)]);

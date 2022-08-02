@@ -1,4 +1,4 @@
-/* NetHack 3.6	minion.c	$NHDT-Date: 1432512773 2015/05/25 00:12:53 $  $NHDT-Branch: master $:$NHDT-Revision: 1.33 $ */
+/* NetHack 3.6	minion.c	$NHDT-Date: 1544998886 2018/12/16 22:21:26 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.40 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2008. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -61,7 +61,7 @@ struct monst *mon;
 
         if (uwep && uwep->oartifact == ART_DEMONBANE && is_demon(ptr)) {
             if (canseemon(mon))
-                pline("%s 看起来困惑了片刻.", Monnam(mon));
+                pline("%s looks puzzled for a moment.", Monnam(mon));
             return 0;
         }
 
@@ -143,6 +143,8 @@ struct monst *mon;
                 EMIN(mtmp)->renegade =
                     (atyp != u.ualign.type) ^ !mtmp->mpeaceful;
             }
+            if (is_demon(ptr) && canseemon(mtmp))
+                pline("%s appears in a cloud of smoke!", Amonnam(mtmp));
         }
         cnt--;
     }
@@ -202,10 +204,10 @@ boolean talk;
     }
     if (mon) {
         if (talk) {
-            pline_The("%s的声音洪亮:", align_gname(alignment));
-            verbalize("你要为你的轻率付出代价!");
+            pline_The("voice of %s booms:", align_gname(alignment));
+            verbalize("Thou shalt pay for thine indiscretion!");
             if (!Blind)
-                pline("%s 出现在你面前.", Amonnam(mon));
+                pline("%s appears before you.", Amonnam(mon));
             mon->mstrategy &= ~STRAT_APPEARMSG;
         }
         mon->mpeaceful = FALSE;
@@ -223,7 +225,7 @@ register struct monst *mtmp;
     long cash, demand, offer;
 
     if (uwep && uwep->oartifact == ART_EXCALIBUR) {
-        pline("%s 看起来非常生气.", Amonnam(mtmp));
+        pline("%s looks very angry.", Amonnam(mtmp));
         mtmp->mpeaceful = mtmp->mtame = 0;
         set_malign(mtmp);
         newsym(mtmp->mx, mtmp->my);
@@ -246,17 +248,17 @@ register struct monst *mtmp;
 
         mtmp->minvis = mtmp->perminvis = 0;
         if (wasunseen && canspotmon(mtmp)) {
-            pline("%s 出现在你面前.", Amonnam(mtmp));
+            pline("%s appears before you.", Amonnam(mtmp));
             mtmp->mstrategy &= ~STRAT_APPEARMSG;
         }
         newsym(mtmp->mx, mtmp->my);
     }
     if (youmonst.data->mlet == S_DEMON) { /* Won't blackmail their own. */
-        pline("%s 说, \" 狩猎好运, %s.\"", Amonnam(mtmp),
-              flags.female ? "姐妹" : "兄弟");
+        pline("%s says, \"Good hunting, %s.\"", Amonnam(mtmp),
+              flags.female ? "Sister" : "Brother");
         if (!tele_restrict(mtmp))
             (void) rloc(mtmp, TRUE);
-        return (1);
+        return 1;
     }
     cash = money_cnt(invent);
     demand =
@@ -274,25 +276,25 @@ register struct monst *mtmp;
         if (mon_has_amulet(mtmp))
             demand = cash + (long) rn1(1000, 40);
 
-        pline("%s 要求%ld %s 的安全通行费.", Amonnam(mtmp), demand,
+        pline("%s demands %ld %s for safe passage.", Amonnam(mtmp), demand,
               currency(demand));
 
         if ((offer = bribe(mtmp)) >= demand) {
-            pline("%s 消失了, 嘲笑着怯懦的凡人.",
+            pline("%s vanishes, laughing about cowardly mortals.",
                   Amonnam(mtmp));
         } else if (offer > 0L
                    && (long) rnd(5 * ACURR(A_CHA)) > (demand - offer)) {
-            pline("%s 恐吓地怒视你, 然后消失了.",
+            pline("%s scowls at you menacingly, then vanishes.",
                   Amonnam(mtmp));
         } else {
-            pline("%s 生气了...", Amonnam(mtmp));
+            pline("%s gets angry...", Amonnam(mtmp));
             mtmp->mpeaceful = 0;
             set_malign(mtmp);
             return 0;
         }
     }
     mongone(mtmp);
-    return (1);
+    return 1;
 }
 
 long
@@ -303,27 +305,27 @@ struct monst *mtmp;
     long offer;
     long umoney = money_cnt(invent);
 
-    getlin("你将提供多少钱?", buf);
+    getlin("How much will you offer?", buf);
     if (sscanf(buf, "%ld", &offer) != 1)
         offer = 0L;
 
     /*Michael Paddon -- fix for negative offer to monster*/
     /*JAR880815 - */
     if (offer < 0L) {
-        You("试图欺骗%s, 但却做得很笨拙.", mon_nam(mtmp));
+        You("try to shortchange %s, but fumble.", mon_nam(mtmp));
         return 0L;
     } else if (offer == 0L) {
-        You("拒绝了.");
+        You("refuse.");
         return 0L;
     } else if (offer >= umoney) {
-        You("把你所有的金币都给了%s.", mon_nam(mtmp));
+        You("give %s all your gold.", mon_nam(mtmp));
         offer = umoney;
     } else {
-        You("给了%s %ld %s.", mon_nam(mtmp), offer, currency(offer));
+        You("give %s %ld %s.", mon_nam(mtmp), offer, currency(offer));
     }
     (void) money2mon(mtmp, offer);
     context.botl = 1;
-    return (offer);
+    return offer;
 }
 
 int
@@ -336,9 +338,9 @@ aligntyp atyp;
         pm = rn1(PM_DEMOGORGON + 1 - PM_ORCUS, PM_ORCUS);
         if (!(mvitals[pm].mvflags & G_GONE)
             && (atyp == A_NONE || sgn(mons[pm].maligntyp) == sgn(atyp)))
-            return (pm);
+            return pm;
     }
-    return (dlord(atyp)); /* approximate */
+    return dlord(atyp); /* approximate */
 }
 
 int
@@ -351,9 +353,9 @@ aligntyp atyp;
         pm = rn1(PM_YEENOGHU + 1 - PM_JUIBLEX, PM_JUIBLEX);
         if (!(mvitals[pm].mvflags & G_GONE)
             && (atyp == A_NONE || sgn(mons[pm].maligntyp) == sgn(atyp)))
-            return (pm);
+            return pm;
     }
-    return (ndemon(atyp)); /* approximate */
+    return ndemon(atyp); /* approximate */
 }
 
 /* create lawful (good) lord */
@@ -361,9 +363,9 @@ int
 llord()
 {
     if (!(mvitals[PM_ARCHON].mvflags & G_GONE))
-        return (PM_ARCHON);
+        return PM_ARCHON;
 
-    return (lminion()); /* approximate */
+    return lminion(); /* approximate */
 }
 
 int
@@ -375,7 +377,7 @@ lminion()
     for (tryct = 0; tryct < 20; tryct++) {
         ptr = mkclass(S_ANGEL, 0);
         if (ptr && !is_lord(ptr))
-            return (monsndx(ptr));
+            return monsndx(ptr);
     }
 
     return NON_PM;
@@ -383,19 +385,26 @@ lminion()
 
 int
 ndemon(atyp)
-aligntyp atyp;
+aligntyp atyp; /* A_NONE is used for 'any alignment' */
 {
-    int tryct;
     struct permonst *ptr;
 
-    for (tryct = 0; tryct < 20; tryct++) {
-        ptr = mkclass(S_DEMON, 0);
-        if (ptr && is_ndemon(ptr)
-            && (atyp == A_NONE || sgn(ptr->maligntyp) == sgn(atyp)))
-            return (monsndx(ptr));
-    }
-
-    return NON_PM;
+    /*
+     * 3.6.2:  [fix #H2204, 22-Dec-2010, eight years later...]
+     * pick a correctly aligned demon in one try.  This used to
+     * use mkclass() to choose a random demon type and keep trying
+     * (up to 20 times) until it got one with the desired alignment.
+     * mkclass_aligned() skips wrongly aligned potential candidates.
+     * [The only neutral demons are djinni and mail daemon and
+     * mkclass() won't pick them, but call it anyway in case either
+     * aspect of that changes someday.]
+     */
+#if 0
+    if (atyp == A_NEUTRAL)
+        return NON_PM;
+#endif
+    ptr = mkclass_aligned(S_DEMON, 0, atyp);
+    return (ptr && is_ndemon(ptr)) ? monsndx(ptr) : NON_PM;
 }
 
 /* guardian angel has been affected by conflict so is abandoning hero */
@@ -409,10 +418,10 @@ struct monst *mon; /* if null, angel hasn't been created yet */
     if (mon) {
         if (canspotmon(mon)) {
             if (!Deaf) {
-                pline("%s 指责你说:", Monnam(mon));
-                verbalize("既然你渴望冲突, 那就再更多一些!");
+                pline("%s rebukes you, saying:", Monnam(mon));
+                verbalize("Since you desire conflict, have some more!");
             } else {
-                pline("%s 消失了!", Monnam(mon));
+                pline("%s vanishes!", Monnam(mon));
             }
         }
         mongone(mon);
@@ -438,13 +447,13 @@ gain_guardian_angel()
     Hear_again(); /* attempt to cure any deafness now (divine
                      message will be heard even if that fails) */
     if (Conflict) {
-        pline("一个声音洪亮:");
-        verbalize("你对冲突的渴望将被满足!");
+        pline("A voice booms:");
+        verbalize("Thy desire for conflict shall be fulfilled!");
         /* send in some hostile angels instead */
         lose_guardian_angel((struct monst *) 0);
     } else if (u.ualign.record > 8) { /* fervent */
-        pline("一个声音低语:");
-        verbalize("你配得上作为我的仆人!");
+        pline("A voice whispers:");
+        verbalize("Thou hast been worthy of me!");
         mm.x = u.ux;
         mm.y = u.uy;
         if (enexto(&mm, mm.x, mm.y, &mons[PM_ANGEL])
@@ -452,9 +461,9 @@ gain_guardian_angel()
                                  TRUE)) != 0) {
             mtmp->mstrategy &= ~STRAT_APPEARMSG;
             if (!Blind)
-                pline("一个天使出现在你跟前.");
+                pline("An angel appears near you.");
             else
-                You_feel("到你跟前的一个友好的天使的存在.");
+                You_feel("the presence of a friendly angel near you.");
             /* guardian angel -- the one case mtame doesn't
              * imply an edog structure, so we don't want to
              * call tamedog().

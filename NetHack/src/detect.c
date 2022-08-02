@@ -1,4 +1,4 @@
-/* NetHack 3.6	detect.c	$NHDT-Date: 1522891623 2018/04/05 01:27:03 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.81 $ */
+/* NetHack 3.6	detect.c	$NHDT-Date: 1544437284 2018/12/10 10:21:24 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.91 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2018. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -78,10 +78,12 @@ struct monst *mtmp;
 boolean showtail;
 {
     if (def_monsyms[(int) mtmp->data->mlet].sym == ' ')
-        show_glyph(mtmp->mx, mtmp->my, detected_mon_to_glyph(mtmp));
-    else
         show_glyph(mtmp->mx, mtmp->my,
-                   mtmp->mtame ? pet_to_glyph(mtmp) : mon_to_glyph(mtmp));
+                   detected_mon_to_glyph(mtmp, newsym_rn2));
+    else
+        show_glyph(mtmp->mx, mtmp->my, mtmp->mtame
+                   ? pet_to_glyph(mtmp, newsym_rn2)
+                   : mon_to_glyph(mtmp, newsym_rn2));
 
     if (showtail && mtmp->data == &mons[PM_LONG_WORM])
         detect_wsegs(mtmp, 0);
@@ -165,8 +167,14 @@ char oclass;
 
     if (obj->oclass == oclass)
         return obj;
-
-    if (Has_contents(obj)) {
+    /*
+     * Note:  we exclude SchroedingersBox because the corpse it contains
+     * isn't necessarily a corpse yet.  Resolving the status would lead
+     * to complications if it turns out to be a live cat.  We know that
+     * that Box can't contain anything else because putting something in
+     * would resolve the cat/corpse situation and convert to ordinary box.
+     */
+    if (Has_contents(obj) && !SchroedingersBox(obj)) {
         for (otmp = obj->cobj; otmp; otmp = otmp->nobj)
             if (otmp->oclass == oclass)
                 return otmp;
@@ -349,19 +357,19 @@ register struct obj *sobj;
             char buf[BUFSZ];
 
             if (youmonst.data == &mons[PM_GOLD_GOLEM])
-                Sprintf(buf, "你感觉像一个百万%s!", currency(2L));
+                Sprintf(buf, "You feel like a million %s!", currency(2L));
             else if (money_cnt(invent) || hidden_gold())
                 Strcpy(buf,
-                   "你担心你未来的财务状况.");
+                   "You feel worried about your future financial situation.");
             else if (steedgold)
-                Sprintf(buf, "你对%s财务状况有点感兴趣.",
+                Sprintf(buf, "You feel interested in %s financial situation.",
                         s_suffix(x_monnam(u.usteed,
                                           u.usteed->mtame ? ARTICLE_YOUR
                                                           : ARTICLE_THE,
                                           (char *) 0,
                                           SUPPRESS_SADDLE, FALSE)));
             else
-                Strcpy(buf, "你感觉物质贫乏.");
+                Strcpy(buf, "You feel materially poor.");
 
             strange_feeling(sobj, buf);
         }
@@ -370,7 +378,7 @@ register struct obj *sobj;
     /* only under me - no separate display required */
     if (stale)
         docrt();
-    You("注意到一些金币在你的%s之间.", makeplural(body_part(FOOT)));
+    You("notice some gold between your %s.", makeplural(body_part(FOOT)));
     return 0;
 
 outgoldmap:
@@ -428,10 +436,10 @@ outgoldmap:
         newsym(u.ux, u.uy);
         ter_typ |= TER_MON; /* so autodescribe will recognize hero */
     }
-    You_feel("非常贪婪, 能感觉到金币!");
+    You_feel("very greedy, and sense gold!");
     exercise(A_WIS, TRUE);
 
-    browse_map(ter_typ, "金币");
+    browse_map(ter_typ, "gold");
 
     reconstrain_map();
     docrt();
@@ -442,8 +450,7 @@ outgoldmap:
     return 0;
 }
 
-/* returns 1 if nothing was detected   */
-/* returns 0 if something was detected */
+/* returns 1 if nothing was detected, 0 if something was detected */
 int
 food_detect(sobj)
 register struct obj *sobj;
@@ -453,7 +460,7 @@ register struct obj *sobj;
     register int ct = 0, ctu = 0;
     boolean confused = (Confusion || (sobj && sobj->cursed)), stale;
     char oclass = confused ? POTION_CLASS : FOOD_CLASS;
-    const char *what = confused ? something : "食物";
+    const char *what = confused ? something : "food";
 
     stale = clear_stale_map(oclass, 0);
     if (u.usteed) /* some situations leave steed with stale coordinates */
@@ -482,18 +489,18 @@ register struct obj *sobj;
         known = stale && !confused;
         if (stale) {
             docrt();
-            You("感觉到附近%s的缺乏.", what);
+            You("sense a lack of %s nearby.", what);
             if (sobj && sobj->blessed) {
                 if (!u.uedibility)
-                    Your("%s 开始感到刺痛.", body_part(NOSE));
+                    Your("%s starts to tingle.", body_part(NOSE));
                 u.uedibility = 1;
             }
         } else if (sobj) {
             char buf[BUFSZ];
 
-            Sprintf(buf, "你的%s抽动%s.", body_part(NOSE),
+            Sprintf(buf, "Your %s twitches%s.", body_part(NOSE),
                     (sobj->blessed && !u.uedibility)
-                        ? "然后开始刺痛"
+                        ? " then starts to tingle"
                         : "");
             if (sobj->blessed && !u.uedibility) {
                 boolean savebeginner = flags.beginner;
@@ -508,10 +515,10 @@ register struct obj *sobj;
         return !stale;
     } else if (!ct) {
         known = TRUE;
-        You("%s 附近的%s.", sobj ? "闻到" : "感觉到", what);
+        You("%s %s nearby.", sobj ? "smell" : "sense", what);
         if (sobj && sobj->blessed) {
             if (!u.uedibility)
-                pline("你的%s开始刺痛.", body_part(NOSE));
+                pline("Your %s starts to tingle.", body_part(NOSE));
             u.uedibility = 1;
         }
     } else {
@@ -544,16 +551,16 @@ register struct obj *sobj;
         }
         if (sobj) {
             if (sobj->blessed) {
-                Your("%s%s刺痛并且你闻到%s.", body_part(NOSE),
-                     u.uedibility ? "继续" : "开始", what);
+                Your("%s %s to tingle and you smell %s.", body_part(NOSE),
+                     u.uedibility ? "continues" : "starts", what);
                 u.uedibility = 1;
             } else
-                Your("%s刺痛并且你闻到%s.", body_part(NOSE), what);
+                Your("%s tingles and you smell %s.", body_part(NOSE), what);
         } else
-            You("感觉到%s.", what);
+            You("sense %s.", what);
         exercise(A_WIS, TRUE);
 
-        browse_map(ter_typ, "食物");
+        browse_map(ter_typ, "food");
 
         reconstrain_map();
         docrt();
@@ -605,9 +612,9 @@ int class;            /* an object class, 0 for all */
     if (Hallucination || (Confusion && class == SCROLL_CLASS))
         Strcpy(stuff, something);
     else
-        Strcpy(stuff, class ? def_oc_syms[class].name : "东西");
+        Strcpy(stuff, class ? def_oc_syms[class].name : "objects");
     if (boulder && class != ROCK_CLASS)
-        Strcat(stuff, "大石头");
+        Strcat(stuff, " and/or large stones");
 
     if (do_dknown)
         for (obj = invent; obj; obj = obj->nobj)
@@ -648,7 +655,7 @@ int class;            /* an object class, 0 for all */
             if (do_dknown)
                 do_dknown_of(obj);
         }
-        if ((is_cursed && mtmp->m_ap_type == M_AP_OBJECT
+        if ((is_cursed && M_AP_TYPE(mtmp) == M_AP_OBJECT
              && (!class || class == objects[mtmp->mappearance].oc_class))
             || (findgold(mtmp->minvent) && (!class || class == COIN_CLASS))) {
             ct++;
@@ -659,11 +666,11 @@ int class;            /* an object class, 0 for all */
     if (!clear_stale_map(!class ? ALL_CLASSES : class, 0) && !ct) {
         if (!ctu) {
             if (detector)
-                strange_feeling(detector, "你感觉到什么东西的缺乏.");
+                strange_feeling(detector, "You feel a lack of something.");
             return 1;
         }
 
-        You("感觉到附近的%s.", stuff);
+        You("sense %s nearby.", stuff);
         return 0;
     }
 
@@ -723,7 +730,7 @@ int class;            /* an object class, 0 for all */
                 break;
             }
         /* Allow a mimic to override the detected objects it is carrying. */
-        if (is_cursed && mtmp->m_ap_type == M_AP_OBJECT
+        if (is_cursed && M_AP_TYPE(mtmp) == M_AP_OBJECT
             && (!class || class == objects[mtmp->mappearance].oc_class)) {
             struct obj temp;
 
@@ -750,12 +757,12 @@ int class;            /* an object class, 0 for all */
         newsym(u.ux, u.uy);
         ter_typ |= TER_MON;
     }
-    You("探测到%s的%s.", stuff, ct ? "存在" : "缺乏");
+    You("detect the %s of %s.", ct ? "presence" : "absence", stuff);
 
     if (!ct)
         display_nhwindow(WIN_MAP, TRUE);
     else
-        browse_map(ter_typ, "物品");
+        browse_map(ter_typ, "object");
 
     reconstrain_map();
     docrt(); /* this will correctly reset vision */
@@ -794,8 +801,8 @@ int mclass;                /* monster class, 0 for all */
     if (!mcnt) {
         if (otmp)
             strange_feeling(otmp, Hallucination
-                                      ? "你毛骨悚然."
-                                      : "你感觉受到威胁的.");
+                                      ? "You get the heebie jeebies."
+                                      : "You feel threatened.");
         return 1;
     } else {
         boolean unconstrained, woken = FALSE;
@@ -820,9 +827,9 @@ int mclass;                /* monster class, 0 for all */
         }
         if (!swallowed)
             display_self();
-        You("感觉到怪物的存在.");
+        You("sense the presence of monsters.");
         if (woken)
-            pline("怪物感觉到了你的存在.");
+            pline("Monsters sense the presence of you.");
 
         if ((otmp && otmp->blessed) && !unconstrained) {
             /* persistent detection--just show updated map */
@@ -831,7 +838,7 @@ int mclass;                /* monster class, 0 for all */
             /* one-shot detection--allow player to move cursor around and
                get autodescribe feedback */
             EDetect_monsters |= I_SPECIAL;
-            browse_map(TER_DETECT | TER_MON, "感兴趣的怪物");
+            browse_map(TER_DETECT | TER_MON, "monster of interest");
             EDetect_monsters &= ~I_SPECIAL;
         }
 
@@ -862,10 +869,10 @@ int src_cursed;
             obj.ox = x;
             obj.oy = y;
         }
-        obj.otyp = !Hallucination ? GOLD_PIECE : random_object();
+        obj.otyp = !Hallucination ? GOLD_PIECE : random_object(rn2);
         obj.quan = (long) ((obj.otyp == GOLD_PIECE) ? rnd(10)
                            : objects[obj.otyp].oc_merge ? rnd(2) : 1);
-        obj.corpsenm = random_monster(); /* if otyp == CORPSE */
+        obj.corpsenm = random_monster(rn2); /* if otyp == CORPSE */
         map_object(&obj, 1);
     } else if (trap) {
         map_trap(trap, 1);
@@ -980,12 +987,12 @@ struct obj *sobj; /* null if crystal ball, *scroll if gold detection scroll */
     if (!found) {
         char buf[BUFSZ];
 
-        Sprintf(buf, "你的%s停止了发痒.", makeplural(body_part(TOE)));
+        Sprintf(buf, "Your %s stop itching.", makeplural(body_part(TOE)));
         strange_feeling(sobj, buf);
         return 1;
     }
     /* traps exist, but only under me - no separate display required */
-    Your("%s发痒.", makeplural(body_part(TOE)));
+    Your("%s itch.", makeplural(body_part(TOE)));
     return 0;
 
 outtrapmap:
@@ -1018,9 +1025,9 @@ outtrapmap:
         newsym(u.ux, u.uy);
         ter_typ |= TER_MON; /* for autodescribe at <u.ux,u.uy> */
     }
-    You_feel("%s.", cursed_src ? "非常贪婪的" : "陷入困境的");
+    You_feel("%s.", cursed_src ? "very greedy" : "entrapped");
 
-    browse_map(ter_typ, "感兴趣的陷阱");
+    browse_map(ter_typ, "trap of interest");
 
     reconstrain_map();
     docrt(); /* redraw the screen to remove unseen traps from the map */
@@ -1041,47 +1048,47 @@ d_level *where;
     if (ll < 0) {
         if (ll < (-8 - rn2(3)))
             if (!indun)
-                return "遥远的";
+                return "far away";
             else
-                return "下面远方";
+                return "far below";
         else if (ll < -1)
             if (!indun)
-                return "你下面远处";
+                return "away below you";
             else
-                return "你下面";
+                return "below you";
         else if (!indun)
-            return "在远处";
+            return "in the distance";
         else
-            return "就在下面";
+            return "just below";
     } else if (ll > 0) {
         if (ll > (8 + rn2(3)))
             if (!indun)
-                return "遥远的";
+                return "far away";
             else
-                return "上面远方";
+                return "far above";
         else if (ll > 1)
             if (!indun)
-                return "你上面远处";
+                return "away above you";
             else
-                return "你上面";
+                return "above you";
         else if (!indun)
-            return "在远处";
+            return "in the distance";
         else
-            return "就在上面";
+            return "just above";
     } else if (!indun)
-        return "在远处";
+        return "in the distance";
     else
-        return "你附近";
+        return "near you";
 }
 
 static const struct {
     const char *what;
     d_level *where;
 } level_detects[] = {
-    { "德尔斐", &oracle_level },
-    { "美杜莎的巢穴", &medusa_level },
-    { "一座城堡", &stronghold_level },
-    { "岩德巫师之塔", &wiz1_level },
+    { "Delphi", &oracle_level },
+    { "Medusa's lair", &medusa_level },
+    { "a castle", &stronghold_level },
+    { "the Wizard of Yendor's tower", &wiz1_level },
 };
 
 void
@@ -1093,41 +1100,41 @@ struct obj **optr;
     struct obj *obj = *optr;
 
     if (Blind) {
-        pline("很糟糕你不能看见%s.", the(xname(obj)));
+        pline("Too bad you can't see %s.", the(xname(obj)));
         return;
     }
     oops = (rnd(20) > ACURR(A_INT) || obj->cursed);
     if (oops && (obj->spe > 0)) {
         switch (rnd(obj->oartifact ? 4 : 5)) {
         case 1:
-            pline("%s太多要理解!", Tobjnam(obj, "有"));
+            pline("%s too much to comprehend!", Tobjnam(obj, "are"));
             break;
         case 2:
-            pline("%s你混乱了!", Tobjnam(obj, "使"));
+            pline("%s you!", Tobjnam(obj, "confuse"));
             make_confused((HConfusion & TIMEOUT) + (long) rnd(100), FALSE);
             break;
         case 3:
             if (!resists_blnd(&youmonst)) {
-                pline("%s你的视力!", Tobjnam(obj, "损害"));
+                pline("%s your vision!", Tobjnam(obj, "damage"));
                 make_blinded((Blinded & TIMEOUT) + (long) rnd(100), FALSE);
                 if (!Blind)
                     Your1(vision_clears);
             } else {
-                pline("%s 你的视力.", Tobjnam(obj, "冲击"));
-                You("不受影响!");
+                pline("%s your vision.", Tobjnam(obj, "assault"));
+                You("are unaffected!");
             }
             break;
         case 4:
-            pline("%s 你的思想!", Tobjnam(obj, "灌入"));
+            pline("%s your mind!", Tobjnam(obj, "zap"));
             (void) make_hallucinated(
                 (HHallucination & TIMEOUT) + (long) rnd(100), FALSE, 0L);
             break;
         case 5:
-            pline("%s!", Tobjnam(obj, "爆炸"));
+            pline("%s!", Tobjnam(obj, "explode"));
             useup(obj);
             *optr = obj = 0; /* it's gone */
             /* physical damage cause by the shards and force */
-            losehp(Maybe_Half_Phys(rnd(30)), "爆炸的水晶球",
+            losehp(Maybe_Half_Phys(rnd(30)), "exploding crystal ball",
                    KILLED_BY_AN);
             break;
         }
@@ -1138,29 +1145,29 @@ struct obj **optr;
 
     if (Hallucination) {
         if (!obj->spe) {
-            pline("所有你看到的是恐惧的%s 烟雾.", hcolor((char *) 0));
+            pline("All you see is funky %s haze.", hcolor((char *) 0));
         } else {
             switch (rnd(6)) {
             case 1:
-                You("观赏一些炽热熔岩里的绝妙液滴.");
+                You("grok some groovy globs of incandescent lava.");
                 break;
             case 2:
-                pline("哇!  迷幻的色彩, %s!",
-                      poly_gender() == 1 ? "性感女郎" : "花花公子");
+                pline("Whoa!  Psychedelic colors, %s!",
+                      poly_gender() == 1 ? "babe" : "dude");
                 break;
             case 3:
-                pline_The("水晶脉冲带着不祥的%s光!",
+                pline_The("crystal pulses with sinister %s light!",
                           hcolor((char *) 0));
                 break;
             case 4:
-                You_see("金鱼在荧光岩石上游着.");
+                You_see("goldfish swimming above fluorescent rocks.");
                 break;
             case 5:
                 You_see(
-                    "小雪花在小农舍周围旋转.");
+                    "tiny snowflakes spinning around a miniature farmhouse.");
                 break;
             default:
-                pline("哇...  像一个万花筒!");
+                pline("Oh wow... like a kaleidoscope!");
                 break;
             }
             consume_obj_charge(obj, TRUE);
@@ -1170,20 +1177,20 @@ struct obj **optr;
 
     /* read a single character */
     if (flags.verbose)
-        You("可以寻找一件物品或怪物符号.");
-    ch = yn_function("你想寻找什么?", (char *) 0, '\0');
+        You("may look for an object or monster symbol.");
+    ch = yn_function("What do you look for?", (char *) 0, '\0');
     /* Don't filter out ' ' here; it has a use */
     if ((ch != def_monsyms[S_GHOST].sym) && index(quitchars, ch)) {
         if (flags.verbose)
             pline1(Never_mind);
         return;
     }
-    You("窥视%s里面...", the(xname(obj)));
+    You("peer into %s...", the(xname(obj)));
     nomul(-rnd(10));
-    multi_reason = "凝视水晶球";
+    multi_reason = "gazing into a crystal ball";
     nomovemsg = "";
     if (obj->spe <= 0) {
-        pline_The("视界不清晰.");
+        pline_The("vision is unclear.");
     } else {
         int class, i;
         int ret = 0;
@@ -1218,9 +1225,9 @@ struct obj **optr;
 
         if (ret) {
             if (!rn2(100)) /* make them nervous */
-                You_see("岩德巫师在凝视着你.");
+                You_see("the Wizard of Yendor gazing out at you.");
             else
-                pline_The("视界不清晰.");
+                pline_The("vision is unclear.");
         }
     }
     return;
@@ -1286,7 +1293,7 @@ do_mapping()
         flush_screen(1);                 /* flush temp screen */
         /* browse_map() instead of display_nhwindow(WIN_MAP, TRUE) */
         browse_map(TER_DETECT | TER_MAP | TER_TRP | TER_OBJ,
-                   "任何感兴趣的东西");
+                   "anything of interest");
         docrt();
     }
     reconstrain_map();
@@ -1300,44 +1307,119 @@ struct obj *sobj; /* scroll--actually fake spellbook--object */
 {
     register int zx, zy;
     struct monst *mtmp;
-    boolean unconstrained, refresh = FALSE, mdetected = FALSE,
-            extended = (sobj && sobj->blessed);
-    int lo_y = ((u.uy - 5 < 0) ? 0 : u.uy - 5),
+    struct obj *otmp;
+    long save_EDetect_mons;
+    char save_viz_uyux;
+    boolean unconstrained, refresh = FALSE,
+            mdetected = FALSE, odetected = FALSE,
+            /* fake spellbook 'sobj' implies hero has cast the spell;
+               when book is blessed, casting is skilled or expert level;
+               if already clairvoyant, non-skilled spell acts like skilled */
+            extended = (sobj && (sobj->blessed || Clairvoyant));
+    int newglyph, oldglyph,
+        lo_y = ((u.uy - 5 < 0) ? 0 : u.uy - 5),
         hi_y = ((u.uy + 6 >= ROWNO) ? ROWNO - 1 : u.uy + 6),
         lo_x = ((u.ux - 9 < 1) ? 1 : u.ux - 9), /* avoid column 0 */
         hi_x = ((u.ux + 10 >= COLNO) ? COLNO - 1 : u.ux + 10),
         ter_typ = TER_DETECT | TER_MAP | TER_TRP | TER_OBJ;
 
+    /*
+     * 3.6.0 attempted to emphasize terrain over transient map
+     * properties (monsters and objects) but that led to problems.
+     * Notably, known trap would be displayed instead of a monster
+     * on or in it and then the display remained that way after the
+     * clairvoyant snapshot finished.  That could have been fixed by
+     * issuing --More-- and then regular vision update, but we want
+     * to avoid that when having a clairvoyant episode every N turns
+     * (from donating to a temple priest or by carrying the Amulet).
+     * Unlike when casting the spell, it is much too intrustive when
+     * in the midst of walking around or combatting monsters.
+     *
+     * For 3.6.2, show terrain, then object, then monster like regular
+     * map updating, except in this case the map locations get marked
+     * as seen from every direction rather than just from direction of
+     * hero.  Skilled spell marks revealed objects as 'seen up close'
+     * (but for piles, only the top item) and shows monsters as if
+     * detected.  Non-skilled and timed clairvoyance reveals non-visible
+     * monsters as 'remembered, unseen'.
+     */
+
+    /* if hero is engulfed, show engulfer at <u.ux,u.uy> */
+    save_viz_uyux = viz_array[u.uy][u.ux];
+    if (u.uswallow)
+        viz_array[u.uy][u.ux] |= IN_SIGHT; /* <x,y> are reversed to [y][x] */
+    save_EDetect_mons = EDetect_monsters;
+    /* for skilled spell, getpos() scanning of the map will display all
+       monsters within range; otherwise, "unseen creature" will be shown */
+    EDetect_monsters |= I_SPECIAL;
     unconstrained = unconstrain_map();
     for (zx = lo_x; zx <= hi_x; zx++)
         for (zy = lo_y; zy <= hi_y; zy++) {
+            oldglyph = glyph_at(zx, zy);
+            /* this will remove 'remembered, unseen mon' (and objects) */
             show_map_spot(zx, zy);
-
-            if (extended && (mtmp = m_at(zx, zy)) != 0
+            /* if there are any objects here, see the top one */
+            if (OBJ_AT(zx, zy)) {
+                /* not vobj_at(); this is not vision-based access;
+                   unlike object detection, we don't notice buried items */
+                otmp = level.objects[zx][zy];
+                if (extended)
+                    otmp->dknown = 1;
+                map_object(otmp, TRUE);
+                newglyph = glyph_at(zx, zy);
+                /* if otmp is underwater, we'll need to redisplay the water */
+                if (newglyph != oldglyph && covers_objects(zx, zy))
+                    odetected = TRUE;
+            }
+            /* if there is a monster here, see or detect it,
+               possibly as "remembered, unseen monster" */
+            if ((mtmp = m_at(zx, zy)) != 0
                 && mtmp->mx == zx && mtmp->my == zy) { /* skip worm tails */
-                int oldglyph = glyph_at(zx, zy);
-
-                map_monst(mtmp, FALSE);
-                if (glyph_at(zx, zy) != oldglyph)
+                /* if we're going to offer browse_map()/getpos() scanning of
+                   the map and we're not doing extended/blessed clairvoyance
+                   (hence must be swallowed or underwater), show "unseen
+                   creature" unless map already displayed a monster here */
+                if ((unconstrained || !level.flags.hero_memory)
+                    && !extended && (zx != u.ux || zy != u.uy)
+                    && !glyph_is_monster(oldglyph))
+                    map_invisible(zx, zy);
+                else
+                    map_monst(mtmp, FALSE);
+                newglyph = glyph_at(zx, zy);
+                if (extended && newglyph != oldglyph
+                    && !glyph_is_invisible(newglyph))
                     mdetected = TRUE;
             }
         }
 
-    if (!level.flags.hero_memory || unconstrained || mdetected) {
+    if (!level.flags.hero_memory || unconstrained || mdetected || odetected) {
         flush_screen(1);                 /* flush temp screen */
         /* the getpos() prompt from browse_map() is only shown when
            flags.verbose is set, but make this unconditional so that
            not-verbose users become aware of the prompting situation */
-        You("感觉你周围的环境.");
+        You("sense your surroundings.");
         if (extended || glyph_is_monster(glyph_at(u.ux, u.uy)))
             ter_typ |= TER_MON;
-        if (extended)
-            EDetect_monsters |= I_SPECIAL;
-        browse_map(ter_typ, "任何感兴趣的东西");
-        EDetect_monsters &= ~I_SPECIAL;
+        browse_map(ter_typ, "anything of interest");
         refresh = TRUE;
     }
     reconstrain_map();
+    EDetect_monsters = save_EDetect_mons;
+    viz_array[u.uy][u.ux] = save_viz_uyux;
+
+    /* replace monsters with remembered,unseen monster, then run
+       see_monsters() to update visible ones and warned-of ones */
+    for (zx = lo_x; zx <= hi_x; zx++)
+        for (zy = lo_y; zy <= hi_y; zy++) {
+            if (zx == u.ux && zy == u.uy)
+                continue;
+            newglyph = glyph_at(zx, zy);
+            if (glyph_is_monster(newglyph)
+                && glyph_to_mon(newglyph) != PM_LONG_WORM_TAIL)
+                map_invisible(zx, zy);
+        }
+    see_monsters();
+
     if (refresh)
         docrt();
 }
@@ -1387,7 +1469,7 @@ genericptr_t num;
             (*(int *) num)++;
         }
     } else if ((mtmp = m_at(zx, zy)) != 0) {
-        if (mtmp->m_ap_type) {
+        if (M_AP_TYPE(mtmp)) {
             seemimic(mtmp);
             (*(int *) num)++;
         }
@@ -1429,11 +1511,11 @@ genericptr_t num;
             cvt_sdoor_to_door(&levl[zx][zy]); /* .typ = DOOR */
         if (levl[zx][zy].doormask & D_TRAPPED) {
             if (distu(zx, zy) < 3)
-                b_trapped("门", 0);
+                b_trapped("door", 0);
             else
-                Norep("你%s爆炸!",
-                      cansee(zx, zy) ? "看见" : (!Deaf ? "听见"
-                                                      : "感觉到冲击来自"));
+                Norep("You %s an explosion!",
+                      cansee(zx, zy) ? "see" : (!Deaf ? "hear"
+                                                      : "feel the shock of"));
             wake_nearto(zx, zy, 11 * 11);
             levl[zx][zy].doormask = D_NODOOR;
         } else
@@ -1487,9 +1569,9 @@ openit()
     if (u.uswallow) {
         if (is_animal(u.ustuck->data)) {
             if (Blind)
-                pline("它的嘴张开了!");
+                pline("Its mouth opens!");
             else
-                pline("%s 张开了它的嘴!", Monnam(u.ustuck));
+                pline("%s opens its mouth!", Monnam(u.ustuck));
         }
         expels(u.ustuck, u.ustuck->data, TRUE);
         return -1;
@@ -1511,14 +1593,20 @@ void
 find_trap(trap)
 struct trap *trap;
 {
-    int tt = what_trap(trap->ttyp);
+    int tt = what_trap(trap->ttyp, rn2);
     boolean cleared = FALSE;
 
     trap->tseen = 1;
     exercise(A_WIS, TRUE);
     feel_newsym(trap->tx, trap->ty);
 
-    if (levl[trap->tx][trap->ty].glyph != trap_to_glyph(trap)) {
+    /* The "Hallucination ||" is to preserve 3.6.1 behaviour, but this
+       behaviour might need a rework in the hallucination case
+       (e.g. to not prompt if any trap glyph appears on the
+       square). */
+    if (Hallucination ||
+        levl[trap->tx][trap->ty].glyph !=
+        trap_to_glyph(trap, rn2_on_display_rng)) {
         /* There's too much clutter to see your find otherwise */
         cls();
         map_trap(trap, 1);
@@ -1526,7 +1614,7 @@ struct trap *trap;
         cleared = TRUE;
     }
 
-    You("找到了一个 %s.", defsyms[trap_to_defsym(tt)].explanation);
+    You("find %s.", an(defsyms[trap_to_defsym(tt)].explanation));
 
     if (cleared) {
         display_nhwindow(WIN_MAP, TRUE); /* wait */
@@ -1539,44 +1627,43 @@ mfind0(mtmp, via_warning)
 struct monst *mtmp;
 boolean via_warning;
 {
-    xchar x = mtmp->mx,
-          y = mtmp->my;
+    int x = mtmp->mx, y = mtmp->my;
+    boolean found_something = FALSE;
 
     if (via_warning && !warning_of(mtmp))
         return -1;
 
-    if (mtmp->m_ap_type) {
+    if (M_AP_TYPE(mtmp)) {
         seemimic(mtmp);
-    find:
-        exercise(A_WIS, TRUE);
-        if (!canspotmon(mtmp)) {
-            if (glyph_is_invisible(levl[x][y].glyph)) {
-                /* Found invisible monster in a square which already has
-                 * an 'I' in it.  Logically, this should still take time
-                 * and lead to a return 1, but if we did that the player
-                 * would keep finding the same monster every turn.
-                 */
-                return -1;
-            } else {
-                You_feel("到一个看不见的怪物!");
-                map_invisible(x, y);
-            }
-        } else if (!sensemon(mtmp))
-                You("发现了%s.",
-                    mtmp->mtame ? y_monnam(mtmp) : a_monnam(mtmp));
-        return 1;
-    }
-    if (!canspotmon(mtmp)) {
+        found_something = TRUE;
+    } else if (!canspotmon(mtmp)) {
         if (mtmp->mundetected
-            && (is_hider(mtmp->data) || mtmp->data->mlet == S_EEL))
+            && (is_hider(mtmp->data) || mtmp->data->mlet == S_EEL)) {
             if (via_warning) {
-                Your("警觉让你进一步%s.",
-                     Blind ? "检查附近" : "查看附近");
+                Your("warning senses cause you to take a second %s.",
+                     Blind ? "to check nearby" : "look close by");
                 display_nhwindow(WIN_MESSAGE, FALSE); /* flush messages */
             }
-        mtmp->mundetected = 0;
+            mtmp->mundetected = 0;
+        }
         newsym(x, y);
-        goto find;
+        found_something = TRUE;
+    }
+
+    if (found_something) {
+        if (!canspotmon(mtmp) && glyph_is_invisible(levl[x][y].glyph))
+            return -1; /* Found invisible monster in square which already has
+                        * 'I' in it.  Logically, this should still take time
+                        * and lead to `return 1', but if we did that the hero
+                        * would keep finding the same monster every turn. */
+        exercise(A_WIS, TRUE);
+        if (!canspotmon(mtmp)) {
+            map_invisible(x, y);
+            You_feel("an unseen monster!");
+        } else if (!sensemon(mtmp)) {
+            You("find %s.", mtmp->mtame ? y_monnam(mtmp) : a_monnam(mtmp));
+        }
+        return 1;
     }
     return 0;
 }
@@ -1600,7 +1687,7 @@ register int aflag; /* intrinsic autosearch vs explicit searching */
 
     if (u.uswallow) {
         if (!aflag)
-            pline("你在找什么?  出口?");
+            pline("What are you looking for?  The exit?");
     } else {
         int fund = (uwep && uwep->oartifact
                     && spec_ability(uwep, SPFX_SEARCH)) ? uwep->spe : 0;
@@ -1625,7 +1712,7 @@ register int aflag; /* intrinsic autosearch vs explicit searching */
                     exercise(A_WIS, TRUE);
                     nomul(0);
                     feel_location(x, y); /* make sure it shows up */
-                    You("找到了一扇暗门.");
+                    You("find a hidden door.");
                 } else if (levl[x][y].typ == SCORR) {
                     if (rnl(7 - fund))
                         continue;
@@ -1634,7 +1721,7 @@ register int aflag; /* intrinsic autosearch vs explicit searching */
                     exercise(A_WIS, TRUE);
                     nomul(0);
                     feel_newsym(x, y); /* make sure it shows up */
-                    You("找到了一条暗道.");
+                    You("find a hidden passage.");
                 } else {
                     /* Be careful not to find anything in an SCORR or SDOOR */
                     if ((mtmp = m_at(x, y)) != 0 && !aflag) {
@@ -1753,7 +1840,7 @@ int default_glyph, which_subset;
            an object, replacing any object or trap at its spot) */
         glyph = !swallowed ? glyph_at(x, y) : levl_glyph;
         if (keep_mons && x == u.ux && y == u.uy && swallowed)
-            glyph = mon_to_glyph(u.ustuck);
+            glyph = mon_to_glyph(u.ustuck, rn2_on_display_rng);
         else if (((glyph_is_monster(glyph)
                    || glyph_is_warning(glyph)) && !keep_mons)
                  || glyph_is_swallow(glyph))
@@ -1762,7 +1849,7 @@ int default_glyph, which_subset;
              || glyph_is_invisible(glyph))
             && keep_traps && !covers_traps(x, y)) {
             if ((t = t_at(x, y)) != 0 && t->tseen)
-                glyph = trap_to_glyph(t);
+                glyph = trap_to_glyph(t, rn2_on_display_rng);
         }
         if ((glyph_is_object(glyph) && !keep_objs)
             || (glyph_is_trap(glyph) && !keep_traps)
@@ -1775,7 +1862,7 @@ int default_glyph, which_subset;
                 /* look for a mimic here posing as furniture;
                    if we don't find one, we'll have to fake it */
                 if ((mtmp = m_at(x, y)) != 0
-                    && mtmp->m_ap_type == M_AP_FURNITURE) {
+                    && M_AP_TYPE(mtmp) == M_AP_FURNITURE) {
                     glyph = cmap_to_glyph(mtmp->mappearance);
                 } else {
                     /* we have a topology type but we want a screen
@@ -1862,7 +1949,7 @@ int full; /* wizard|explore modes allow player to request full map */
 int which_subset; /* when not full, whether to suppress objs and/or traps */
 {
     if ((Hallucination || Stunned || Confusion) && !full) {
-        You("对这个太迷惑了.");
+        You("are too disoriented for this.");
     } else {
         int x, y, glyph, default_glyph;
         char buf[BUFSZ];
@@ -1887,26 +1974,26 @@ int which_subset; /* when not full, whether to suppress objs and/or traps */
            cursor there, and after moving it anywhere '@' moves it back */
         flush_screen(1);
         if (full) {
-            Strcpy(buf, "全地图");
+            Strcpy(buf, "underlying terrain");
         } else {
-            Strcpy(buf, "已知地图");
+            Strcpy(buf, "known terrain");
             if (keep_traps)
-                Sprintf(eos(buf), "%s 陷阱",
-                        (keep_objs || keep_mons) ? "," : " 和");
+                Sprintf(eos(buf), "%s traps",
+                        (keep_objs || keep_mons) ? "," : " and");
             if (keep_objs)
-                Sprintf(eos(buf), "%s%s 物品",
+                Sprintf(eos(buf), "%s%s objects",
                         (keep_traps || keep_mons) ? "," : "",
-                        keep_mons ? "" : " 和");
+                        keep_mons ? "" : " and");
             if (keep_mons)
-                Sprintf(eos(buf), "%s 和怪物",
+                Sprintf(eos(buf), "%s and monsters",
                         (keep_traps || keep_objs) ? "," : "");
         }
-        pline("仅显示%s...", buf);
+        pline("Showing %s only...", buf);
 
         /* allow player to move cursor around and get autodescribe feedback
            based on what is visible now rather than what is on 'real' map */
         which_subset |= TER_MAP; /* guarantee non-zero */
-        browse_map(which_subset, "任何感兴趣的东西");
+        browse_map(which_subset, "anything of interest");
 
         reconstrain_map();
         docrt(); /* redraw the screen, restoring regular map */

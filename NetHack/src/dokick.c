@@ -1,4 +1,4 @@
-/* NetHack 3.6	dokick.c	$NHDT-Date: 1517128663 2018/01/28 08:37:43 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.113 $ */
+/* NetHack 3.6	dokick.c	$NHDT-Date: 1551920353 2019/03/07 00:59:13 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.131 $ */
 /* Copyright (c) Izchak Miller, Mike Stephenson, Steve Linhart, 1989. */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -26,17 +26,17 @@ STATIC_DCL char *FDECL(kickstr, (char *, const char *));
 STATIC_DCL void FDECL(otransit_msg, (struct obj *, BOOLEAN_P, long));
 STATIC_DCL void FDECL(drop_to, (coord *, SCHAR_P));
 
-static const char kick_passes_thru[] = "踢无伤害地穿过了";
+static const char kick_passes_thru[] = "kick passes harmlessly through";
 
+/* kicking damage when not poly'd into a form with a kick attack */
 STATIC_OVL void
 kickdmg(mon, clumsy)
-register struct monst *mon;
-register boolean clumsy;
+struct monst *mon;
+boolean clumsy;
 {
-    register int mdx, mdy;
-    register int dmg = (ACURRSTR + ACURR(A_DEX) + ACURR(A_CON)) / 15;
-    int kick_skill = P_NONE;
-    int blessed_foot_damage = 0;
+    int mdx, mdy;
+    int dmg = (ACURRSTR + ACURR(A_DEX) + ACURR(A_CON)) / 15;
+    int specialdmg, kick_skill = P_NONE;
     boolean trapkilled = FALSE;
 
     if (uarmf && uarmf->otyp == KICKING_BOOTS)
@@ -50,22 +50,20 @@ register boolean clumsy;
     if (thick_skinned(mon->data))
         dmg = 0;
 
-    /* attacking a shade is useless */
+    /* attacking a shade is normally useless */
     if (mon->data == &mons[PM_SHADE])
         dmg = 0;
 
-    if ((is_undead(mon->data) || is_demon(mon->data) || is_vampshifter(mon))
-        && uarmf && uarmf->blessed)
-        blessed_foot_damage = 1;
+    specialdmg = special_dmgval(&youmonst, mon, W_ARMF, (long *) 0);
 
-    if (mon->data == &mons[PM_SHADE] && !blessed_foot_damage) {
+    if (mon->data == &mons[PM_SHADE] && !specialdmg) {
         pline_The("%s.", kick_passes_thru);
         /* doesn't exercise skill or abuse alignment or frighten pet,
            and shades have no passive counterattack */
         return;
     }
 
-    if (mon->m_ap_type)
+    if (M_AP_TYPE(mon))
         seemimic(mon);
 
     check_caitiff(mon);
@@ -90,20 +88,19 @@ register boolean clumsy;
         /* a good kick exercises your dex */
         exercise(A_DEX, TRUE);
     }
-    if (blessed_foot_damage)
-        dmg += rnd(4);
+    dmg += specialdmg; /* for blessed (or hypothetically, silver) boots */
     if (uarmf)
         dmg += uarmf->spe;
     dmg += u.udaminc; /* add ring(s) of increase damage */
     if (dmg > 0)
         mon->mhp -= dmg;
-    if (mon->mhp > 0 && martial() && !bigmonst(mon->data) && !rn2(3)
+    if (!DEADMONSTER(mon) && martial() && !bigmonst(mon->data) && !rn2(3)
         && mon->mcanmove && mon != u.ustuck && !mon->mtrapped) {
         /* see if the monster has a place to move into */
         mdx = mon->mx + u.dx;
         mdy = mon->my + u.dy;
         if (goodpos(mdx, mdy, mon, 0)) {
-            pline("%s 被风吹得直旋转.", Monnam(mon));
+            pline("%s reels from the blow.", Monnam(mon));
             if (m_in_out_region(mon, mdx, mdy)) {
                 remove_monster(mon->mx, mon->my);
                 newsym(mon->mx, mon->my);
@@ -116,8 +113,8 @@ register boolean clumsy;
         }
     }
 
-    (void) passive(mon, uarmf, TRUE, mon->mhp > 0, AT_KICK, FALSE);
-    if (mon->mhp <= 0 && !trapkilled)
+    (void) passive(mon, uarmf, TRUE, !DEADMONSTER(mon), AT_KICK, FALSE);
+    if (DEADMONSTER(mon) && !trapkilled)
         killed(mon);
 
     /* may bring up a dialog, so put this after all messages */
@@ -160,7 +157,7 @@ xchar x, y;
 
     if (Levitation && !rn2(3) && verysmall(mon->data)
         && !is_flyer(mon->data)) {
-        pline("飘浮在空中, 你未打中目标!");
+        pline("Floating in the air, you miss wildly!");
         exercise(A_DEX, FALSE);
         (void) passive(mon, uarmf, FALSE, 1, AT_KICK, FALSE);
         return;
@@ -169,16 +166,16 @@ xchar x, y;
     /* reveal hidden target even if kick ends up missing (note: being
        hidden doesn't affect chance to hit so neither does this reveal) */
     if (mon->mundetected
-        || (mon->m_ap_type && mon->m_ap_type != M_AP_MONSTER)) {
-        if (mon->m_ap_type)
+        || (M_AP_TYPE(mon) && M_AP_TYPE(mon) != M_AP_MONSTER)) {
+        if (M_AP_TYPE(mon))
             seemimic(mon);
         mon->mundetected = 0;
         if (!canspotmon(mon))
             map_invisible(x, y);
         else
             newsym(x, y);
-        There("有%s在那儿.",
-              canspotmon(mon) ? a_monnam(mon) : "什么东西隐藏");
+        There("is %s here.",
+              canspotmon(mon) ? a_monnam(mon) : "something hidden");
     }
 
     /* Kick attacks by kicking monsters are normal attacks, not special.
@@ -189,7 +186,7 @@ xchar x, y;
      */
     if (Upolyd && attacktype(youmonst.data, AT_KICK)) {
         struct attack *uattk;
-        int sum, kickdieroll, armorpenalty,
+        int sum, kickdieroll, armorpenalty, specialdmg,
             attknum = 0,
             tmp = find_roll_to_hit(mon, AT_KICK, (struct obj *) 0, &attknum,
                                    &armorpenalty);
@@ -205,14 +202,16 @@ xchar x, y;
             if (uattk->aatyp != AT_KICK)
                 continue;
 
-            if (mon->data == &mons[PM_SHADE] && (!uarmf || !uarmf->blessed)) {
+            kickdieroll = rnd(20);
+            specialdmg = special_dmgval(&youmonst, mon, W_ARMF, (long *) 0);
+            if (mon->data == &mons[PM_SHADE] && !specialdmg) {
                 /* doesn't matter whether it would have hit or missed,
                    and shades have no passive counterattack */
                 Your("%s %s.", kick_passes_thru, mon_nam(mon));
                 break; /* skip any additional kicks */
-            } else if (tmp > (kickdieroll = rnd(20))) {
-                You("踢%s.", mon_nam(mon));
-                sum = damageum(mon, uattk);
+            } else if (tmp > kickdieroll) {
+                You("kick %s.", mon_nam(mon));
+                sum = damageum(mon, uattk, specialdmg);
                 (void) passive(mon, uarmf, (boolean) (sum > 0),
                                (sum != 2), AT_KICK, FALSE);
                 if (sum == 2)
@@ -232,7 +231,7 @@ xchar x, y;
         if (!rn2((i < j / 10) ? 2 : (i < j / 5) ? 3 : 4)) {
             if (martial() && !rn2(2))
                 goto doit;
-            Your("笨拙的踢没有造成伤害.");
+            Your("clumsy kick does no damage.");
             (void) passive(mon, uarmf, FALSE, 1, AT_KICK, FALSE);
             return;
         }
@@ -247,33 +246,33 @@ xchar x, y;
 
     else if (uarm && objects[uarm->otyp].oc_bulky && ACURR(A_DEX) < rnd(25))
         clumsy = TRUE;
-doit:
-    You("踢%s.", mon_nam(mon));
+ doit:
+    You("kick %s.", mon_nam(mon));
     if (!rn2(clumsy ? 3 : 4) && (clumsy || !bigmonst(mon->data))
         && mon->mcansee && !mon->mtrapped && !thick_skinned(mon->data)
         && mon->data->mlet != S_EEL && haseyes(mon->data) && mon->mcanmove
         && !mon->mstun && !mon->mconf && !mon->msleeping
         && mon->data->mmove >= 12) {
         if (!nohands(mon->data) && !rn2(martial() ? 5 : 3)) {
-            pline("%s 阻碍了你的%s踢.", Monnam(mon),
-                  clumsy ? "笨拙的" : "");
+            pline("%s blocks your %skick.", Monnam(mon),
+                  clumsy ? "clumsy " : "");
             (void) passive(mon, uarmf, FALSE, 1, AT_KICK, FALSE);
             return;
         } else {
             maybe_mnexto(mon);
             if (mon->mx != x || mon->my != y) {
                 (void) unmap_invisible(x, y);
-                pline("%s %s, %s回避了你的%s踢.", Monnam(mon),
+                pline("%s %s, %s evading your %skick.", Monnam(mon),
                       (!level.flags.noteleport && can_teleport(mon->data))
-                          ? "传送了"
+                          ? "teleports"
                           : is_floater(mon->data)
-                                ? "飘浮了"
-                                : is_flyer(mon->data) ? "突然下降"
+                                ? "floats"
+                                : is_flyer(mon->data) ? "swoops"
                                                       : (nolimbs(mon->data)
                                                          || slithy(mon->data))
-                                                            ? "滑动"
-                                                            : "跳",
-                      clumsy ? "轻易地" : "敏捷地", clumsy ? "笨拙的" : "");
+                                                            ? "slides"
+                                                            : "jumps",
+                      clumsy ? "easily" : "nimbly", clumsy ? "clumsy " : "");
                 (void) passive(mon, uarmf, FALSE, 1, AT_KICK, FALSE);
                 return;
             }
@@ -299,8 +298,8 @@ register struct obj *gold;
     } else if (!mtmp->mcanmove) {
         /* too light to do real damage */
         if (canseemon(mtmp)) {
-            pline_The("%s无伤害地%s %s.", xname(gold),
-                      otense(gold, "打了一下"), mon_nam(mtmp));
+            pline_The("%s harmlessly %s %s.", xname(gold),
+                      otense(gold, "hit"), mon_nam(mtmp));
             msg_given = TRUE;
         }
     } else {
@@ -312,7 +311,7 @@ register struct obj *gold;
             setmangry(mtmp, TRUE);
         /* greedy monsters catch gold */
         if (cansee(mtmp->mx, mtmp->my))
-            pline("%s 抓住了金币.", Monnam(mtmp));
+            pline("%s catches the gold.", Monnam(mtmp));
         (void) mpickobj(mtmp, gold);
         gold = (struct obj *) 0; /* obj has been freed */
         if (mtmp->isshk) {
@@ -322,24 +321,24 @@ register struct obj *gold;
                 robbed -= value;
                 if (robbed < 0L)
                     robbed = 0L;
-                pline_The("相当于%s弥补了%s最近的损失.",
-                          !robbed ? "" : "部分", mhis(mtmp));
+                pline_The("amount %scovers %s recent losses.",
+                          !robbed ? "" : "partially ", mhis(mtmp));
                 ESHK(mtmp)->robbed = robbed;
                 if (!robbed)
                     make_happy_shk(mtmp, FALSE);
             } else {
                 if (mtmp->mpeaceful) {
                     ESHK(mtmp)->credit += value;
-                    You("有%ld %s 信用.", ESHK(mtmp)->credit,
+                    You("have %ld %s in credit.", ESHK(mtmp)->credit,
                         currency(ESHK(mtmp)->credit));
                 } else
-                    verbalize("谢谢, 人渣!");
+                    verbalize("Thanks, scum!");
             }
         } else if (mtmp->ispriest) {
             if (mtmp->mpeaceful)
-                verbalize("谢谢你的贡献.");
+                verbalize("Thank you for your contribution.");
             else
-                verbalize("谢谢, 人渣!");
+                verbalize("Thanks, scum!");
         } else if (mtmp->isgd) {
             umoney = money_cnt(invent);
             /* Some of these are iffy, because a hostile guard
@@ -349,12 +348,12 @@ register struct obj *gold;
                killed by throwing his/her gold when losing. */
             verbalize(
                 umoney
-                    ? "放下剩下的然后跟着我."
+                    ? "Drop the rest and follow me."
                     : hidden_gold()
-                          ? "你仍还有隐藏的金币.  现在扔下它."
+                          ? "You still have hidden gold.  Drop it now."
                           : mtmp->mpeaceful
-                                ? "我会处理的; 请向前走."
-                                : "我拿走了; 现在走吧.");
+                                ? "I'll take care of that; please move along."
+                                : "I'll take that; now get moving.");
         } else if (is_mercenary(mtmp->data)) {
             long goldreqd = 0L;
 
@@ -377,9 +376,9 @@ register struct obj *gold;
                 }
             }
             if (mtmp->mpeaceful)
-                verbalize("那是应该的.  滚吧!");
+                verbalize("That should do.  Now beat it!");
             else
-                verbalize("那还不够, 懦夫!");
+                verbalize("That's not enough, coward!");
         }
         return TRUE;
     }
@@ -418,9 +417,9 @@ xchar x, y; /* coordinates where object was before the impact, not after */
         otmp2 = otmp->nobj;
         if (objects[otmp->otyp].oc_material == GLASS
             && otmp->oclass != GEM_CLASS && !obj_resists(otmp, 33, 100)) {
-            result = "破碎";
+            result = "shatter";
         } else if (otmp->otyp == EGG && !rn2(3)) {
-            result = "破裂";
+            result = "cracking";
         }
         if (result) {
             if (otmp->otyp == MIRROR)
@@ -430,7 +429,7 @@ xchar x, y; /* coordinates where object was before the impact, not after */
              * but it's always exactly 1 that breaks */
             if (otmp->otyp == EGG && otmp->spe && otmp->corpsenm >= LOW_PM)
                 change_luck(-1);
-            You_hear("一种低沉的%s的声音.", result);
+            You_hear("a muffled %s.", result);
             if (costly) {
                 if (frominv && !otmp->unpaid)
                     otmp->no_charge = 1;
@@ -449,10 +448,10 @@ xchar x, y; /* coordinates where object was before the impact, not after */
     }
     if (costly && loss) {
         if (!insider) {
-            You("造成了价值%ld %s 的损坏!", loss, currency(loss));
+            You("caused %ld %s worth of damage!", loss, currency(loss));
             make_angry_shk(shkp, x, y);
         } else {
-            You("破坏了%s %ld %s 的东西.", mon_nam(shkp), loss,
+            You("owe %s %ld %s for objects destroyed.", mon_nam(shkp), loss,
                 currency(loss));
         }
     }
@@ -495,13 +494,13 @@ xchar x, y;
         return 0;
 
     if ((trap = t_at(x, y)) != 0) {
-        if (((trap->ttyp == PIT || trap->ttyp == SPIKED_PIT) && !Passes_walls)
-            || trap->ttyp == WEB) {
+        if ((is_pit(trap->ttyp) && !Passes_walls) || trap->ttyp == WEB) {
             if (!trap->tseen)
                 find_trap(trap);
-            You_cant("在%s中踢%s!",
-                     Hallucination ? "慌乱" :
-                     (trap->ttyp == WEB) ? "网" : "坑", something);
+            You_cant("kick %s that's in a %s!", something,
+                     Hallucination ? "tizzy"
+                         : (trap->ttyp == WEB) ? "web"
+                             : "pit");
             return 1;
         }
         if (trap->ttyp == STATUE_TRAP) {
@@ -511,28 +510,44 @@ xchar x, y;
     }
 
     if (Fumbling && !rn2(3)) {
-        Your("笨拙的踢没打中.");
+        Your("clumsy kick missed.");
         return 1;
     }
 
     if (!uarmf && kickedobj->otyp == CORPSE
         && touch_petrifies(&mons[kickedobj->corpsenm]) && !Stone_resistance) {
-        You("用你的赤%s 踢%s.",
-            makeplural(body_part(FOOT)),
-            corpse_xname(kickedobj, (const char *) 0, CXN_PFX_THE));
+        You("kick %s with your bare %s.",
+            corpse_xname(kickedobj, (const char *) 0, CXN_PFX_THE),
+            makeplural(body_part(FOOT)));
         if (poly_when_stoned(youmonst.data) && polymon(PM_STONE_GOLEM)) {
             ; /* hero has been transformed but kick continues */
         } else {
             /* normalize body shape here; foot, not body_part(FOOT) */
-            Sprintf(killer.name, "赤脚踢%s",
+            Sprintf(killer.name, "kicking %s barefoot",
                     killer_xname(kickedobj));
             instapetrify(killer.name);
         }
     }
 
-    /* range < 2 means the object will not move.  */
-    /* maybe dexterity should also figure here.   */
-    range = (int) ((ACURRSTR) / 2 - kickedobj->owt / 40);
+    isgold = (kickedobj->oclass == COIN_CLASS);
+    {
+        int k_owt = (int) kickedobj->owt;
+
+        /* for non-gold stack, 1 item will be split off below (unless an
+           early return occurs, so we aren't moving the split to here);
+           calculate the range for that 1 rather than for the whole stack */
+        if (kickedobj->quan > 1L && !isgold) {
+            long save_quan = kickedobj->quan;
+
+            kickedobj->quan = 1L;
+            k_owt = weight(kickedobj);
+            kickedobj->quan = save_quan;
+        }
+
+        /* range < 2 means the object will not move
+           (maybe dexterity should also figure here) */
+        range = ((int) ACURRSTR) / 2 - k_owt / 40;
+    }
 
     if (martial())
         range += rnd(3);
@@ -562,30 +577,29 @@ xchar x, y;
     costly = (!(kickedobj->no_charge && !Has_contents(kickedobj))
               && (shkp = shop_keeper(*in_rooms(x, y, SHOPBASE))) != 0
               && costly_spot(x, y));
-    isgold = (kickedobj->oclass == COIN_CLASS);
 
     if (IS_ROCK(levl[x][y].typ) || closed_door(x, y)) {
         if ((!martial() && rn2(20) > ACURR(A_DEX))
             || IS_ROCK(levl[u.ux][u.uy].typ) || closed_door(u.ux, u.uy)) {
             if (Blind)
-                pline("它没有松散.");
+                pline("It doesn't come loose.");
             else
-                pline("%s %s松散.",
+                pline("%s %sn't come loose.",
                       The(distant_name(kickedobj, xname)),
-                      otense(kickedobj, "没有"));
+                      otense(kickedobj, "do"));
             return (!rn2(3) || martial());
         }
         if (Blind)
-            pline("它松散了.");
+            pline("It comes loose.");
         else
-            pline("%s %s了.", The(distant_name(kickedobj, xname)),
-                  otense(kickedobj, "松散"));
+            pline("%s %s loose.", The(distant_name(kickedobj, xname)),
+                  otense(kickedobj, "come"));
         obj_extract_self(kickedobj);
         newsym(x, y);
         if (costly && (!costly_spot(u.ux, u.uy)
                        || !index(u.urooms, *in_rooms(x, y, SHOPBASE))))
             addtobill(kickedobj, FALSE, FALSE, FALSE);
-        if (!flooreffects(kickedobj, u.ux, u.uy, "掉落")) {
+        if (!flooreffects(kickedobj, u.ux, u.uy, "fall")) {
             place_object(kickedobj, u.ux, u.uy);
             stackobj(kickedobj);
             newsym(u.ux, u.uy);
@@ -598,11 +612,11 @@ xchar x, y;
         boolean otrp = kickedobj->otrapped;
 
         if (range < 2)
-            pline("砰的一声!");
+            pline("THUD!");
         container_impact_dmg(kickedobj, x, y);
         if (kickedobj->olocked) {
             if (!rn2(5) || (martial() && !rn2(2))) {
-                You("破开了锁!");
+                You("break open the lock!");
                 breakchestlock(kickedobj, FALSE);
                 if (otrp)
                     (void) chest_trap(kickedobj, LEG, FALSE);
@@ -610,7 +624,7 @@ xchar x, y;
             }
         } else {
             if (!rn2(3) || (martial() && !rn2(2))) {
-                pline_The("盖子砰的一声开了, 然后落下关上了.");
+                pline_The("lid slams open, then falls shut.");
                 kickedobj->lknown = 1;
                 if (otrp)
                     (void) chest_trap(kickedobj, LEG, FALSE);
@@ -632,7 +646,7 @@ xchar x, y;
      */
     if (range < 2) {
         if (!Is_box(kickedobj))
-            pline("重击!");
+            pline("Thump!");
         return (!rn2(3) || martial());
     }
 
@@ -642,8 +656,8 @@ xchar x, y;
         } else {
             if (rn2(20)) {
                 static NEARDATA const char *const flyingcoinmsg[] = {
-                    "让金币散开了", "把金币弄得到处都是",
-                    "把金币踢飞向四面八方",
+                    "scatter the coins", "knock coins all over the place",
+                    "send coins flying in all directions",
                 };
 
                 pline("Thwwpingg!");
@@ -654,15 +668,15 @@ xchar x, y;
                 return 1;
             }
             if (kickedobj->quan > 300L) {
-                pline("重击!");
+                pline("Thump!");
                 return (!rn2(3) || martial());
             }
         }
     }
 
     if (slide && !Blind)
-        pline("啊!  %s %s过%s.", Doname2(kickedobj),
-              otense(kickedobj, "滑"), surface(x, y));
+        pline("Whee!  %s %s across the %s.", Doname2(kickedobj),
+              otense(kickedobj, "slide"), surface(x, y));
 
     if (costly && !isgold)
         addtobill(kickedobj, FALSE, FALSE, TRUE);
@@ -700,7 +714,7 @@ xchar x, y;
                                 FALSE);
     }
 
-    if (flooreffects(kickedobj, bhitpos.x, bhitpos.y, "掉落"))
+    if (flooreffects(kickedobj, bhitpos.x, bhitpos.y, "fall"))
         return 1;
     if (kickedobj->unpaid)
         subfrombill(kickedobj, shkp);
@@ -721,36 +735,36 @@ const char *kickobjnam;
     if (*kickobjnam)
         what = kickobjnam;
     else if (maploc == &nowhere)
-        what = "空气";
+        what = "nothing";
     else if (IS_DOOR(maploc->typ))
-        what = "门";
+        what = "a door";
     else if (IS_TREE(maploc->typ))
-        what = "树";
+        what = "a tree";
     else if (IS_STWALL(maploc->typ))
-        what = "墙壁";
+        what = "a wall";
     else if (IS_ROCK(maploc->typ))
-        what = "岩石";
+        what = "a rock";
     else if (IS_THRONE(maploc->typ))
-        what = "王座";
+        what = "a throne";
     else if (IS_FOUNTAIN(maploc->typ))
-        what = "喷泉";
+        what = "a fountain";
     else if (IS_GRAVE(maploc->typ))
-        what = "墓碑";
+        what = "a headstone";
     else if (IS_SINK(maploc->typ))
-        what = "水槽";
+        what = "a sink";
     else if (IS_ALTAR(maploc->typ))
-        what = "祭坛";
+        what = "an altar";
     else if (IS_DRAWBRIDGE(maploc->typ))
-        what = "吊桥";
+        what = "a drawbridge";
     else if (maploc->typ == STAIRS)
-        what = "楼梯";
+        what = "the stairs";
     else if (maploc->typ == LADDER)
-        what = "梯子";
+        what = "a ladder";
     else if (maploc->typ == IRONBARS)
-        what = "铁球";
+        what = "an iron bar";
     else
         what = "something weird";
-    return strcat(strcpy(buf, "踢 "), what);
+    return strcat(strcpy(buf, "kicking "), what);
 }
 
 int
@@ -765,14 +779,14 @@ dokick()
 
     kickobjnam[0] = '\0';
     if (nolimbs(youmonst.data) || slithy(youmonst.data)) {
-        You("没有腿来踢.");
+        You("have no legs to kick with.");
         no_kick = TRUE;
     } else if (verysmall(youmonst.data)) {
-        You("太小了来踢任何东西.");
+        You("are too small to do any kicking.");
         no_kick = TRUE;
     } else if (u.usteed) {
-        if (yn_function("踢你的坐骑?", ynchars, 'y') == 'y') {
-            You("踢了一下%s.", mon_nam(u.usteed));
+        if (yn_function("Kick your steed?", ynchars, 'y') == 'y') {
+            You("kick %s.", mon_nam(u.usteed));
             kick_steed();
             return 1;
         } else {
@@ -785,31 +799,31 @@ dokick()
 
         if (wl == BOTH_SIDES)
             bp = makeplural(bp);
-        Your("%s%s%s完全不能踢.",
-             (wl == LEFT_SIDE) ? "左 " : (wl == RIGHT_SIDE) ? "右 " : "",
-             bp, (wl == BOTH_SIDES) ? "" : "");
+        Your("%s%s %s in no shape for kicking.",
+             (wl == LEFT_SIDE) ? "left " : (wl == RIGHT_SIDE) ? "right " : "",
+             bp, (wl == BOTH_SIDES) ? "are" : "is");
         no_kick = TRUE;
     } else if (near_capacity() > SLT_ENCUMBER) {
-        Your("承载得太重无法平衡来踢.");
+        Your("load is too heavy to balance yourself for a kick.");
         no_kick = TRUE;
     } else if (youmonst.data->mlet == S_LIZARD) {
-        Your("腿不能有效地踢.");
+        Your("legs cannot kick effectively.");
         no_kick = TRUE;
     } else if (u.uinwater && !rn2(2)) {
-        Your("慢动作踢打不了任何东西.");
+        Your("slow motion kick doesn't hit anything.");
         no_kick = TRUE;
     } else if (u.utrap) {
         no_kick = TRUE;
         switch (u.utraptype) {
         case TT_PIT:
             if (!Passes_walls)
-                pline("那里没有足够的空间来踢倒.");
+                pline("There's not enough room to kick down here.");
             else
                 no_kick = FALSE;
             break;
         case TT_WEB:
         case TT_BEARTRAP:
-            You_cant("移动你的%s!", body_part(LEG));
+            You_cant("move your %s!", body_part(LEG));
             break;
         default:
             break;
@@ -839,22 +853,22 @@ dokick()
     if (u.uswallow) {
         switch (rn2(3)) {
         case 0:
-            You_cant("移动你的%s!", body_part(LEG));
+            You_cant("move your %s!", body_part(LEG));
             break;
         case 1:
             if (is_animal(u.ustuck->data)) {
-                pline("%s 大声地打嗝.", Monnam(u.ustuck));
+                pline("%s burps loudly.", Monnam(u.ustuck));
                 break;
             }
             /*FALLTHRU*/
         default:
-            Your("无力的踢没有效果.");
+            Your("feeble kick has no effect.");
             break;
         }
         return 1;
     } else if (u.utrap && u.utraptype == TT_PIT) {
         /* must be Passes_walls */
-        You("在坑边踢.");
+        You("kick at the side of the pit.");
         return 1;
     }
     if (Levitation) {
@@ -869,7 +883,7 @@ dokick()
         if (isok(xx, yy) && !IS_ROCK(levl[xx][yy].typ)
             && !IS_DOOR(levl[xx][yy].typ)
             && (!Is_airlevel(&u.uz) || !OBJ_AT(xx, yy))) {
-            You("没有东西来支撑你自己.");
+            You("have nothing to brace yourself against.");
             return 0;
         }
     }
@@ -914,7 +928,7 @@ dokick()
         kick_monster(mtmp, x, y);
         glyph = glyph_at(x, y);
         /* see comment in attack_checks() */
-        if (mtmp->mhp <= 0) { /* DEADMONSTER() */
+        if (DEADMONSTER(mtmp)) { /* DEADMONSTER() */
             /* if we mapped an invisible monster and immediately
                killed it, we don't want to forget what we thought
                was there before the kick */
@@ -947,7 +961,7 @@ dokick()
     (void) unmap_invisible(x, y);
     if (is_pool(x, y) ^ !!u.uinwater) {
         /* objects normally can't be removed from water by kicking */
-        You("让一些%s四处飞溅.", hliquid("水"));
+        You("splash some %s around.", hliquid("water"));
         return 1;
     }
 
@@ -965,16 +979,16 @@ dokick()
         if (maploc->typ == SDOOR) {
             if (!Levitation && rn2(30) < avrg_attrib) {
                 cvt_sdoor_to_door(maploc); /* ->typ = DOOR */
-                pline("轰隆!  %s 一个暗门!",
+                pline("Crash!  %s a secret door!",
                       /* don't "kick open" when it's locked
                          unless it also happens to be trapped */
                       (maploc->doormask & (D_LOCKED | D_TRAPPED)) == D_LOCKED
-                          ? "你的踢发现了"
-                          : "你踢开了");
+                          ? "Your kick uncovers"
+                          : "You kick open");
                 exercise(A_DEX, TRUE);
                 if (maploc->doormask & D_TRAPPED) {
                     maploc->doormask = D_NODOOR;
-                    b_trapped("门", FOOT);
+                    b_trapped("door", FOOT);
                 } else if (maploc->doormask != D_NODOOR
                            && !(maploc->doormask & D_LOCKED))
                     maploc->doormask = D_ISOPEN;
@@ -988,7 +1002,7 @@ dokick()
         }
         if (maploc->typ == SCORR) {
             if (!Levitation && rn2(30) < avrg_attrib) {
-                pline("轰隆!  你踢开了一个暗道!");
+                pline("Crash!  You kick open a secret passage!");
                 exercise(A_DEX, TRUE);
                 maploc->typ = CORR;
                 feel_newsym(x, y); /* we know it's gone */
@@ -1006,9 +1020,9 @@ dokick()
                 maploc->doormask = 0; /* don't leave loose ends.. */
                 (void) mkgold((long) rnd(200), x, y);
                 if (Blind)
-                    pline("轰隆!  你破坏了它.");
+                    pline("CRASH!  You destroy it.");
                 else {
-                    pline("轰隆!  你破坏了王座.");
+                    pline("CRASH!  You destroy the throne.");
                     newsym(x, y);
                 }
                 exercise(A_DEX, TRUE);
@@ -1023,9 +1037,9 @@ dokick()
                         rnd_class(DILITHIUM_CRYSTAL, LUCKSTONE - 1), x, y,
                         FALSE, TRUE);
                 if (Blind)
-                    You("把%s踢松散了!", something);
+                    You("kick %s loose!", something);
                 else {
-                    You("把一些装饰性的钱币和宝石踢松散了!");
+                    You("kick loose some ornamental coins and gems!");
                     newsym(x, y);
                 }
                 /* prevent endless milking */
@@ -1043,7 +1057,7 @@ dokick()
         if (IS_ALTAR(maploc->typ)) {
             if (Levitation)
                 goto dumb;
-            You("踢了一下 %s.", (Blind ? something : "祭坛"));
+            You("kick %s.", (Blind ? something : "the altar"));
             if (!rn2(3))
                 goto ouch;
             altar_wrath(x, y);
@@ -1053,13 +1067,13 @@ dokick()
         if (IS_FOUNTAIN(maploc->typ)) {
             if (Levitation)
                 goto dumb;
-            You("踢了一下 %s.", (Blind ? something : "喷泉"));
+            You("kick %s.", (Blind ? something : "the fountain"));
             if (!rn2(3))
                 goto ouch;
             /* make metal boots rust */
             if (uarmf && rn2(3))
-                if (water_damage(uarmf, "金属靴子", TRUE) == ER_NOTHING) {
-                    Your("靴子弄湿了.");
+                if (water_damage(uarmf, "metal boots", TRUE) == ER_NOTHING) {
+                    Your("boots get wet.");
                     /* could cause short-lived fumbling here */
                 }
             exercise(A_DEX, TRUE);
@@ -1080,9 +1094,9 @@ dokick()
             (void) mksobj_at(ROCK, x, y, TRUE, FALSE);
             del_engr_at(x, y);
             if (Blind)
-                pline("噼啪!  %s破了!", Something);
+                pline("Crack!  %s broke!", Something);
             else {
-                pline_The("墓碑倒下并打破了!");
+                pline_The("headstone topples over and breaks!");
                 newsym(x, y);
             }
             return 1;
@@ -1095,7 +1109,7 @@ dokick()
             /* nothing, fruit or trouble? 75:23.5:1.5% */
             if (rn2(3)) {
                 if (!rn2(6) && !(mvitals[PM_KILLER_BEE].mvflags & G_GONE))
-                    You_hear("低声的嗡嗡响."); /* a warning */
+                    You_hear("a low buzzing."); /* a warning */
                 goto ouch;
             }
             if (rn2(15) && !(maploc->looted & TREE_LOOTED)
@@ -1106,16 +1120,16 @@ dokick()
                 treefruit->quan = nfruit;
                 treefruit->owt = weight(treefruit);
                 if (is_plural(treefruit))
-                    pline("一些%s 从树上掉落!", xname(treefruit));
+                    pline("Some %s fall from the tree!", xname(treefruit));
                 else
-                    pline("一个%s 从树上掉落!", xname(treefruit));
+                    pline("%s falls from the tree!", An(xname(treefruit)));
                 nfall = scatter(x, y, 2, MAY_HIT, treefruit);
                 if (nfall != nfruit) {
                     /* scatter left some in the tree, but treefruit
                      * may not refer to the correct object */
                     treefruit = mksobj(frtype, TRUE, FALSE);
                     treefruit->quan = nfruit - nfall;
-                    pline("%ld %s 卡在树枝上.",
+                    pline("%ld %s got caught in the branches.",
                           nfruit - nfall, xname(treefruit));
                     dealloc_obj(treefruit);
                 }
@@ -1138,9 +1152,9 @@ dokick()
                         made++;
                 }
                 if (made)
-                    pline("你吸引了那棵树从前的居住者!");
+                    pline("You've attracted the tree's former occupants!");
                 else
-                    You("闻到了不新鲜的蜂蜜味.");
+                    You("smell stale honey.");
                 maploc->looted |= TREE_SWARM;
                 return 1;
             }
@@ -1156,17 +1170,17 @@ dokick()
                 goto dumb;
             if (rn2(5)) {
                 if (!Deaf)
-                    pline("咚咚!  管道吵闹地振动.");
+                    pline("Klunk!  The pipes vibrate noisily.");
                 else
-                    pline("咚咚!");
+                    pline("Klunk!");
                 exercise(A_DEX, TRUE);
                 return 1;
             } else if (!(maploc->looted & S_LPUDDING) && !rn2(3)
                        && !(mvitals[PM_BLACK_PUDDING].mvflags & G_GONE)) {
                 if (Blind)
-                    You_hear("涌出的声音.");
+                    You_hear("a gushing sound.");
                 else
-                    pline("%s淤泥从下水道涌出!",
+                    pline("A %s ooze gushes up from the drain!",
                           hcolor(NH_BLACK));
                 (void) makemon(&mons[PM_BLACK_PUDDING], x, y, NO_MM_FLAGS);
                 exercise(A_DEX, TRUE);
@@ -1176,19 +1190,19 @@ dokick()
             } else if (!(maploc->looted & S_LDWASHER) && !rn2(3)
                        && !(mvitals[washerndx].mvflags & G_GONE)) {
                 /* can't resist... */
-                pline("%s 回来了!", (Blind ? Something : "洗碗工"));
+                pline("%s returns!", (Blind ? Something : "The dish washer"));
                 if (makemon(&mons[washerndx], x, y, NO_MM_FLAGS))
                     newsym(x, y);
                 maploc->looted |= S_LDWASHER;
                 exercise(A_DEX, TRUE);
                 return 1;
             } else if (!rn2(3)) {
-                pline("泼溅声!  %s.",
-                      (Blind ? "你听见泼溅的声音"
-                             : "泥泞的垃圾从下水道出来"));
+                pline("Flupp!  %s.",
+                      (Blind ? "You hear a sloshing sound"
+                             : "Muddy waste pops up from the drain"));
                 if (!(maploc->looted & S_LRING)) { /* once per sink */
                     if (!Blind)
-                        You_see("一枚戒指在它中间闪耀.");
+                        You_see("a ring shining in its midst.");
                     (void) mkobj_at(RING_CLASS, x, y, TRUE);
                     newsym(x, y);
                     exercise(A_DEX, TRUE);
@@ -1203,15 +1217,15 @@ dokick()
             || IS_STWALL(maploc->typ)) {
             if (!IS_STWALL(maploc->typ) && maploc->ladder == LA_DOWN)
                 goto dumb;
-        ouch:
-            pline("嗷!  疼!");
+ ouch:
+            pline("Ouch!  That hurts!");
             exercise(A_DEX, FALSE);
             exercise(A_STR, FALSE);
             if (isok(x, y)) {
                 if (Blind)
                     feel_location(x, y); /* we know we hit it */
                 if (is_drawbridge_wall(x, y) >= 0) {
-                    pline_The("吊桥不受影响.");
+                    pline_The("drawbridge is unaffected.");
                     /* update maploc to refer to the drawbridge */
                     (void) find_drawbridge(&x, &y);
                     maploc = &levl[x][y];
@@ -1230,14 +1244,14 @@ dokick()
 
     if (maploc->doormask == D_ISOPEN || maploc->doormask == D_BROKEN
         || maploc->doormask == D_NODOOR) {
-    dumb:
+ dumb:
         exercise(A_DEX, FALSE);
         if (martial() || ACURR(A_DEX) >= 16 || rn2(3)) {
-            You("踢了空气.");
+            You("kick at empty space.");
             if (Blind)
                 feel_location(x, y);
         } else {
-            pline("笨蛋!  你拉伤了肌肉.");
+            pline("Dumb move!  You strain a muscle.");
             exercise(A_STR, FALSE);
             set_wounded_legs(RIGHT_SIDE, 5 + rnd(5));
         }
@@ -1257,16 +1271,16 @@ dokick()
         /* break the door */
         if (maploc->doormask & D_TRAPPED) {
             if (flags.verbose)
-                You("踢门.");
+                You("kick the door.");
             exercise(A_STR, FALSE);
             maploc->doormask = D_NODOOR;
-            b_trapped("门", FOOT);
+            b_trapped("door", FOOT);
         } else if (ACURR(A_STR) > 18 && !rn2(5) && !shopdoor) {
-            pline("你把门踢成了碎片!");
+            pline("As you kick the door, it shatters to pieces!");
             exercise(A_STR, TRUE);
             maploc->doormask = D_NODOOR;
         } else {
-            pline("你把门踢坏了, 门开了!");
+            pline("As you kick the door, it crashes open!");
             exercise(A_STR, TRUE);
             maploc->doormask = D_BROKEN;
         }
@@ -1274,7 +1288,7 @@ dokick()
         unblock_point(x, y); /* vision */
         if (shopdoor) {
             add_damage(x, y, SHOP_DOOR_COST);
-            pay_for_damage("弄坏", FALSE);
+            pay_for_damage("break", FALSE);
         }
         if (in_town(x, y))
             for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
@@ -1282,7 +1296,7 @@ dokick()
                     continue;
                 if (is_watch(mtmp->data) && couldsee(mtmp->mx, mtmp->my)
                     && mtmp->mpeaceful) {
-                    mon_yells(mtmp, "停止, 小偷!  你被捕了!");
+                    mon_yells(mtmp, "Halt, thief!  You're under arrest!");
                     (void) angry_guards(FALSE);
                     break;
                 }
@@ -1291,7 +1305,7 @@ dokick()
         if (Blind)
             feel_location(x, y); /* we know we hit it */
         exercise(A_STR, TRUE);
-        pline("咚!!!");
+        pline("WHAMMM!!!");
         if (in_town(x, y))
             for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
                 if (DEADMONSTER(mtmp))
@@ -1300,10 +1314,10 @@ dokick()
                     && couldsee(mtmp->mx, mtmp->my)) {
                     if (levl[x][y].looted & D_WARNED) {
                         mon_yells(mtmp,
-                                  "停止, 破坏者!  你被捕了!");
+                                  "Halt, vandal!  You're under arrest!");
                         (void) angry_guards(FALSE);
                     } else {
-                        mon_yells(mtmp, "喂, 停止破坏那个门!");
+                        mon_yells(mtmp, "Hey, stop damaging that door!");
                         levl[x][y].looted |= D_WARNED;
                     }
                     break;
@@ -1412,10 +1426,11 @@ xchar dlev;          /* if !0 send to dlev near player */
         obj_extract_self(obj);
 
         if (costly) {
-            price += stolen_value(
-                obj, x, y, (costly_spot(u.ux, u.uy)
-                            && index(u.urooms, *in_rooms(x, y, SHOPBASE))),
-                TRUE);
+            price += stolen_value(obj, x, y,
+                                  (costly_spot(u.ux, u.uy)
+                                   && index(u.urooms,
+                                            *in_rooms(x, y, SHOPBASE))),
+                                  TRUE);
             /* set obj->no_charge to 0 */
             if (Has_contents(obj))
                 picked_container(obj); /* does the right thing */
@@ -1433,39 +1448,39 @@ xchar dlev;          /* if !0 send to dlev near player */
     }
 
     if (dct && cansee(x, y)) { /* at least one object fell */
-        const char *what = (dct == 1L ? "东西掉落" : "东西掉落");
+        const char *what = (dct == 1L ? "object falls" : "objects fall");
 
         if (missile)
-            pline("受其影响, 另外的%s%s了.",
-                  dct == oct ? "" : dct == 1L ? "一个" : "", what);
+            pline("From the impact, %sother %s.",
+                  dct == oct ? "the " : dct == 1L ? "an" : "", what);
         else if (oct == dct)
-            pline("%s邻近的%s %s.", dct == 1L ? "" : "所有", what,
+            pline("%s adjacent %s %s.", dct == 1L ? "The" : "All the", what,
                   gate_str);
         else
-            pline("%s邻近的%s %s.",
-                  dct == 1L ? "一个" : "一些",
-                  dct == 1L ? "东西掉落" : what, gate_str);
+            pline("%s adjacent %s %s.",
+                  dct == 1L ? "One of the" : "Some of the",
+                  dct == 1L ? "objects falls" : what, gate_str);
     }
 
     if (costly && shkp && price) {
         if (ESHK(shkp)->robbed > robbed) {
-            You("除去了价值 %ld %s  的物品!", price, currency(price));
+            You("removed %ld %s worth of goods!", price, currency(price));
             if (cansee(shkp->mx, shkp->my)) {
                 if (ESHK(shkp)->customer[0] == 0)
                     (void) strncpy(ESHK(shkp)->customer, plname, PL_NSIZ);
                 if (angry)
-                    pline("%s 是激怒的!", Monnam(shkp));
+                    pline("%s is infuriated!", Monnam(shkp));
                 else
-                    pline("\" %s, 你这个小偷!\"", plname);
+                    pline("\"%s, you are a thief!\"", plname);
             } else
-                You_hear("一个尖叫, \" 小偷!\"");
+                You_hear("a scream, \"Thief!\"");
             hot_pursuit(shkp);
             (void) angry_guards(FALSE);
             return;
         }
         if (ESHK(shkp)->debit > debit) {
             long amt = (ESHK(shkp)->debit - debit);
-            You("欠%s %ld %s  的物品损失.", Monnam(shkp), amt,
+            You("owe %s %ld %s for goods lost.", Monnam(shkp), amt,
                 currency(amt));
         }
     }
@@ -1515,7 +1530,7 @@ boolean shop_floor_obj;
     /* boulders never fall through trap doors, but they might knock
        other things down before plugging the hole */
     if (otmp->otyp == BOULDER && ((t = t_at(x, y)) != 0)
-        && (t->ttyp == TRAPDOOR || t->ttyp == HOLE)) {
+        && is_hole(t->ttyp)) {
         if (impact)
             impact_drop(otmp, x, y, 0);
         return FALSE; /* let caller finish the drop */
@@ -1560,14 +1575,14 @@ boolean shop_floor_obj;
             || otmp->otyp == EXPENSIVE_CAMERA) {
             if (otmp->otyp == MIRROR)
                 change_luck(-2);
-            result = "破碎";
+            result = "crash";
         } else {
             /* penalty for breaking eggs laid by you */
             if (otmp->otyp == EGG && otmp->spe && otmp->corpsenm >= LOW_PM)
                 change_luck((schar) -min(otmp->quan, 5L));
-            result = "啪啦";
+            result = "splat";
         }
-        You_hear("低沉的%s的声音.", result);
+        You_hear("a muffled %s.", result);
         obj_extract_self(otmp);
         obfree(otmp, (struct obj *) 0);
         return TRUE;
@@ -1612,6 +1627,9 @@ boolean near_hero;
             continue;
 
         where = (int) (otmp->owornmask & 0x7fffL); /* destination code */
+        if ((where & MIGR_TO_SPECIES) != 0)
+            continue;
+
         nobreak = (where & MIGR_NOBREAK) != 0;
         noscatter = (where & MIGR_WITH_HERO) != 0;
         where &= ~(MIGR_NOBREAK | MIGR_NOSCATTER);
@@ -1655,6 +1673,8 @@ boolean near_hero;
             stackobj(otmp);
             if (!noscatter)
                 (void) scatter(nx, ny, rnd(2), 0, otmp);
+            else
+                newsym(nx, ny);
         } else { /* random location */
             /* set dummy coordinates because there's no
                current position for rloco() to update */
@@ -1667,30 +1687,86 @@ boolean near_hero;
     }
 }
 
+void
+deliver_obj_to_mon(mtmp, cnt, deliverflags)
+int cnt;
+struct monst *mtmp;
+unsigned long deliverflags;
+{
+    struct obj *otmp, *otmp2;
+    int where, maxobj = 1;
+    boolean at_crime_scene = In_mines(&u.uz);
+
+    if ((deliverflags & DF_RANDOM) && cnt > 1)
+        maxobj = rnd(cnt);
+    else if (deliverflags & DF_ALL)
+        maxobj = 0;
+    else
+        maxobj = 1;
+
+    cnt = 0;
+    for (otmp = migrating_objs; otmp; otmp = otmp2) {
+        otmp2 = otmp->nobj;
+        where = (int) (otmp->owornmask & 0x7fffL); /* destination code */
+        if ((where & MIGR_TO_SPECIES) == 0)
+            continue;
+
+        if ((mtmp->data->mflags2 & otmp->corpsenm) != 0) {
+            obj_extract_self(otmp);
+            otmp->owornmask = 0L;
+            otmp->ox = otmp->oy = 0;
+
+            /* special treatment for orcs and their kind */
+            if ((otmp->corpsenm & M2_ORC) != 0 && has_oname(otmp)) {
+                if (!has_mname(mtmp)) {
+                    if (at_crime_scene || !rn2(2))
+                        mtmp = christen_orc(mtmp,
+                                            at_crime_scene ? ONAME(otmp)
+                                                           : (char *) 0,
+                                            /* bought the stolen goods */
+                                            " the Fence");
+                }
+                free_oname(otmp);
+            }
+            otmp->corpsenm = 0;
+            (void) add_to_minv(mtmp, otmp);
+            cnt++;
+            if (maxobj && cnt >= maxobj)
+                break;
+            /* getting here implies DF_ALL */
+        }
+    }
+}
+
 STATIC_OVL void
 otransit_msg(otmp, nodrop, num)
 register struct obj *otmp;
 register boolean nodrop;
 long num;
 {
-    char obuf[BUFSZ];
+    char *optr = 0, obuf[BUFSZ], xbuf[BUFSZ];
 
-    Sprintf(obuf, "%s%s",
-            (otmp->otyp == CORPSE && type_is_pname(&mons[otmp->corpsenm]))
-                ? ""
-                : "",
-            cxname(otmp));
+    if (otmp->otyp == CORPSE) {
+        /* Tobjnam() calls xname() and would yield "The corpse";
+           we want more specific "The newt corpse" or "Medusa's corpse" */
+        optr = upstart(corpse_xname(otmp, (char *) 0, CXN_PFX_THE));
+    } else {
+        optr = Tobjnam(otmp, (char *) 0);
+    }
+    Strcpy(obuf, optr);
 
     if (num) { /* means: other objects are impacted */
-        Sprintf(eos(obuf), "%s%s东西%s", otense(otmp, "打中"),
-                num == 1L ? "另一个" : "另外的", num > 1L ? "" : "");
+        /* 3.6.2: use a separate buffer for the suffix to avoid risk of
+           overrunning obuf[] (let pline() handle truncation if necessary) */
+        Sprintf(xbuf, " %s %s object%s", otense(otmp, "hit"),
+                (num == 1L) ? "another" : "other", (num > 1L) ? "s" : "");
         if (nodrop)
-            Sprintf(eos(obuf), ".");
+            Sprintf(eos(xbuf), ".");
         else
-            Sprintf(eos(obuf), "然后%s %s.", otense(otmp, "掉落"), gate_str);
-        pline1(obuf);
+            Sprintf(eos(xbuf), " and %s %s.", otense(otmp, "fall"), gate_str);
+        pline("%s%s", obuf, xbuf);
     } else if (!nodrop)
-        pline("%s %s %s.", obuf, otense(otmp, "掉落"), gate_str);
+        pline("%s %s %s.", obuf, otense(otmp, "fall"), gate_str);
 }
 
 /* migration destination for objects which fall down to next level */
@@ -1707,19 +1783,19 @@ xchar x, y;
 
     if ((xdnstair == x && ydnstair == y)
         || (sstairs.sx == x && sstairs.sy == y && !sstairs.up)) {
-        gate_str = "下楼梯";
+        gate_str = "down the stairs";
         return (xdnstair == x && ydnstair == y) ? MIGR_STAIRS_UP
                                                 : MIGR_SSTAIRS;
     }
     if (xdnladder == x && ydnladder == y) {
-        gate_str = "下梯子";
+        gate_str = "down the ladder";
         return MIGR_LADDER_UP;
     }
 
     if (((ttmp = t_at(x, y)) != 0 && ttmp->tseen)
-        && (ttmp->ttyp == TRAPDOOR || ttmp->ttyp == HOLE)) {
-        gate_str = (ttmp->ttyp == TRAPDOOR) ? "穿过陷阱门"
-                                            : "穿过洞";
+        && is_hole(ttmp->ttyp)) {
+        gate_str = (ttmp->ttyp == TRAPDOOR) ? "through the trap door"
+                                            : "through the hole";
         return MIGR_RANDOM;
     }
     return MIGR_NOWHERE;

@@ -1,18 +1,20 @@
-/* NetHack 3.6	vault.c	$NHDT-Date: 1452132199 2016/01/07 02:03:19 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.42 $ */
+/* NetHack 3.6	vault.c	$NHDT-Date: 1549921171 2019/02/11 21:39:31 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.62 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2011. */
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
 
-STATIC_DCL struct monst *NDECL(findgd);
-
 STATIC_DCL boolean FDECL(clear_fcorr, (struct monst *, BOOLEAN_P));
 STATIC_DCL void FDECL(blackout, (int, int));
 STATIC_DCL void FDECL(restfakecorr, (struct monst *));
+STATIC_DCL void FDECL(parkguard, (struct monst *));
 STATIC_DCL boolean FDECL(in_fcorridor, (struct monst *, int, int));
+STATIC_DCL boolean FDECL(find_guard_dest, (struct monst *, xchar *, xchar *));
 STATIC_DCL void FDECL(move_gold, (struct obj *, int));
 STATIC_DCL void FDECL(wallify_vault, (struct monst *));
+STATIC_DCL void FDECL(gd_mv_monaway, (struct monst *, int, int));
+STATIC_OVL void FDECL(gd_pick_corridor_gold, (struct monst *, int, int));
 
 void
 newegd(mtmp)
@@ -21,8 +23,8 @@ struct monst *mtmp;
     if (!mtmp->mextra)
         mtmp->mextra = newmextra();
     if (!EGD(mtmp)) {
-        EGD(mtmp) = (struct egd *) alloc(sizeof(struct egd));
-        (void) memset((genericptr_t) EGD(mtmp), 0, sizeof(struct egd));
+        EGD(mtmp) = (struct egd *) alloc(sizeof (struct egd));
+        (void) memset((genericptr_t) EGD(mtmp), 0, sizeof (struct egd));
     }
 }
 
@@ -37,6 +39,9 @@ struct monst *mtmp;
     mtmp->isgd = 0;
 }
 
+/* try to remove the temporary corridor (from vault to rest of map) being
+   maintained by guard 'grd'; if guard is still in it, removal will fail,
+   to be tried again later */
 STATIC_OVL boolean
 clear_fcorr(grd, forceshow)
 struct monst *grd;
@@ -44,7 +49,8 @@ boolean forceshow;
 {
     register int fcx, fcy, fcbeg;
     struct monst *mtmp;
-    boolean sawcorridor = FALSE;
+    boolean sawcorridor = FALSE,
+            silently = program_state.stopprint ? TRUE : FALSE;
     struct egd *egrd = EGD(grd);
     struct trap *trap;
     struct rm *lev;
@@ -52,12 +58,16 @@ boolean forceshow;
     if (!on_level(&egrd->gdlevel, &u.uz))
         return TRUE;
 
+    /* note: guard remains on 'fmons' list (alive or dead, at off-map
+       coordinate <0,0>), until temporary corridor from vault back to
+       civilization has been removed */
     while ((fcbeg = egrd->fcbeg) < egrd->fcend) {
         fcx = egrd->fakecorr[fcbeg].fx;
         fcy = egrd->fakecorr[fcbeg].fy;
-        if ((grd->mhp <= 0 || !in_fcorridor(grd, u.ux, u.uy)) && egrd->gddone)
+        if ((DEADMONSTER(grd) || !in_fcorridor(grd, u.ux, u.uy))
+            && egrd->gddone)
             forceshow = TRUE;
-        if ((u.ux == fcx && u.uy == fcy && grd->mhp > 0)
+        if ((u.ux == fcx && u.uy == fcy && !DEADMONSTER(grd))
             || (!forceshow && couldsee(fcx, fcy))
             || (Punished && !carried(uball) && uball->ox == fcx
                 && uball->oy == fcy))
@@ -92,10 +102,14 @@ boolean forceshow;
         vision_full_recalc = 1;
         egrd->fcbeg++;
     }
-    if (sawcorridor)
-        pline_The("通道消失了.");
-    if (IS_ROCK(levl[u.ux][u.uy].typ))
-        You("被围在岩石里.");
+    if (sawcorridor && !silently)
+        pline_The("corridor disappears.");
+    /* only give encased message if hero is still alive (might get here
+       via paygd() -> mongone() -> grddead() when game is over;
+       died: no message, quit: message) */
+    if (IS_ROCK(levl[u.ux][u.uy].typ) && (Upolyd ? u.mh : u.uhp) > 0
+        && !silently)
+        You("are encased in rock.");
     return TRUE;
 }
 
@@ -136,6 +150,26 @@ struct monst *grd;
     }
 }
 
+/* move guard--dead to alive--to <0,0> until temporary corridor is removed */
+STATIC_OVL void
+parkguard(grd)
+struct monst *grd;
+{
+    /* either guard is dead or will now be treated as if so;
+       monster traversal loops should skip it */
+    if (grd == context.polearm.hitmon)
+        context.polearm.hitmon = 0;
+    if (grd->mx) {
+        remove_monster(grd->mx, grd->my);
+        newsym(grd->mx, grd->my);
+        place_monster(grd, 0, 0);
+        /* [grd->mx,my just got set to 0,0 by place_monster(), so this
+           just sets EGD(grd)->ogx,ogy to 0,0 too; is that what we want?] */
+        EGD(grd)->ogx = grd->mx;
+        EGD(grd)->ogy = grd->my;
+    }
+}
+
 /* called in mon.c */
 boolean
 grddead(grd)
@@ -146,16 +180,8 @@ struct monst *grd;
     if (!dispose) {
         /* destroy guard's gold; drop any other inventory */
         relobj(grd, 0, FALSE);
-        /* guard is dead; monster traversal loops should skip it */
         grd->mhp = 0;
-        if (grd == context.polearm.hitmon)
-            context.polearm.hitmon = 0;
-        /* see comment by newpos in gd_move() */
-        remove_monster(grd->mx, grd->my);
-        newsym(grd->mx, grd->my);
-        place_monster(grd, 0, 0);
-        EGD(grd)->ogx = grd->mx;
-        EGD(grd)->ogy = grd->my;
+        parkguard(grd);
         dispose = clear_fcorr(grd, TRUE);
     }
     if (dispose)
@@ -177,7 +203,6 @@ int x, y;
     return FALSE;
 }
 
-STATIC_OVL
 struct monst *
 findgd()
 {
@@ -211,6 +236,71 @@ char *array;
     return '\0';
 }
 
+/* hero has teleported out of vault while a guard is active */
+void
+uleftvault(grd)
+struct monst *grd;
+{
+    /* only called if caller has checked vault_occupied() and findgd() */
+    if (!grd || !grd->isgd || DEADMONSTER(grd)) {
+        impossible("escaping vault without guard?");
+        return;
+    }
+    /* if carrying gold and arriving anywhere other than next to the guard,
+       set the guard loose */
+    if ((money_cnt(invent) || hidden_gold())
+        && um_dist(grd->mx, grd->my, 1)) {
+        if (grd->mpeaceful) {
+            if (canspotmon(grd)) /* see or sense via telepathy */
+                pline("%s becomes irate.", Monnam(grd));
+            grd->mpeaceful = 0; /* bypass setmangry() */
+        }
+        /* if arriving outside guard's temporary corridor, give the
+           guard an extra move to deliver message(s) and to teleport
+           out of and remove that corridor */
+        if (!in_fcorridor(grd, u.ux, u.uy))
+            (void) gd_move(grd);
+    }
+}
+
+STATIC_OVL boolean
+find_guard_dest(guard, rx, ry)
+struct monst *guard;
+xchar *rx, *ry;
+{
+    register int x, y, dd, lx = 0, ly = 0;
+
+    for (dd = 2; (dd < ROWNO || dd < COLNO); dd++) {
+        for (y = u.uy - dd; y <= u.uy + dd; ly = y, y++) {
+            if (y < 0 || y > ROWNO - 1)
+                continue;
+            for (x = u.ux - dd; x <= u.ux + dd; lx = x, x++) {
+                if (y != u.uy - dd && y != u.uy + dd && x != u.ux - dd)
+                    x = u.ux + dd;
+                if (x < 1 || x > COLNO - 1)
+                    continue;
+                if (guard && ((x == guard->mx && y == guard->my)
+                              || (guard->isgd && in_fcorridor(guard, x, y))))
+                    continue;
+                if (levl[x][y].typ == CORR) {
+                    lx = (x < u.ux) ? x + 1 : (x > u.ux) ? x - 1 : x;
+                    ly = (y < u.uy) ? y + 1 : (y > u.uy) ? y - 1 : y;
+                    if (levl[lx][ly].typ != STONE && levl[lx][ly].typ != CORR)
+                        goto incr_radius;
+                    *rx = x;
+                    *ry = y;
+                    return TRUE;
+                }
+            }
+        }
+ incr_radius:
+        ;
+    }
+    impossible("Not a single corridor on this level?");
+    tele();
+    return FALSE;
+}
+
 void
 invault()
 {
@@ -225,56 +315,20 @@ invault()
         u.uinvault = 0;
         return;
     }
-
     vaultroom -= ROOMOFFSET;
 
     guard = findgd();
     if (++u.uinvault % VAULT_GUARD_TIME == 0 && !guard) {
         /* if time ok and no guard now. */
-        char buf[BUFSZ] = DUMMY;
-        register int x, y, dd, gx, gy;
-        int lx = 0, ly = 0;
+        char buf[BUFSZ];
+        register int x, y, gx, gy;
+        xchar rx, ry;
         long umoney;
 
         /* first find the goal for the guard */
-        for (dd = 2; (dd < ROWNO || dd < COLNO); dd++) {
-            for (y = u.uy - dd; y <= u.uy + dd; ly = y, y++) {
-                if (y < 0 || y > ROWNO - 1)
-                    continue;
-                for (x = u.ux - dd; x <= u.ux + dd; lx = x, x++) {
-                    if (y != u.uy - dd && y != u.uy + dd && x != u.ux - dd)
-                        x = u.ux + dd;
-                    if (x < 1 || x > COLNO - 1)
-                        continue;
-                    if (levl[x][y].typ == CORR) {
-                        if (x < u.ux)
-                            lx = x + 1;
-                        else if (x > u.ux)
-                            lx = x - 1;
-                        else
-                            lx = x;
-                        if (y < u.uy)
-                            ly = y + 1;
-                        else if (y > u.uy)
-                            ly = y - 1;
-                        else
-                            ly = y;
-                        if (levl[lx][ly].typ != STONE
-                            && levl[lx][ly].typ != CORR)
-                            goto incr_radius;
-                        goto fnd;
-                    }
-                }
-            }
-        incr_radius:
-            ;
-        }
-        impossible("Not a single corridor on this level??");
-        tele();
-        return;
-    fnd:
-        gx = x;
-        gy = y;
+        if (!find_guard_dest((struct monst *)0, &rx, &ry))
+            return;
+        gx = rx, gy = ry;
 
         /* next find a good place for a door in the wall */
         x = u.ux;
@@ -344,26 +398,28 @@ invault()
         reset_faint(); /* if fainted - wake up */
         gsensed = !canspotmon(guard);
         if (!gsensed)
-            pline("突然一个金库的%s 进来了!",
+            pline("Suddenly one of the Vault's %s enters!",
                   makeplural(guard->data->mname));
         else
-            pline("有人已经进入了金库.");
+            pline("Someone else has entered the Vault.");
         newsym(guard->mx, guard->my);
         if (u.uswallow) {
             /* can't interrogate hero, don't interrogate engulfer */
-            if (!Deaf) verbalize("这里发生了什么事?");
+            if (!Deaf)
+                verbalize("What's going on here?");
             if (gsensed)
-                pline_The("其他人不见了踪影.");
+                pline_The("other presence vanishes.");
             mongone(guard);
             return;
         }
-        if (youmonst.m_ap_type == M_AP_OBJECT || u.uundetected) {
-            if (youmonst.m_ap_type == M_AP_OBJECT
+        if (U_AP_TYPE == M_AP_OBJECT || u.uundetected) {
+            if (U_AP_TYPE == M_AP_OBJECT
                 && youmonst.mappearance != GOLD_PIECE)
-                if (!Deaf) verbalize("嘿! 谁把%s 放在这儿的?",
-                                    mimic_obj_name(&youmonst));
+                if (!Deaf)
+                    verbalize("Hey!  Who left that %s in here?",
+                              mimic_obj_name(&youmonst));
             /* You're mimicking some object or you're hidden. */
-            pline("很困惑, %s 转身离开.", mhe(guard));
+            pline("Puzzled, %s turns around and leaves.", mhe(guard));
             mongone(guard);
             return;
         }
@@ -372,9 +428,9 @@ invault()
                been given in order to vary it upon repeat visits, but
                discarding the monster and its egd data renders that hard] */
             if (Deaf)
-                pline("%s气喘吁吁地转身离开了.", noit_Monnam(guard));
+                pline("%s huffs and turns to leave.", noit_Monnam(guard));
             else
-                verbalize("当你准备好跟我说话时, 我会回来的!");
+                verbalize("I'll be back when you're ready to speak to me!");
             mongone(guard);
             return;
         }
@@ -384,10 +440,11 @@ invault()
             nomul(0);
             unmul((char *) 0);
         }
+        buf[0] = '\0';
         trycount = 5;
         do {
-            getlin(Deaf ? "你被要求提供你的名字. -"
-                        : "\" 你好陌生人, 你是谁?\" -", buf);
+            getlin(Deaf ? "You are required to supply your name. -"
+                        : "\"Hello stranger, who are you?\" -", buf);
             (void) mungspaces(buf);
         } while (!buf[0] && --trycount > 0);
 
@@ -398,25 +455,25 @@ invault()
         }
 
         if (!strcmpi(buf, "Croesus") || !strcmpi(buf, "Kroisos")
-            || !strcmpi(buf, "Creosote") || !strcmpi(buf, "克罗伊斯")) {
+            || !strcmpi(buf, "Creosote")) { /* Discworld */
             if (!mvitals[PM_CROESUS].died) {
                 if (Deaf) {
                     if (!Blind)
-                        pline("%s 挥手再见.", noit_Monnam(guard));
+                        pline("%s waves goodbye.", noit_Monnam(guard));
                 } else {
                     verbalize(
-                         "哦, 是的, 当然.  抱歉打扰你了.");
+                         "Oh, yes, of course.  Sorry to have disturbed you.");
                 }
                 mongone(guard);
             } else {
                 setmangry(guard, FALSE);
                 if (Deaf) {
                    if (!Blind)
-                        pline("%s 在说什么而且看起来非常生气!",
+                        pline("%s mouths something and looks very angry!",
                               noit_Monnam(guard));
                 } else {
                    verbalize(
-                           "你死而复生?  我会纠正你!");
+                           "Back from the dead, are you?  I'll remedy that!");
                 }
                 /* don't want guard to waste next turn wielding a weapon */
                 if (!MON_WEP(guard)) {
@@ -427,35 +484,37 @@ invault()
             return;
         }
         if (Deaf)
-            pline("%s%s没有认出你来.", noit_Monnam(guard),
-                    (Blind) ? "" : "好像");
+            pline("%s doesn't %srecognize you.", noit_Monnam(guard),
+                    (Blind) ? "" : "appear to ");
         else
-            verbalize("我不认识你.");
+            verbalize("I don't know you.");
         umoney = money_cnt(invent);
         if (!umoney && !hidden_gold()) {
             if (Deaf)
-                pline("%s 跺着脚%s.", noit_Monnam(guard),
-                        (Blind) ? "" : "并招着手");
+                pline("%s stomps%s.", noit_Monnam(guard),
+                      (Blind) ? "" : " and beckons");
             else
-                verbalize("请跟我来.");
+                verbalize("Please follow me.");
         } else {
             if (!umoney) {
                 if (Deaf) {
                     if (!Blind)
-                        pline("%s 怒视着你%s.", noit_Monnam(guard),
-                            invent ? "的东西" : "");
+                        pline("%s glares at you%s.", noit_Monnam(guard),
+                              invent ? "r stuff" : "");
                 } else {
-                   verbalize("你藏了金币.");
-		        }
+                   verbalize("You have hidden gold.");
+                }
             }
             if (Deaf) {
                 if (!Blind)
-                    pline("%s 伸出%s手掌, 并用%s另一只手招手示意.",
-                        noit_Monnam(guard), mhis(guard), mhis(guard));
+                    pline(
+                       "%s holds out %s palm and beckons with %s other hand.",
+                          noit_Monnam(guard), noit_mhis(guard),
+                          noit_mhis(guard));
             } else {
                 verbalize(
-                    "很可能你所有的金币都是从这个的金库偷的.");
-                verbalize("请扔掉金币然后跟着我.");
+                    "Most likely all your gold was stolen from this vault.");
+                verbalize("Please drop that gold and follow me.");
             }
         }
         EGD(guard)->gdx = gx;
@@ -463,9 +522,9 @@ invault()
         EGD(guard)->fcbeg = 0;
         EGD(guard)->fakecorr[0].fx = x;
         EGD(guard)->fakecorr[0].fy = y;
-        if (IS_WALL(levl[x][y].typ))
+        if (IS_WALL(levl[x][y].typ)) {
             EGD(guard)->fakecorr[0].ftyp = levl[x][y].typ;
-        else { /* the initial guard location is a dug door */
+        } else { /* the initial guard location is a dug door */
             int vlt = EGD(guard)->vroom;
             xchar lowx = rooms[vlt].lx, hix = rooms[vlt].hx;
             xchar lowy = rooms[vlt].ly, hiy = rooms[vlt].hy;
@@ -565,14 +624,118 @@ struct monst *grd;
 
     if (movedgold || fixed) {
         if (in_fcorridor(grd, grd->mx, grd->my) || cansee(grd->mx, grd->my))
-            pline("%s 低声念了一句咒语.", noit_Monnam(grd));
+            pline("%s whispers an incantation.", noit_Monnam(grd));
         else
-            You_hear("远处的咏唱声.");
+            You_hear("a distant chant.");
         if (movedgold)
-            pline("一种神秘的力量把金币移进了金库.");
+            pline("A mysterious force moves the gold into the vault.");
         if (fixed)
-            pline_The("被破坏的金库的墙壁魔法般的恢复了!");
+            pline_The("damaged vault's walls are magically restored!");
     }
+}
+
+STATIC_OVL void
+gd_mv_monaway(grd, nx, ny)
+register struct monst *grd;
+int nx, ny;
+{
+    if (MON_AT(nx, ny) && !(nx == grd->mx && ny == grd->my)) {
+        if (!Deaf)
+            verbalize("Out of my way, scum!");
+        if (!rloc(m_at(nx, ny), FALSE) || MON_AT(nx, ny))
+            m_into_limbo(m_at(nx, ny));
+    }
+}
+
+/* have guard pick gold off the floor, possibly moving to the gold's
+   position before message and back to his current spot after */
+STATIC_OVL void
+gd_pick_corridor_gold(grd, goldx, goldy)
+struct monst *grd;
+int goldx, goldy; /* <gold->ox, gold->oy> */
+{
+    struct obj *gold;
+    coord newcc, bestcc;
+    int gdelta, newdelta, bestdelta, tryct,
+        guardx = grd->mx, guardy = grd->my;
+    boolean under_u = (goldx == u.ux && goldy == u.uy),
+            see_it = cansee(goldx, goldy);
+
+    if (under_u) {
+        /* Grab the gold from between the hero's feet.
+           If guard is two or more steps away; bring him closer first. */
+        gold = g_at(goldx, goldy);
+        if (!gold) {
+            impossible("vault guard: no gold at hero's feet?");
+            return;
+        }
+        gdelta = distu(guardx, guardy);
+        if (gdelta > 2 && see_it) { /* skip if player won't see it */
+            bestdelta = gdelta;
+            bestcc.x = (xchar) guardx, bestcc.y = (xchar) guardy;
+            tryct = 9;
+            do {
+                /* pick an available spot nearest the hero and also try
+                   to find the one meeting that criterium which is nearest
+                   the guard's current location */
+                if (enexto(&newcc, goldx, goldy, grd->data)) {
+                    if ((newdelta = distu(newcc.x, newcc.y)) < bestdelta
+                        || (newdelta == bestdelta
+                            && dist2(newcc.x, newcc.y, guardx, guardy)
+                               < dist2(bestcc.x, bestcc.y, guardx, guardy))) {
+                        bestdelta = newdelta;
+                        bestcc = newcc;
+                    }
+                }
+            } while (--tryct >= 0);
+
+            if (bestdelta < gdelta) {
+                remove_monster(guardx, guardy);
+                newsym(guardx, guardy);
+                place_monster(grd, (int) bestcc.x, (int) bestcc.y);
+                newsym(grd->mx, grd->my);
+            }
+        }
+        obj_extract_self(gold);
+        add_to_minv(grd, gold);
+        newsym(goldx, goldy);
+
+    /* guard is already at gold's location */
+    } else if (goldx == guardx && goldy == guardy) {
+        mpickgold(grd); /* does a newsym */
+
+    /* gold is at some third spot, neither guard's nor hero's */
+    } else {
+        /* just for insurance... */
+        gd_mv_monaway(grd, goldx, goldy); /* make room for guard */
+        if (see_it) { /* skip if player won't see the message */
+            remove_monster(grd->mx, grd->my);
+            newsym(grd->mx, grd->my);
+            place_monster(grd, goldx, goldy); /* sets <grd->mx, grd->my> */
+        }
+        mpickgold(grd); /* does a newsym */
+    }
+
+    if (see_it) { /* cansee(goldx, goldy) */
+        char monnambuf[BUFSZ];
+
+        Strcpy(monnambuf, Monnam(grd));
+        if (!strcmpi(monnambuf, "It"))
+            Strcpy(monnambuf, "Someone");
+        pline("%s%s picks up the gold%s.", monnambuf,
+              (grd->mpeaceful && EGD(grd)->warncnt > 5)
+                 ? " calms down and" : "",
+              under_u ? " from beneath you" : "");
+    }
+
+    /* if guard was moved to get the gold, move him back */
+    if (grd->mx != guardx || grd->my != guardy) {
+        remove_monster(grd->mx, grd->my);
+        newsym(grd->mx, grd->my);
+        place_monster(grd, guardx, guardy);
+        newsym(guardx, guardy);
+    }
+    return;
 }
 
 /*
@@ -583,29 +746,31 @@ gd_move(grd)
 register struct monst *grd;
 {
     int x, y, nx, ny, m, n;
-    int dx, dy, gx, gy, fci;
+    int dx, dy, gx = 0, gy = 0, fci;
     uchar typ;
+    struct rm *crm;
     struct fakecorridor *fcp;
     register struct egd *egrd = EGD(grd);
-    struct rm *crm;
-    boolean goldincorridor = FALSE,
-            u_in_vault = vault_occupied(u.urooms) ? TRUE : FALSE,
-            grd_in_vault = *in_rooms(grd->mx, grd->my, VAULT) ? TRUE : FALSE;
-    boolean disappear_msg_seen = FALSE, semi_dead = (grd->mhp <= 0);
-    long umoney = money_cnt(invent);
-    register boolean u_carry_gold = ((umoney + hidden_gold()) > 0L);
-    boolean see_guard, newspot = FALSE;
+    long umoney = 0L;
+    boolean goldincorridor = FALSE, u_in_vault = FALSE, grd_in_vault = FALSE,
+            disappear_msg_seen = FALSE, semi_dead = DEADMONSTER(grd),
+            u_carry_gold = FALSE, newspot = FALSE, see_guard;
 
     if (!on_level(&(egrd->gdlevel), &u.uz))
         return -1;
     nx = ny = m = n = 0;
+    if (semi_dead || !grd->mx || egrd->gddone) {
+        egrd->gddone = 1;
+        goto cleanup;
+    }
+    debugpline1("gd_move: %s guard", grd->mpeaceful ? "peaceful" : "hostile");
+
+    u_in_vault = vault_occupied(u.urooms) ? TRUE : FALSE;
+    grd_in_vault = *in_rooms(grd->mx, grd->my, VAULT) ? TRUE : FALSE;
     if (!u_in_vault && !grd_in_vault)
         wallify_vault(grd);
+
     if (!grd->mpeaceful) {
-        if (semi_dead) {
-            egrd->gddone = 1;
-            goto newpos;
-        }
         if (!u_in_vault
             && (grd_in_vault || (in_fcorridor(grd, grd->mx, grd->my)
                                  && !in_fcorridor(grd, u.ux, u.uy)))) {
@@ -623,25 +788,28 @@ register struct monst *grd;
 
     if (egrd->witness) {
         if (!Deaf)
-            verbalize("你竟敢%s金币, 恶棍!",
-                      (egrd->witness & GD_EATGOLD) ? "吃掉" : "毁坏");
+            verbalize("How dare you %s that gold, scoundrel!",
+                      (egrd->witness & GD_EATGOLD) ? "consume" : "destroy");
         egrd->witness = 0;
         grd->mpeaceful = 0;
         return -1;
     }
+
+    umoney = money_cnt(invent);
+    u_carry_gold = umoney > 0L || hidden_gold() > 0L;
     if (egrd->fcend == 1) {
         if (u_in_vault && (u_carry_gold || um_dist(grd->mx, grd->my, 1))) {
             if (egrd->warncnt == 3 && !Deaf)
-                verbalize("我重复一遍, %s跟我来!",
+                verbalize("I repeat, %sfollow me!",
                           u_carry_gold
-                              ? (!umoney ? "扔掉那个隐藏的金币并"
-                                         : "扔掉那个金币并")
+                              ? (!umoney ? "drop that hidden money and "
+                                         : "drop that money and ")
                               : "");
             if (egrd->warncnt == 7) {
                 m = grd->mx;
                 n = grd->my;
                 if (!Deaf)
-                    verbalize("已经警告过你了, 无赖!");
+                    verbalize("You've been warned, knave!");
                 mnexto(grd);
                 levl[m][n].typ = egrd->fakecorr[0].ftyp;
                 newsym(m, n);
@@ -662,20 +830,22 @@ register struct monst *grd;
                 levl[m][n].typ = egrd->fakecorr[0].ftyp;
                 newsym(m, n);
                 grd->mpeaceful = 0;
-            letknow:
+ letknow:
                 if (!cansee(grd->mx, grd->my) || !mon_visible(grd))
-                    You_hear("警卫尖锐的哨声.");
+                    You_hear("%s.",
+                             m_carrying(grd, TIN_WHISTLE)
+                                 ? "the shrill sound of a guard's whistle"
+                                 : "angry shouting");
                 else
                     You(um_dist(grd->mx, grd->my, 2)
-                            ? "看见%s接近."
-                            : "面对着%s.",
+                            ? "see %s approaching."
+                            : "are confronted by %s.",
                         /* "an angry guard" */
-                        x_monnam(grd, ARTICLE_A, "生气的", 0, FALSE));
+                        x_monnam(grd, ARTICLE_A, "angry", 0, FALSE));
                 return -1;
             } else {
                 if (!Deaf)
-                    verbalize("好吧, 去吧.");
-                wallify_vault(grd);
+                    verbalize("Well, begone.");
                 egrd->gddone = 1;
                 goto cleanup;
             }
@@ -687,7 +857,7 @@ register struct monst *grd;
             && !egrd->gddone && !in_fcorridor(grd, u.ux, u.uy)
             && levl[egrd->fakecorr[0].fx][egrd->fakecorr[0].fy].typ
                    == egrd->fakecorr[0].ftyp) {
-            pline("%s, 混乱的, 消失了.", noit_Monnam(grd));
+            pline("%s, confused, disappears.", noit_Monnam(grd));
             disappear_msg_seen = TRUE;
             goto cleanup;
         }
@@ -702,20 +872,20 @@ register struct monst *grd;
                 egrd->warncnt = 6;
                 if (Deaf) {
                     if (!Blind)
-                        pline("%s 强硬地伸出%s手掌!",
-                              noit_Monnam(grd), mhis(grd));
+                        pline("%s holds out %s palm demandingly!",
+                              noit_Monnam(grd), noit_mhis(grd));
                 } else {
-                    verbalize("扔掉你所有的金币, 恶棍!");
-		        }
+                    verbalize("Drop all your gold, scoundrel!");
+                }
                 return 0;
             } else {
                 if (Deaf) {
                     if (!Blind)
-                        pline("%s既愤怒又喜悦地搓%s手!",
-                                noit_Monnam(grd), mhis(grd));
+                        pline("%s rubs %s hands with enraged delight!",
+                              noit_Monnam(grd), noit_mhis(grd));
                 } else {
-                    verbalize("就这样, 无赖!");
-		        }
+                    verbalize("So be it, rogue!");
+                }
                 grd->mpeaceful = 0;
                 return -1;
             }
@@ -726,39 +896,12 @@ register struct monst *grd;
             m = egrd->fakecorr[fci].fx;
             n = egrd->fakecorr[fci].fy;
             goldincorridor = TRUE;
+            break;
         }
+    /* new gold can appear if it was embedded in stone and hero kicks it
+       (on even via wish and drop) so don't assume hero has been warned */
     if (goldincorridor && !egrd->gddone) {
-        x = grd->mx;
-        y = grd->my;
-        if (m == u.ux && n == u.uy) {
-            struct obj *gold = g_at(m, n);
-            /* Grab the gold from between the hero's feet.  */
-            obj_extract_self(gold);
-            add_to_minv(grd, gold);
-            newsym(m, n);
-        } else if (m == x && n == y) {
-            mpickgold(grd); /* does a newsym */
-        } else {
-            /* just for insurance... */
-            if (MON_AT(m, n) && m != grd->mx && n != grd->my) {
-                if (!Deaf)
-                    verbalize("别挡道, 浮渣!");
-                (void) rloc(m_at(m, n), FALSE);
-            }
-            remove_monster(grd->mx, grd->my);
-            newsym(grd->mx, grd->my);
-            place_monster(grd, m, n);
-            mpickgold(grd); /* does a newsym */
-        }
-        if (cansee(m, n))
-            pline("%s%s 捡起了金币.", Monnam(grd),
-                  grd->mpeaceful ? "平静下来" : "");
-        if (x != grd->mx || y != grd->my) {
-            remove_monster(grd->mx, grd->my);
-            newsym(grd->mx, grd->my);
-            place_monster(grd, x, y);
-            newsym(x, y);
-        }
+        gd_pick_corridor_gold(grd, m, n);
         if (!grd->mpeaceful)
             return -1;
         egrd->warncnt = 5;
@@ -767,7 +910,7 @@ register struct monst *grd;
     if (um_dist(grd->mx, grd->my, 1) || egrd->gddone) {
         if (!egrd->gddone && !rn2(10) && !Deaf && !u.uswallow
             && !(u.ustuck && !sticks(youmonst.data)))
-            verbalize("往前走!");
+            verbalize("Move along!");
         restfakecorr(grd);
         return 0; /* didn't move */
     }
@@ -807,10 +950,10 @@ register struct monst *grd;
                     goto proceed;
                 }
             }
-        nextnxy:
+ nextnxy:
             ;
         }
-nextpos:
+ nextpos:
     nx = x;
     ny = y;
     gx = egrd->gdx;
@@ -851,19 +994,31 @@ nextpos:
         break;
     }
     crm->typ = CORR;
-proceed:
+ proceed:
     newspot = TRUE;
     unblock_point(nx, ny); /* doesn't block light */
     if (cansee(nx, ny))
         newsym(nx, ny);
 
-    fcp = &(egrd->fakecorr[egrd->fcend]);
-    if (egrd->fcend++ == FCSIZ)
-        panic("fakecorr overflow");
-    fcp->fx = nx;
-    fcp->fy = ny;
-    fcp->ftyp = typ;
-newpos:
+    if ((nx != gx || ny != gy) || (grd->mx != gx || grd->my != gy)) {
+        fcp = &(egrd->fakecorr[egrd->fcend]);
+        if (egrd->fcend++ == FCSIZ)
+            panic("fakecorr overflow");
+        fcp->fx = nx;
+        fcp->fy = ny;
+        fcp->ftyp = typ;
+    } else if (!egrd->gddone) {
+        /* We're stuck, so try to find a new destination. */
+        if (!find_guard_dest(grd, &egrd->gdx, &egrd->gdy)
+            || (egrd->gdx == gx && egrd->gdy == gy)) {
+            pline("%s, confused, disappears.", Monnam(grd));
+            disappear_msg_seen = TRUE;
+            goto cleanup;
+        } else
+            goto nextpos;
+    }
+ newpos:
+    gd_mv_monaway(grd, nx, ny);
     if (egrd->gddone) {
         /* The following is a kludge.  We need to keep    */
         /* the guard around in order to be able to make   */
@@ -874,21 +1029,18 @@ newpos:
         /* to avoid a check at the top of this function.  */
         /* At the end of the process, the guard is killed */
         /* in restfakecorr().                             */
-    cleanup:
-        x = grd->mx;
-        y = grd->my;
-
+ cleanup:
+        x = grd->mx, y = grd->my;
         see_guard = canspotmon(grd);
+        parkguard(grd); /* move to <0,0> */
         wallify_vault(grd);
-        remove_monster(grd->mx, grd->my);
-        newsym(grd->mx, grd->my);
-        place_monster(grd, 0, 0);
-        egrd->ogx = grd->mx;
-        egrd->ogy = grd->my;
         restfakecorr(grd);
+        debugpline2("gd_move: %scleanup%s",
+                    grd->isgd ? "" : "final ",
+                    grd->isgd ? " attempt" : "");
         if (!semi_dead && (in_fcorridor(grd, u.ux, u.uy) || cansee(x, y))) {
             if (!disappear_msg_seen && see_guard)
-                pline("突然, %s消失了.", noit_mon_nam(grd));
+                pline("Suddenly, %s disappears.", noit_mon_nam(grd));
             return 1;
         }
         return -2;
@@ -903,7 +1055,7 @@ newpos:
            it and give an inappropriate message */
         mpickgold(grd);
         if (canspotmon(grd))
-            pline("%s 捡起了一些金币.", Monnam(grd));
+            pline("%s picks up some gold.", Monnam(grd));
     } else
         newsym(grd->mx, grd->my);
     restfakecorr(grd);
@@ -912,7 +1064,8 @@ newpos:
 
 /* Routine when dying or quitting with a vault guard around */
 void
-paygd()
+paygd(silently)
+boolean silently;
 {
     register struct monst *grd = findgd();
     long umoney = money_cnt(invent);
@@ -924,20 +1077,21 @@ paygd()
         return;
 
     if (u.uinvault) {
-        Your("%ld %s 进入了魔力的记忆金库.", umoney,
-             currency(umoney));
+        if (!silently)
+            Your("%ld %s goes into the Magic Memory Vault.",
+                 umoney, currency(umoney));
         gx = u.ux;
         gy = u.uy;
     } else {
-        if (grd->mpeaceful) { /* guard has no "right" to your gold */
-            mongone(grd);
-            return;
-        }
+        if (grd->mpeaceful) /* peaceful guard has no "right" to your gold */
+            goto remove_guard;
+
         mnexto(grd);
-        pline("%s 把你的金币传送回了金库.", Monnam(grd));
+        if (!silently)
+            pline("%s remits your gold to the vault.", Monnam(grd));
         gx = rooms[EGD(grd)->vroom].lx + rn2(2);
         gy = rooms[EGD(grd)->vroom].ly + rn2(2);
-        Sprintf(buf, "致克罗伊斯: 这里是从%s %s获得的金币.",
+        Sprintf(buf, "To Croesus: here's the gold recovered from %s the %s.",
                 plname, mons[u.umonster].mname);
         make_grave(gx, gy, buf);
     }
@@ -949,7 +1103,9 @@ paygd()
             stackobj(coins);
         }
     }
+ remove_guard:
     mongone(grd);
+    return;
 }
 
 long

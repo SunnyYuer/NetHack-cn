@@ -1,4 +1,4 @@
-/* NetHack 3.6	do_name.c	$NHDT-Date: 1519420054 2018/02/23 21:07:34 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.128 $ */
+/* NetHack 3.6	do_name.c	$NHDT-Date: 1555627306 2019/04/18 22:41:46 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.145 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Pasi Kallinen, 2018. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -50,20 +50,22 @@ boolean FDECL((*gp_getvalidf), (int, int));
     getpos_getvalid = gp_getvalidf;
 }
 
-const char *const gloc_descr[NUM_GLOCS][4] = {
-    { "任何怪物", "怪物", "一旁的怪物", "怪物们" },
-    { "任何物品", "物品", "一旁的物品", "物品" },
-    { "任何门", "门", "一旁的的门或门口", "门或门口" },
-    { "任何未探索的区域", "未探索的区域", "未探索的位置",
-      "未探索的位置" },
-    { "任何感兴趣的东西", "感兴趣的东西", "任何感兴趣的东西",
-      "任何感兴趣的东西" }
+static const char *const gloc_descr[NUM_GLOCS][4] = {
+    { "any monsters", "monster", "next/previous monster", "monsters" },
+    { "any items", "item", "next/previous object", "objects" },
+    { "any doors", "door", "next/previous door or doorway", "doors or doorways" },
+    { "any unexplored areas", "unexplored area", "unexplored location",
+      "unexplored locations" },
+    { "anything interesting", "interesting thing", "anything interesting",
+      "anything interesting" },
+    { "any valid locations", "valid location", "valid location",
+      "valid locations" }
 };
 
-const char *const gloc_filtertxt[NUM_GFILTER] = {
+static const char *const gloc_filtertxt[NUM_GFILTER] = {
     "",
-    "视图中的",
-    "这个区域中的"
+    " in view",
+    " in this area"
 };
 
 void
@@ -75,12 +77,12 @@ int gloc;
 {
     char sbuf[BUFSZ];
 
-    Sprintf(sbuf, "使用%s'%s' 或'%s' 来%s%s.",
-            gloc_filtertxt[iflags.getloc_filter],
+    Sprintf(sbuf, "Use '%s'/'%s' to %s%s%s.",
             k1, k2,
-            iflags.getloc_usemenu ? "获得菜单"
-                                  : "移动光标到",
-            gloc_descr[gloc][2 + iflags.getloc_usemenu]);
+            iflags.getloc_usemenu ? "get a menu of "
+                                  : "move the cursor to ",
+            gloc_descr[gloc][2 + iflags.getloc_usemenu],
+            gloc_filtertxt[iflags.getloc_filter]);
     putstr(tmpwin, 0, sbuf);
 }
 
@@ -90,22 +92,22 @@ getpos_help(force, goal)
 boolean force;
 const char *goal;
 {
+    static const char *const fastmovemode[2] = { "8 units at a time",
+                                                 "skipping same glyphs" };
     char sbuf[BUFSZ];
     boolean doing_what_is;
     winid tmpwin = create_nhwindow(NHW_MENU);
-    const char *const fastmovemode[2] = { "一次移动光标8 格",
-                                          "跳过相同的标志符号" };
 
     Sprintf(sbuf,
-            "使用'%c', '%c', '%c', '%c' 来移动光标到%s.", /* hjkl */
+            "Use '%c', '%c', '%c', '%c' to move the cursor to %s.", /* hjkl */
             Cmd.move_W, Cmd.move_S, Cmd.move_N, Cmd.move_E, goal);
     putstr(tmpwin, 0, sbuf);
     Sprintf(sbuf,
-            "使用'H', 'J', 'K', 'L' 快速移动光标, %s.",
+            "Use 'H', 'J', 'K', 'L' to fast-move the cursor, %s.",
             fastmovemode[iflags.getloc_moveskip]);
     putstr(tmpwin, 0, sbuf);
-    putstr(tmpwin, 0, "或输入地图上的符号( 例. '<').");
-    Sprintf(sbuf, "使用'%s' 使光标回到自己位置.",
+    putstr(tmpwin, 0, "Or enter a background symbol (ex. '<').");
+    Sprintf(sbuf, "Use '%s' to move the cursor on yourself.",
            visctrl(Cmd.spkeys[NHKF_GETPOS_SELF]));
     putstr(tmpwin, 0, sbuf);
     if (!iflags.terrainmode || (iflags.terrainmode & TER_MON) != 0) {
@@ -136,16 +138,16 @@ const char *goal;
                              visctrl(Cmd.spkeys[NHKF_GETPOS_INTERESTING_PREV]),
                              GLOC_INTERESTING);
     }
-    Sprintf(sbuf, "使用'%s' 换到快速移动模式来%s.",
+    Sprintf(sbuf, "Use '%s' to change fast-move mode to %s.",
             visctrl(Cmd.spkeys[NHKF_GETPOS_MOVESKIP]),
             fastmovemode[!iflags.getloc_moveskip]);
     putstr(tmpwin, 0, sbuf);
     if (!iflags.terrainmode || (iflags.terrainmode & TER_DETECT) == 0) {
-        Sprintf(sbuf, "使用'%s' 为可能的目标切换菜单列表.",
+        Sprintf(sbuf, "Use '%s' to toggle menu listing for possible targets.",
                 visctrl(Cmd.spkeys[NHKF_GETPOS_MENU]));
         putstr(tmpwin, 0, sbuf);
         Sprintf(sbuf,
-                "使用'%s' 来改变有限的可能目标的模式.",
+                "Use '%s' to change the mode of limiting possible targets.",
                 visctrl(Cmd.spkeys[NHKF_GETPOS_LIMITVIEW]));
         putstr(tmpwin, 0, sbuf);
     }
@@ -153,31 +155,31 @@ const char *goal;
         char kbuf[BUFSZ];
 
         if (getpos_getvalid) {
-            Sprintf(sbuf, "使用'%s' 或'%s' 移动到有效的位置.",
+            Sprintf(sbuf, "Use '%s' or '%s' to move to valid locations.",
                     visctrl(Cmd.spkeys[NHKF_GETPOS_VALID_NEXT]),
                     visctrl(Cmd.spkeys[NHKF_GETPOS_VALID_PREV]));
             putstr(tmpwin, 0, sbuf);
         }
         if (getpos_hilitefunc) {
-            Sprintf(sbuf, "使用'%s' 来显示有效位置.",
+            Sprintf(sbuf, "Use '%s' to display valid locations.",
                     visctrl(Cmd.spkeys[NHKF_GETPOS_SHOWVALID]));
             putstr(tmpwin, 0, sbuf);
         }
-        Sprintf(sbuf, "使用'%s' 来切换自动描述开关.",
+        Sprintf(sbuf, "Use '%s' to toggle automatic description.",
                 visctrl(Cmd.spkeys[NHKF_GETPOS_AUTODESC]));
         putstr(tmpwin, 0, sbuf);
         if (iflags.cmdassist) { /* assisting the '/' command, I suppose... */
             Sprintf(sbuf,
                     (iflags.getpos_coords == GPCOORDS_NONE)
-         ? "( 设置'whatis_coord' 选项来包含'%s' 文本中的坐标.)"
-         : "( 重置'whatis_coord' 选项以忽略'%s' 文本中的坐标.)",
+         ? "(Set 'whatis_coord' option to include coordinates with '%s' text.)"
+         : "(Reset 'whatis_coord' option to omit coordinates from '%s' text.)",
                     visctrl(Cmd.spkeys[NHKF_GETPOS_AUTODESC]));
         }
         /* disgusting hack; the alternate selection characters work for any
            getpos call, but only matter for dowhatis (and doquickwhatis) */
-	doing_what_is = (goal == what_is_an_unknown_object);
+        doing_what_is = (goal == what_is_an_unknown_object);
         if (doing_what_is) {
-            Sprintf(kbuf, "'%s' 或'%s' 或'%s' 或'%s'",
+            Sprintf(kbuf, "'%s' or '%s' or '%s' or '%s'",
                     visctrl(Cmd.spkeys[NHKF_GETPOS_PICK]),
                     visctrl(Cmd.spkeys[NHKF_GETPOS_PICK_Q]),
                     visctrl(Cmd.spkeys[NHKF_GETPOS_PICK_O]),
@@ -185,30 +187,30 @@ const char *goal;
         } else {
             Sprintf(kbuf, "'%s'", visctrl(Cmd.spkeys[NHKF_GETPOS_PICK]));
         }
-        Sprintf(sbuf, "输入%s 当你在正确的位置.", kbuf);
+        Sprintf(sbuf, "Type a %s when you are at the right place.", kbuf);
         putstr(tmpwin, 0, sbuf);
         if (doing_what_is) {
             Sprintf(sbuf,
-       "  '%s' 描述当前位置, 显示' 更多信息', 移动到其他位置.",
+       "  '%s' describe current spot, show 'more info', move to another spot.",
                     visctrl(Cmd.spkeys[NHKF_GETPOS_PICK_V]));
             putstr(tmpwin, 0, sbuf);
             Sprintf(sbuf,
-                    "  '%s' 描述当前位置,%s 移动到其他位置;",
+                    "  '%s' describe current spot,%s move to another spot;",
                     visctrl(Cmd.spkeys[NHKF_GETPOS_PICK]),
-                    flags.help ? " 如果提示' 更多信息'," : "");
+                    flags.help ? " prompt if 'more info'," : "");
             putstr(tmpwin, 0, sbuf);
             Sprintf(sbuf,
-                    "  '%s' 描述当前位置, 移动到其他位置;",
+                    "  '%s' describe current spot, move to another spot;",
                     visctrl(Cmd.spkeys[NHKF_GETPOS_PICK_Q]));
             putstr(tmpwin, 0, sbuf);
             Sprintf(sbuf,
-                    "  '%s' 描述当前位置, 停止看向物品;",
+                    "  '%s' describe current spot, stop looking at things;",
                     visctrl(Cmd.spkeys[NHKF_GETPOS_PICK_O]));
             putstr(tmpwin, 0, sbuf);
         }
     }
     if (!force)
-        putstr(tmpwin, 0, "当你完成时输入空格或Esc.");
+        putstr(tmpwin, 0, "Type Space or Escape when you're done.");
     putstr(tmpwin, 0, "");
     display_nhwindow(tmpwin, TRUE);
     destroy_nhwindow(tmpwin);
@@ -275,8 +277,8 @@ int glyph;
 }
 
 STATIC_OVL int
-gloc_filter_floodfill_matcharea(x,y)
-int x,y;
+gloc_filter_floodfill_matcharea(x, y)
+int x, y;
 {
     int glyph = back_to_glyph(x, y);
 
@@ -308,7 +310,7 @@ gloc_filter_init()
 {
     if (iflags.getloc_filter == GFILTER_AREA) {
         if (!gloc_filter_map) {
-            gloc_filter_map = selection_opvar(NULL);
+            gloc_filter_map = selection_opvar((char *) 0);
         }
         /* special case: if we're in a doorway, try to figure out which
            direction we're moving, and use that side of the doorway */
@@ -321,8 +323,6 @@ gloc_filter_init()
         } else {
             gloc_filter_floodfill(u.ux, u.uy);
         }
-
-
     }
 }
 
@@ -331,7 +331,7 @@ gloc_filter_done()
 {
     if (gloc_filter_map) {
         opvar_free_x(gloc_filter_map);
-        gloc_filter_map = NULL;
+        gloc_filter_map = (struct opvar *) 0;
     }
 }
 
@@ -380,6 +380,10 @@ int x, y, gloc;
                     || IS_UNEXPLORED_LOC(x - 1, y)
                     || IS_UNEXPLORED_LOC(x, y + 1)
                     || IS_UNEXPLORED_LOC(x, y - 1)));
+    case GLOC_VALID:
+        if (getpos_getvalid)
+            return (*getpos_getvalid)(x,y);
+        /*FALLTHRU*/
     case GLOC_INTERESTING:
         return gather_locs_interesting(x,y, GLOC_DOOR)
             || !(glyph_is_cmap(glyph)
@@ -397,8 +401,6 @@ int x, y, gloc;
                      || glyph_to_cmap(glyph) == S_darkroom
                      || glyph_to_cmap(glyph) == S_corr
                      || glyph_to_cmap(glyph) == S_litcorr));
-    case GLOC_VALID:
-        return (getpos_getvalid && getpos_getvalid(x,y));
     }
     /*NOTREACHED*/
     return FALSE;
@@ -466,7 +468,7 @@ boolean fulldir;
         /* explicit direction; 'one step' is implicit */
         Sprintf(buf, "%s", directionname(dst));
     } else {
-        const char *dirnames[4][2] = {
+        static const char *dirnames[4][2] = {
             { "n", "north" },
             { "s", "south" },
             { "w", "west" },
@@ -543,15 +545,16 @@ int cx, cy;
 
     cc.x = cx;
     cc.y = cy;
-    if (do_screen_description(cc, TRUE, sym, tmpbuf, &firstmatch)) {
+    if (do_screen_description(cc, TRUE, sym, tmpbuf, &firstmatch,
+                              (struct permonst **) 0)) {
         (void) coord_desc(cx, cy, tmpbuf, iflags.getpos_coords);
         custompline(SUPPRESS_HISTORY,
                     "%s%s%s%s%s", firstmatch, *tmpbuf ? " " : "", tmpbuf,
                     (iflags.autodescribe
-                     && getpos_getvalid && !getpos_getvalid(cx, cy))
-                      ? " ( 非法的)" : "",
+                     && getpos_getvalid && !(*getpos_getvalid)(cx, cy))
+                      ? " (illegal)" : "",
                     (iflags.getloc_travelmode && !is_valid_travelpt(cx, cy))
-                      ? " ( 无路可行)" : "");
+                      ? " (no travel path)" : "");
         curs(WIN_MAP, cx, cy);
         flush_screen(0);
     }
@@ -574,8 +577,8 @@ int gloc;
 
     if (gcount < 2) { /* gcount always includes the hero */
         free((genericptr_t) garr);
-        You("不能%s%s.",
-            iflags.getloc_filter == GFILTER_VIEW ? "看见" : "探测",
+        You("cannot %s %s.",
+            iflags.getloc_filter == GFILTER_VIEW ? "see" : "detect",
             gloc_descr[gloc][0]);
         return FALSE;
     }
@@ -590,10 +593,12 @@ int gloc;
         coord tmpcc;
         const char *firstmatch = "unknown";
         int sym = 0;
+
         any.a_int = i + 1;
         tmpcc.x = garr[i].x;
         tmpcc.y = garr[i].y;
-        if (do_screen_description(tmpcc, TRUE, sym, tmpbuf, &firstmatch)) {
+        if (do_screen_description(tmpcc, TRUE, sym, tmpbuf,
+                              &firstmatch, (struct permonst **)0)) {
             (void) coord_desc(garr[i].x, garr[i].y, tmpbuf,
                               iflags.getpos_coords);
             Sprintf(fullbuf, "%s%s%s", firstmatch,
@@ -603,10 +608,10 @@ int gloc;
         }
     }
 
-    Sprintf(tmpbuf, "选择%s一个目标%s%s",
+    Sprintf(tmpbuf, "Pick %s%s%s",
+            an(gloc_descr[gloc][1]),
             gloc_filtertxt[iflags.getloc_filter],
-            gloc_descr[gloc][1],
-            iflags.getloc_travelmode ? "来移动" : "");
+            iflags.getloc_travelmode ? " for travel destination" : "");
     end_menu(tmpwin, tmpbuf);
     pick_cnt = select_menu(tmpwin, PICK_ONE, &picks);
     destroy_nhwindow(tmpwin);
@@ -626,7 +631,7 @@ boolean force;
 const char *goal;
 {
     const char *cp;
-    struct {
+    static struct {
         int nhkf, ret;
     } const pick_chars_def[] = {
         { NHKF_GETPOS_PICK, LOOK_TRADITIONAL },
@@ -634,7 +639,7 @@ const char *goal;
         { NHKF_GETPOS_PICK_O, LOOK_ONCE },
         { NHKF_GETPOS_PICK_V, LOOK_VERBOSE }
     };
-    const int mMoOdDxX_def[] = {
+    static const int mMoOdDxX_def[] = {
         NHKF_GETPOS_MON_NEXT,
         NHKF_GETPOS_MON_PREV,
         NHKF_GETPOS_OBJ_NEXT,
@@ -669,9 +674,9 @@ const char *goal;
     mMoOdDxX[SIZE(mMoOdDxX_def)] = '\0';
 
     if (!goal)
-        goal = "期望位置";
+        goal = "desired location";
     if (flags.verbose) {
-        pline("( 需说明请输入'%s')",
+        pline("(For instructions type a '%s')",
               visctrl(Cmd.spkeys[NHKF_GETPOS_HELP]));
         msg_given = TRUE;
     }
@@ -687,7 +692,7 @@ const char *goal;
 #endif
     for (;;) {
         if (show_goal_msg) {
-            pline("移动光标到%s:", goal);
+            pline("Move cursor to %s:", goal);
             curs(WIN_MAP, cx, cy);
             flush_screen(0);
             show_goal_msg = FALSE;
@@ -795,19 +800,20 @@ const char *goal;
             goto nxtc;
         } else if (c == Cmd.spkeys[NHKF_GETPOS_AUTODESC]) {
             iflags.autodescribe = !iflags.autodescribe;
-            pline("自动描述%s%s.",
-                  flags.verbose ? "光标下的事物" : "",
-                  iflags.autodescribe ? "开" : "关");
+            pline("Automatic description %sis %s.",
+                  flags.verbose ? "of features under cursor " : "",
+                  iflags.autodescribe ? "on" : "off");
             if (!iflags.autodescribe)
                 show_goal_msg = TRUE;
             msg_given = TRUE;
             goto nxtc;
         } else if (c == Cmd.spkeys[NHKF_GETPOS_LIMITVIEW]) {
-            const char *const view_filters[NUM_GFILTER] = {
-                "不限制目标",
-                "将目标限制在视线范围内",
-                "将限制目标在同一区域"
+            static const char *const view_filters[NUM_GFILTER] = {
+                "Not limiting targets",
+                "Limiting targets to those in sight",
+                "Limiting targets to those in same area"
             };
+
             iflags.getloc_filter = (iflags.getloc_filter + 1) % NUM_GFILTER;
             for (i = 0; i < NUM_GLOCS; i++) {
                 if (garr[i]) {
@@ -821,8 +827,10 @@ const char *goal;
             goto nxtc;
         } else if (c == Cmd.spkeys[NHKF_GETPOS_MENU]) {
             iflags.getloc_usemenu = !iflags.getloc_usemenu;
-            pline("%s 菜单显示可能的目标.",
-                  iflags.getloc_usemenu ? "使用" : "不使用");
+            pline("%s a menu to show possible targets%s.",
+                  iflags.getloc_usemenu ? "Using" : "Not using",
+                  iflags.getloc_usemenu
+                      ? " for 'm|M', 'o|O', 'd|D', and 'x|X'" : "");
             msg_given = TRUE;
             goto nxtc;
         } else if (c == Cmd.spkeys[NHKF_GETPOS_SELF]) {
@@ -835,8 +843,8 @@ const char *goal;
             goto nxtc;
         } else if (c == Cmd.spkeys[NHKF_GETPOS_MOVESKIP]) {
             iflags.getloc_moveskip = !iflags.getloc_moveskip;
-            pline("快速移动光标时%s跳过类似地形.",
-                  iflags.getloc_moveskip ? "" : "不");
+            pline("%skipping over similar terrain when fastmoving the cursor.",
+                  iflags.getloc_moveskip ? "S" : "Not s");
         } else if ((cp = index(mMoOdDxX, c)) != 0) { /* 'm|M', 'o|O', &c */
             /* nearest or farthest monster or object or door or unexplored */
             int gtmp = (int) (cp - mMoOdDxX), /* 0..7 */
@@ -844,6 +852,7 @@ const char *goal;
 
             if (iflags.getloc_usemenu) {
                 coord tmpcrd;
+
                 if (getpos_menu(&tmpcrd, gloc)) {
                     cx = tmpcrd.x;
                     cy = tmpcrd.y;
@@ -927,7 +936,7 @@ const char *goal;
                             } /* column */
                         }     /* row */
                     }         /* pass */
-                    pline("不能找到该对象'%c'.", c);
+                    pline("Can't find dungeon feature '%c'.", c);
                     msg_given = TRUE;
                     goto nxtc;
                 } else {
@@ -936,17 +945,17 @@ const char *goal;
                     if (!force)
                         Strcpy(note, "aborted");
                     else /* hjkl */
-                        Sprintf(note, "用'%c', '%c', '%c', '%c'  或 '%s'",
+                        Sprintf(note, "use '%c', '%c', '%c', '%c' or '%s'",
                                 Cmd.move_W, Cmd.move_S, Cmd.move_N, Cmd.move_E,
                                 visctrl(Cmd.spkeys[NHKF_GETPOS_PICK]));
-                    pline("未知方向: '%s' (%s).", visctrl((char) c),
+                    pline("Unknown direction: '%s' (%s).", visctrl((char) c),
                           note);
                     msg_given = TRUE;
                 } /* k => matching */
             }     /* !quitchars */
             if (force)
                 goto nxtc;
-            pline("完成.");
+            pline("Done.");
             msg_given = FALSE; /* suppress clear */
             cx = -1;
             cy = 0;
@@ -1089,18 +1098,18 @@ char *monnambuf, *usrbuf;
         || (!strncmpi(monnambuf, "the ", 4)
             && fuzzymatch(usrbuf, monnambuf + 4, " -_", TRUE))
         /* catch trying to name "invisible Orcus" as "Orcus" */
-        || ((p = strstri(monnambuf, "隐形的")) != 0
-            && fuzzymatch(usrbuf, p + strlen("隐形的"), " -_", TRUE))
+        || ((p = strstri(monnambuf, "invisible ")) != 0
+            && fuzzymatch(usrbuf, p + 10, " -_", TRUE))
         /* catch trying to name "the {priest,Angel} of Crom" as "Crom" */
         || ((p = strstri(monnambuf, " of ")) != 0
             && fuzzymatch(usrbuf, p + 4, " -_", TRUE))) {
-        pline("%s已经被叫做%s了.",
+        pline("%s is already called %s.",
               upstart(strcpy(pronounbuf, mhe(mtmp))), monnambuf);
         return TRUE;
     } else if (mtmp->data == &mons[PM_JUIBLEX]
-               && strstri(monnambuf, "朱比烈斯")
-               && !strcmpi(usrbuf, "朱比烈斯")) {
-        pline("%s不喜欢被叫做%s.", upstart(monnambuf), usrbuf);
+               && strstri(monnambuf, "Juiblex")
+               && !strcmpi(usrbuf, "Jubilex")) {
+        pline("%s doesn't like being called %s.", upstart(monnambuf), usrbuf);
         return TRUE;
     }
     return FALSE;
@@ -1116,12 +1125,12 @@ do_mname()
     struct monst *mtmp = 0;
 
     if (Hallucination) {
-        You("永远不会认出它无论如何.");
+        You("would never recognize it anyway.");
         return;
     }
     cc.x = u.ux;
     cc.y = u.uy;
-    if (getpos(&cc, FALSE, "你想要命名的怪物") < 0
+    if (getpos(&cc, FALSE, "the monster you want to name") < 0
         || (cx = cc.x) < 0)
         return;
     cy = cc.y;
@@ -1130,7 +1139,7 @@ do_mname()
         if (u.usteed && canspotmon(u.usteed)) {
             mtmp = u.usteed;
         } else {
-            pline("这个%s生物叫做%s 且不能被改名了.",
+            pline("This %s creature is called %s and cannot be renamed.",
                   beautiful(), plname);
             return;
         }
@@ -1140,14 +1149,14 @@ do_mname()
     if (!mtmp
         || (!sensemon(mtmp)
             && (!(cansee(cx, cy) || see_with_infrared(mtmp))
-                || mtmp->mundetected || mtmp->m_ap_type == M_AP_FURNITURE
-                || mtmp->m_ap_type == M_AP_OBJECT
+                || mtmp->mundetected || M_AP_TYPE(mtmp) == M_AP_FURNITURE
+                || M_AP_TYPE(mtmp) == M_AP_OBJECT
                 || (mtmp->minvis && !See_invisible)))) {
-        pline("那里没有怪.");
+        pline("I see no monster there.");
         return;
     }
     /* special case similar to the one in lookat() */
-    Sprintf(qbuf, "你想命名%s 为什么?",
+    Sprintf(qbuf, "What do you want to call %s?",
             distant_monnam(mtmp, ARTICLE_THE, monnambuf));
     getlin(qbuf, buf);
     if (!*buf || *buf == '\033')
@@ -1164,15 +1173,15 @@ do_mname()
      */
     if ((mtmp->data->geno & G_UNIQ) && !mtmp->ispriest) {
         if (!alreadynamed(mtmp, monnambuf, buf))
-            pline("%s 不喜欢被取名字!", upstart(monnambuf));
+            pline("%s doesn't like being called names!", upstart(monnambuf));
     } else if (mtmp->isshk
                && !(Deaf || mtmp->msleeping || !mtmp->mcanmove
                     || mtmp->data->msound <= MS_ANIMAL)) {
         if (!alreadynamed(mtmp, monnambuf, buf))
-            verbalize("我是%s, 不是%s.", shkname(mtmp), buf);
+            verbalize("I'm %s, not %s.", shkname(mtmp), buf);
     } else if (mtmp->ispriest || mtmp->isminion || mtmp->isshk) {
         if (!alreadynamed(mtmp, monnambuf, buf))
-            pline("%s 不会接受这个名字%s.", upstart(monnambuf), buf);
+            pline("%s will not accept the name %s.", upstart(monnambuf), buf);
     } else
         (void) christen_monst(mtmp, buf);
 }
@@ -1195,12 +1204,12 @@ register struct obj *obj;
 
     /* Do this now because there's no point in even asking for a name */
     if (obj->otyp == SPE_NOVEL) {
-        pline("%s 已经有一个出版的名字.", Ysimple_name2(obj));
+        pline("%s already has a published name.", Ysimple_name2(obj));
         return;
     }
 
-    Sprintf(qbuf, "你想命名为什么给%s ",
-            is_plural(obj) ? "这些" : "这个");
+    Sprintf(qbuf, "What do you want to name %s ",
+            is_plural(obj) ? "these" : "this");
     (void) safe_qbuf(qbuf, qbuf, "?", obj, xname, simpleonames, "item");
     getlin(qbuf, buf);
     if (!*buf || *buf == '\033')
@@ -1223,7 +1232,7 @@ register struct obj *obj;
         Strcpy(buf, aname);
 
     if (obj->oartifact) {
-        pline_The("神器似乎在抵抗.");
+        pline_The("artifact seems to resist the attempt.");
         return;
     } else if (restrict_name(obj, buf) || exist_artifact(obj->otyp, buf)) {
         /* this used to change one letter, substituting a value
@@ -1241,11 +1250,11 @@ register struct obj *obj;
         /* for "the Foo of Bar", only scuff "Foo of Bar" part */
         bufp = !strncmpi(bufcpy, "the ", 4) ? (buf + 4) : buf;
         do {
-            wipeout_text(bufp, rnd(2), (unsigned) 0);
+            wipeout_text(bufp, rn2_on_display_rng(2), (unsigned) 0);
         } while (!strcmp(buf, bufcpy));
-        pline("雕刻的时候, 你的%s滑了一下.", body_part(HAND));
+        pline("While engraving, your %s slips.", body_part(HAND));
         display_nhwindow(WIN_MESSAGE, FALSE);
-        You("刻上: \" %s\".", buf);
+        You("engrave: \"%s\".", buf);
         /* violate illiteracy conduct since hero attempted to write
            a valid artifact name */
         u.uconduct.literate++;
@@ -1333,27 +1342,27 @@ docallcmd()
     any = zeroany;
     any.a_char = 'm'; /* group accelerator 'C' */
     add_menu(win, NO_GLYPH, &any, abc ? 0 : any.a_char, 'C', ATR_NONE,
-             "一只怪", MENU_UNSELECTED);
+             "a monster", MENU_UNSELECTED);
     if (invent) {
         /* we use y and n as accelerators so that we can accept user's
            response keyed to old "name an individual object?" prompt */
         any.a_char = 'i'; /* group accelerator 'y' */
         add_menu(win, NO_GLYPH, &any, abc ? 0 : any.a_char, 'y', ATR_NONE,
-                 "背包中的一个单独物品", MENU_UNSELECTED);
+                 "a particular object in inventory", MENU_UNSELECTED);
         any.a_char = 'o'; /* group accelerator 'n' */
         add_menu(win, NO_GLYPH, &any, abc ? 0 : any.a_char, 'n', ATR_NONE,
-                 "背包中的一类物品", MENU_UNSELECTED);
+                 "the type of an object in inventory", MENU_UNSELECTED);
     }
     any.a_char = 'f'; /* group accelerator ',' (or ':' instead?) */
     add_menu(win, NO_GLYPH, &any, abc ? 0 : any.a_char, ',', ATR_NONE,
-             "地上的一类物品", MENU_UNSELECTED);
+             "the type of an object upon the floor", MENU_UNSELECTED);
     any.a_char = 'd'; /* group accelerator '\' */
     add_menu(win, NO_GLYPH, &any, abc ? 0 : any.a_char, '\\', ATR_NONE,
-             "发现物列表中的一类物品", MENU_UNSELECTED);
+             "the type of an object on discoveries list", MENU_UNSELECTED);
     any.a_char = 'a'; /* group accelerator 'l' */
     add_menu(win, NO_GLYPH, &any, abc ? 0 : any.a_char, 'l', ATR_NONE,
-             "给这一层作个备注", MENU_UNSELECTED);
-    end_menu(win, "你想要给什么命名?");
+             "record an annotation for the current level", MENU_UNSELECTED);
+    end_menu(win, "What do you want to name?");
     if (select_menu(win, PICK_ONE, &pick_list) > 0) {
         ch = pick_list[0].item.a_char;
         free((genericptr_t) pick_list);
@@ -1371,12 +1380,12 @@ docallcmd()
     case 'i': /* name an individual object in inventory */
         allowall[0] = ALL_CLASSES;
         allowall[1] = '\0';
-        obj = getobj(allowall, "命名");  //name
+        obj = getobj(allowall, "name");
         if (obj)
             do_oname(obj);
         break;
     case 'o': /* name a type of object in inventory */
-        obj = getobj(callable, "称作");  //call
+        obj = getobj(callable, "call");
         if (obj) {
             /* behave as if examining it in inventory;
                this might set dknown if it was picked up
@@ -1384,7 +1393,7 @@ docallcmd()
             (void) xname(obj);
 
             if (!obj->dknown) {
-                You("将不会识别出另一个.");
+                You("would never recognize another one.");
 #if 0
             } else if (!objtyp_is_callable(obj->otyp)) {
                 You("know those as well as you ever will.");
@@ -1437,7 +1446,7 @@ struct obj *obj;
     else if (otemp.oclass == FOOD_CLASS && otemp.globby)
         otemp.owt = 120; /* 6*20, neither a small glob nor a large one */
 
-    return xname(&otemp);
+    return an(xname(&otemp));
 }
 
 void
@@ -1452,10 +1461,10 @@ struct obj *obj;
 
     if (obj->oclass == POTION_CLASS && obj->fromsink)
         /* kludge, meaning it's sink water */
-        Sprintf(qbuf, "称一股%s液体为:",
+        Sprintf(qbuf, "Call a stream of %s fluid:",
                 OBJ_DESCR(objects[obj->otyp]));
     else
-        (void) safe_qbuf(qbuf, "称作什么给", ":", obj,
+        (void) safe_qbuf(qbuf, "Call ", ":", obj,
                          docall_xname, simpleonames, "thing");
     getlin(qbuf, buf);
     if (!*buf || *buf == '\033')
@@ -1494,8 +1503,8 @@ namefloorobj()
     /* "dot for under/over you" only makes sense when the cursor hasn't
        been moved off the hero's '@' yet, but there's no way to adjust
        the help text once getpos() has started */
-    Sprintf(buf, "地图上的东西( 或 '.'  在你%s)",
-            (u.uundetected && hides_under(youmonst.data)) ? "上面" : "下面");
+    Sprintf(buf, "object on map (or '.' for one %s you)",
+            (u.uundetected && hides_under(youmonst.data)) ? "over" : "under");
     if (getpos(&cc, FALSE, buf) < 0 || cc.x <= 0)
         return;
     if (cc.x == u.ux && cc.y == u.uy) {
@@ -1508,11 +1517,11 @@ namefloorobj()
     }
     if (!obj) {
         /* "under you" is safe here since there's no object to hide under */
-        pline("那儿似乎没有什么东西%s.",
-              (cc.x == u.ux && cc.y == u.uy) ? "在你的脚下" : "");
+        pline("There doesn't seem to be any object %s.",
+              (cc.x == u.ux && cc.y == u.uy) ? "under you" : "there");
         return;
     }
-    /* note well: 'obj' might be as instance of STRANGE_OBJECT if target
+    /* note well: 'obj' might be an instance of STRANGE_OBJECT if target
        is a mimic; passing that to xname (directly or via simpleonames)
        would yield "glorkum" so we need to handle it explicitly; it will
        always fail the Hallucination test and pass the !callable test,
@@ -1529,8 +1538,12 @@ namefloorobj()
         unames[0] = ((Upolyd ? u.mfemale : flags.female) && urole.name.f)
                      ? urole.name.f
                      : urole.name.m;
-        /* random rank title for hero's role */
-        unames[1] = rank_of(rnd(30), Role_switch, flags.female);
+        /* random rank title for hero's role
+
+           note: the 30 is hardcoded in xlev_to_rank, so should be
+           hardcoded here too */
+        unames[1] = rank_of(rn2_on_display_rng(30) + 1,
+                            Role_switch, flags.female);
         /* random fake monster */
         unames[2] = bogusmon(tmpbuf, (char *) 0);
         /* increased chance for fake monster */
@@ -1539,20 +1552,22 @@ namefloorobj()
         unames[4] = roguename();
         /* silly */
         unames[5] = "Wibbly Wobbly";
-        pline("%s %s叫你 \"%s.\"",
-              The(buf), use_plural ? "决定" : "决定",
-              unames[rn2(SIZE(unames))]);
+        pline("%s %s to call you \"%s.\"",
+              The(buf), use_plural ? "decide" : "decides",
+              unames[rn2_on_display_rng(SIZE(unames))]);
     } else if (!objtyp_is_callable(obj->otyp)) {
-        pline("%s %s 不能被指定一个类型名字.",
-              use_plural ? "那些" : "那个", buf);
+        pline("%s %s can't be assigned a type name.",
+              use_plural ? "Those" : "That", buf);
     } else if (!obj->dknown) {
-        You("不是很了解%s %s 来命名%s.",
-            use_plural ? "那些" : "那个", buf, use_plural ? "它们" : "它");
+        You("don't know %s %s well enough to name %s.",
+            use_plural ? "those" : "that", buf, use_plural ? "them" : "it");
     } else {
         docall(obj);
     }
-    if (fakeobj)
+    if (fakeobj) {
+        obj->where = OBJ_FREE; /* object_from_map() sets it to OBJ_FLOOR */
         dealloc_obj(obj);
+    }
 }
 
 static const char *const ghostnames[] = {
@@ -1637,7 +1652,7 @@ boolean called;
 
     /* unseen monsters, etc.  Use "it" */
     if (do_it) {
-        Strcpy(buf, "它");
+        Strcpy(buf, "it");
         return buf;
     }
 
@@ -1663,9 +1678,9 @@ boolean called;
     /* an "aligned priest" not flagged as a priest or minion should be
        "priest" or "priestess" (normally handled by priestname()) */
     if (mdat == &mons[PM_ALIGNED_PRIEST])
-        pm_name = mtmp->female ? "女牧师" : "牧师";
+        pm_name = mtmp->female ? "priestess" : "priest";
     else if (mdat == &mons[PM_HIGH_PRIEST] && mtmp->female)
-        pm_name = "高级女祭司";
+        pm_name = "high priestess";
 
     /* Shopkeepers: use shopkeeper name.  For normal shopkeepers, just
      * "Asidonhopo"; for unusual ones, "Asidonhopo the invisible
@@ -1676,7 +1691,7 @@ boolean called;
         if (adjective && article == ARTICLE_THE) {
             /* pathological case: "the angry Asidonhopo the blue dragon"
                sounds silly */
-            Strcpy(buf, "");
+            Strcpy(buf, "the ");
             Strcat(strcat(buf, adjective), " ");
             Strcat(buf, shkname(mtmp));
             return buf;
@@ -1684,9 +1699,9 @@ boolean called;
         Strcat(buf, shkname(mtmp));
         if (mdat == &mons[PM_SHOPKEEPER] && !do_invis)
             return buf;
-        Strcat(buf, " ");
+        Strcat(buf, " the ");
         if (do_invis)
-            Strcat(buf, "隐形的");
+            Strcat(buf, "invisible ");
         Strcat(buf, pm_name);
         return buf;
     }
@@ -1695,14 +1710,11 @@ boolean called;
     if (adjective)
         Strcat(strcat(buf, adjective), " ");
     if (do_invis)
-        Strcat(buf, "隐形的");
+        Strcat(buf, "invisible ");
     if (do_saddle && (mtmp->misc_worn_check & W_SADDLE) && !Blind
         && !Hallucination)
-        Strcat(buf, "装有鞍的");
-    if (buf[0] != 0)
-        has_adjectives = TRUE;
-    else
-        has_adjectives = FALSE;
+        Strcat(buf, "saddled ");
+    has_adjectives = (buf[0] != '\0');
 
     /* Put the actual monster name or type into the buffer now */
     /* Be sure to remember whether the buffer starts with a name */
@@ -1716,10 +1728,10 @@ boolean called;
         char *name = MNAME(mtmp);
 
         if (mdat == &mons[PM_GHOST]) {
-            Sprintf(eos(buf), "%s 鬼魂", s_suffix(name));
+            Sprintf(eos(buf), "%s ghost", s_suffix(name));
             name_at_start = TRUE;
         } else if (called) {
-            Sprintf(eos(buf), "%s 叫做 %s", pm_name, name);
+            Sprintf(eos(buf), "%s called %s", pm_name, name);
             name_at_start = (boolean) type_is_pname(mdat);
         } else if (is_mplayer(mdat) && (bp = strstri(name, " the ")) != 0) {
             /* <name> the <adjective> <invisible> <saddled> <rank> */
@@ -1763,17 +1775,17 @@ boolean called;
 
         switch (article) {
         case ARTICLE_YOUR:
-            Strcpy(buf2, "你的");
+            Strcpy(buf2, "your ");
             Strcat(buf2, buf);
             Strcpy(buf, buf2);
             return buf;
         case ARTICLE_THE:
-            Strcpy(buf2, "");
+            Strcpy(buf2, "the ");
             Strcat(buf2, buf);
             Strcpy(buf, buf2);
             return buf;
         case ARTICLE_A:
-            return buf;
+            return an(buf);
         case ARTICLE_NONE:
         default:
             return buf;
@@ -1909,8 +1921,8 @@ char *outbuf;
        its own obfuscation) */
     if (mon->data == &mons[PM_HIGH_PRIEST] && !Hallucination
         && Is_astralevel(&u.uz) && distu(mon->mx, mon->my) > 2) {
-        Strcpy(outbuf, article == ARTICLE_THE ? "" : "");
-        Strcat(outbuf, mon->female ? "高级女祭司" : "高级祭司");
+        Strcpy(outbuf, article == ARTICLE_THE ? "the " : "");
+        Strcat(outbuf, mon->female ? "high priestess" : "high priest");
     } else {
         Strcpy(outbuf, x_monnam(mon, article, (char *) 0, 0, TRUE));
     }
@@ -1924,7 +1936,7 @@ char *buf, *code;
 {
     char *mname = buf;
 
-    get_rnd_text(BOGUSMONFILE, buf);
+    get_rnd_text(BOGUSMONFILE, buf, rn2_on_display_rng);
     /* strip prefix if present */
     if (!letter(*mname)) {
         if (code)
@@ -1951,7 +1963,7 @@ char *code;
         *code = '\0';
 
     do {
-        name = rn1(SPECIAL_PM + BOGUSMONSIZE - LOW_PM, LOW_PM);
+        name = rn2_on_display_rng(SPECIAL_PM + BOGUSMONSIZE - LOW_PM) + LOW_PM;
     } while (name < SPECIAL_PM
              && (type_is_pname(&mons[name]) || (mons[name].geno & G_NOGEN)));
 
@@ -1994,21 +2006,22 @@ roguename()
 }
 
 static NEARDATA const char *const hcolors[] = {
-    "紫外线的", "红外线的", "蓝橙色", "红绿色", "黑白",
-    "浅黑色", "天空蓝粉色", "咸的", "甜的", "酸的", "苦的",
-    "有条纹的", "螺旋形的", "涡旋形的", "格子图案的", "有方格的", "菱形花纹的", "涡纹图案的",
-    "有污渍的", "根西岛斑点的", "圆点花纹的", "正方形的", "圆的",
-    "三角的", "卡百内的", "桑格利亚的", "紫红色的", "紫藤的", "柠檬酸橙的",
-    "草莓香蕉的", "薄荷的", "浪漫的", "辉耀的",
-    "黄绿紫色的", /* Discworld: the Colour of Magic */
+    "ultraviolet", "infrared", "bluish-orange", "reddish-green", "dark white",
+    "light black", "sky blue-pink", "salty", "sweet", "sour", "bitter",
+    "striped", "spiral", "swirly", "plaid", "checkered", "argyle", "paisley",
+    "blotchy", "guernsey-spotted", "polka-dotted", "square", "round",
+    "triangular", "cabernet", "sangria", "fuchsia", "wisteria", "lemon-lime",
+    "strawberry-banana", "peppermint", "romantic", "incandescent",
+    "octarine", /* Discworld: the Colour of Magic */
 };
 
 const char *
 hcolor(colorpref)
 const char *colorpref;
 {
-    return (Hallucination || !colorpref) ? hcolors[rn2(SIZE(hcolors))]
-                                         : colorpref;
+    return (Hallucination || !colorpref)
+        ? hcolors[rn2_on_display_rng(SIZE(hcolors))]
+        : colorpref;
 }
 
 /* return a random real color unless hallucinating */
@@ -2018,18 +2031,18 @@ rndcolor()
     int k = rn2(CLR_MAX);
 
     return Hallucination ? hcolor((char *) 0)
-                         : (k == NO_COLOR) ? "无色的"
+                         : (k == NO_COLOR) ? "colorless"
                                            : c_obj_colors[k];
 }
 
 static NEARDATA const char *const hliquids[] = {
-    "酸奶", "欧不裂", "瘀血", "淡水", "纯净水",
-    "速溶咖啡", "茶", "花茶", "液体彩虹",
-    "奶油泡沫", "热葡萄酒", "牛肉清汤", "花蜜", "格罗格酒", "flubber 胶",
-    "番茄酱", "慢光", "油", "油醋汁", "液晶", "蜂蜜",
-    "焦糖酱", "墨水", "房水", "代乳", "果汁",
-    "炽热的熔岩", "胃酸", "矿泉水", "止咳糖浆", "水银",
-    "甜硫酸", "灰色粘液", "粉红肉渣",
+    "yoghurt", "oobleck", "clotted blood", "diluted water", "purified water",
+    "instant coffee", "tea", "herbal infusion", "liquid rainbow",
+    "creamy foam", "mulled wine", "bouillon", "nectar", "grog", "flubber",
+    "ketchup", "slow light", "oil", "vinaigrette", "liquid crystal", "honey",
+    "caramel sauce", "ink", "aqueous humour", "milk substitute",
+    "fruit juice", "glowing lava", "gastric acid", "mineral water",
+    "cough syrup", "quicksilver", "sweet vitriol", "grey goo", "pink slime",
 };
 
 const char *
@@ -2037,7 +2050,7 @@ hliquid(liquidpref)
 const char *liquidpref;
 {
     return (Hallucination || !liquidpref) ? hliquids[rn2(SIZE(hliquids))]
-                                         : liquidpref;
+                                          : liquidpref;
 }
 
 /* Aliases for road-runner nemesis
@@ -2065,6 +2078,59 @@ char *buf;
                            : coynames[mtmp->m_id % (SIZE(coynames) - 1)]);
     }
     return buf;
+}
+
+char *
+rndorcname(s)
+char *s;
+{
+    static const char *v[] = { "a", "ai", "og", "u" };
+    static const char *snd[] = { "gor", "gris", "un", "bane", "ruk",
+                                 "oth","ul", "z", "thos","akh","hai" };
+    int i, iend = rn1(2, 3), vstart = rn2(2);
+
+    if (s) {
+        *s = '\0';
+        for (i = 0; i < iend; ++i) {
+            vstart = 1 - vstart;                /* 0 -> 1, 1 -> 0 */
+            Sprintf(eos(s), "%s%s", (i > 0 && !rn2(30)) ? "-" : "",
+                    vstart ? v[rn2(SIZE(v))] : snd[rn2(SIZE(snd))]);
+        }
+    }
+    return s;
+}
+
+struct monst *
+christen_orc(mtmp, gang, other)
+struct monst *mtmp;
+const char *gang, *other;
+{
+    int sz = 0;
+    char buf[BUFSZ], buf2[BUFSZ], *orcname;
+
+    orcname = rndorcname(buf2);
+    sz = (int) strlen(orcname);
+    if (gang)
+        sz += (int) (strlen(gang) + sizeof " of " - sizeof "");
+    else if (other)
+        sz += (int) strlen(other);
+
+    if (sz < BUFSZ) {
+        char gbuf[BUFSZ];
+        boolean nameit = FALSE;
+
+        if (gang && orcname) {
+            Sprintf(buf, "%s of %s", upstart(orcname),
+                    upstart(strcpy(gbuf, gang)));
+            nameit = TRUE;
+        } else if (other && orcname) {
+            Sprintf(buf, "%s%s", upstart(orcname), other);
+            nameit = TRUE;
+        }
+        if (nameit)
+            mtmp = christen_monst(mtmp, buf);
+    }
+    return mtmp;
 }
 
 /* make sure "The Colour of Magic" remains the first entry in here */

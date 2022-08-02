@@ -1,4 +1,4 @@
-/* NetHack 3.6	ball.c	$NHDT-Date: 1450402033 2015/12/18 01:27:13 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.29 $ */
+/* NetHack 3.6	ball.c	$NHDT-Date: 1557088406 2019/05/05 20:33:26 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.36 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) David Cohrs, 2006. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -17,19 +17,21 @@ boolean showmsg;
 {
     if (carried(uball)) {
         if (showmsg)
-            pline("吃了一惊, 你掉落了铁球.");
+            pline("Startled, you drop the iron ball.");
         if (uwep == uball)
             setuwep((struct obj *) 0);
         if (uswapwep == uball)
             setuswapwep((struct obj *) 0);
         if (uquiver == uball)
             setuqwep((struct obj *) 0);
-        ;
-        if (uwep != uball)
-            freeinv(uball);
+        /* [this used to test 'if (uwep != uball)' but that always passes
+           after the setuwep() above] */
+        freeinv(uball); /* remove from inventory but don't place on floor */
+        encumber_msg();
     }
 }
 
+/* ball&chain might hit hero when falling through a trap door */
 void
 ballfall()
 {
@@ -40,15 +42,16 @@ ballfall()
     ballrelease(TRUE);
     if (gets_hit) {
         int dmg = rn1(7, 25);
-        pline_The("铁球掉在你的%s上.", body_part(HEAD));
+
+        pline_The("iron ball falls on your %s.", body_part(HEAD));
         if (uarmh) {
             if (is_metallic(uarmh)) {
-                pline("幸运的是, 你戴着一个硬头盔.");
+                pline("Fortunately, you are wearing a hard helmet.");
                 dmg = 3;
             } else if (flags.verbose)
-                pline("%s 没有保护到你.", Yname2(uarmh));
+                pline("%s does not protect you.", Yname2(uarmh));
         }
-        losehp(Maybe_Half_Phys(dmg), "被一个铁球砸到头",
+        losehp(Maybe_Half_Phys(dmg), "crunched in the head by an iron ball",
                NO_KILLER_PREFIX);
     }
 }
@@ -113,9 +116,9 @@ placebc()
 
     (void) flooreffects(uchain, u.ux, u.uy, ""); /* chain might rust */
 
-    if (carried(uball)) /* the ball is carried */
+    if (carried(uball)) { /* the ball is carried */
         u.bc_order = BCPOS_DIFFER;
-    else {
+    } else {
         /* ball might rust -- already checked when carried */
         (void) flooreffects(uball, u.ux, u.uy, "");
         place_object(uball, u.ux, u.uy);
@@ -181,7 +184,7 @@ bc_order()
         if (obj == uball)
             return BCPOS_BALL;
     }
-    impossible("bc_order:  ball&chain 不在同一位置!");
+    impossible("bc_order:  ball&chain not in same location!");
     return BCPOS_DIFFER;
 }
 
@@ -411,6 +414,7 @@ boolean allow_drag;
     /* only need to move the chain? */
     if (carried(uball) || distmin(x, y, uball->ox, uball->oy) <= 2) {
         xchar oldchainx = uchain->ox, oldchainy = uchain->oy;
+
         *bc_control = BC_CHAIN;
         move_bc(1, *bc_control, *ballx, *bally, *chainx, *chainy);
         if (carried(uball)) {
@@ -576,7 +580,7 @@ boolean allow_drag;
             break;
 
         default:
-            impossible("坏的铁链不可移动");
+            impossible("bad chain movement");
             break;
         }
 #undef SKIP_TO_DRAG
@@ -584,11 +588,11 @@ boolean allow_drag;
         return TRUE;
     }
 
-drag:
+ drag:
 
     if (near_capacity() > SLT_ENCUMBER && dist2(x, y, u.ux, u.uy) <= 2) {
-        You("不能 %s 拖着沉重的铁球.",
-            invent ? "带着所有那些, 也不能" : "");
+        You("cannot %sdrag the heavy iron ball.",
+            invent ? "carry all that and also " : "");
         nomul(0);
         return FALSE;
     }
@@ -599,16 +603,15 @@ drag:
              || !is_pool(uball->ox, uball->oy)
              || levl[uball->ox][uball->oy].typ == POOL))
         || ((t = t_at(uchain->ox, uchain->oy))
-            && (t->ttyp == PIT || t->ttyp == SPIKED_PIT || t->ttyp == HOLE
-                || t->ttyp == TRAPDOOR))) {
+            && (is_pit(t->ttyp) || is_hole(t->ttyp)))) {
         if (Levitation) {
-            You_feel("到铁球的拉力.");
+            You_feel("a tug from the iron ball.");
             if (t)
                 t->tseen = 1;
         } else {
             struct monst *victim;
 
-            You("被铁球猛拉回来!");
+            You("are jerked back by the iron ball!");
             if ((victim = m_at(uchain->ox, uchain->oy)) != 0) {
                 int tmp;
                 int dieroll = rnd(20);
@@ -704,39 +707,39 @@ xchar x, y;
     }
 
     if (x != u.ux || y != u.uy) {
+        static const char *pullmsg = "The ball pulls you out of the %s!";
         struct trap *t;
-        const char *pullmsg = "球把你拉出了%s!";
+        long side;
 
-        if (u.utrap && u.utraptype != TT_INFLOOR
-            && u.utraptype != TT_BURIEDBALL) {
+        if (u.utrap
+            && u.utraptype != TT_INFLOOR && u.utraptype != TT_BURIEDBALL) {
             switch (u.utraptype) {
             case TT_PIT:
-                pline(pullmsg, "坑");
+                pline(pullmsg, "pit");
                 break;
             case TT_WEB:
-                pline(pullmsg, "网");
-                pline_The("网被破坏了!");
+                pline(pullmsg, "web");
+                pline_The("web is destroyed!");
                 deltrap(t_at(u.ux, u.uy));
                 break;
             case TT_LAVA:
-                pline(pullmsg, hliquid("熔岩"));
+                pline(pullmsg, hliquid("lava"));
                 break;
-            case TT_BEARTRAP: {
-                register long side = rn2(3) ? LEFT_SIDE : RIGHT_SIDE;
-                pline(pullmsg, "捕兽夹");
+            case TT_BEARTRAP:
+                side = rn2(3) ? LEFT_SIDE : RIGHT_SIDE;
+                pline(pullmsg, "bear trap");
                 set_wounded_legs(side, rn1(1000, 500));
                 if (!u.usteed) {
-                    Your("%s %s 受到严重的损害.",
-                         (side == LEFT_SIDE) ? "左" : "右",
+                    Your("%s %s is severely damaged.",
+                         (side == LEFT_SIDE) ? "left" : "right",
                          body_part(LEG));
                     losehp(Maybe_Half_Phys(2),
-                           "被拉出捕兽夹时腿损伤",
+                           "leg damage from being pulled out of a bear trap",
                            KILLED_BY);
                 }
                 break;
             }
-            }
-            u.utrap = 0;
+            reset_utrap(TRUE);
             fill_pit(u.ux, u.uy);
         }
 
@@ -745,8 +748,8 @@ xchar x, y;
         if (!Levitation && !MON_AT(x, y) && !u.utrap
             && (is_pool(x, y)
                 || ((t = t_at(x, y))
-                    && (t->ttyp == PIT || t->ttyp == SPIKED_PIT
-                        || t->ttyp == TRAPDOOR || t->ttyp == HOLE)))) {
+                    && (is_pit(t->ttyp)
+                        || is_hole(t->ttyp))))) {
             u.ux = x;
             u.uy = y;
         } else {
@@ -775,21 +778,24 @@ xchar x, y;
     }
 }
 
+/* ball&chain cause hero to randomly lose stuff from inventory */
 STATIC_OVL void
 litter()
 {
-    struct obj *otmp = invent, *nextobj;
+    struct obj *otmp, *nextobj = 0;
     int capacity = weight_cap();
 
-    while (otmp) {
+    for (otmp = invent; otmp; otmp = nextobj) {
         nextobj = otmp->nobj;
         if ((otmp != uball) && (rnd(capacity) <= (int) otmp->owt)) {
             if (canletgo(otmp, "")) {
-                pline("%s 你从楼梯下来.", Yobjnam2(otmp, "跟着"));
+                You("drop %s and %s %s down the stairs with you.",
+                    yname(otmp), (otmp->quan == 1L) ? "it" : "they",
+                    otense(otmp, "fall"));
                 dropx(otmp);
+                encumber_msg(); /* drop[xyz]() probably ought to to this... */
             }
         }
-        otmp = nextobj;
     }
 }
 
@@ -810,34 +816,95 @@ drag_down()
     forward = carried(uball) && (uwep == uball || !uwep || !rn2(3));
 
     if (carried(uball))
-        You("没有紧握住铁球.");
+        You("lose your grip on the iron ball.");
 
     cls();  /* previous level is still displayed although you
                went down the stairs. Avoids bug C343-20 */
 
     if (forward) {
         if (rn2(6)) {
-            pline_The("铁球把你拖下了楼梯!");
+            pline_The("iron ball drags you downstairs!");
             losehp(Maybe_Half_Phys(rnd(6)),
-                   "被一个铁球拖下楼", NO_KILLER_PREFIX);
+                   "dragged downstairs by an iron ball", NO_KILLER_PREFIX);
             litter();
         }
     } else {
         if (rn2(2)) {
-            pline_The("铁球撞到你!");
-            losehp(Maybe_Half_Phys(rnd(20)), "铁球碰撞",
+            pline_The("iron ball smacks into you!");
+            losehp(Maybe_Half_Phys(rnd(20)), "iron ball collision",
                    KILLED_BY_AN);
             exercise(A_STR, FALSE);
             dragchance -= 2;
         }
         if ((int) dragchance >= rnd(6)) {
-            pline_The("铁球把你拖下了楼梯!");
+            pline_The("iron ball drags you downstairs!");
             losehp(Maybe_Half_Phys(rnd(3)),
-                   "被一个铁球拖下楼", NO_KILLER_PREFIX);
+                   "dragged downstairs by an iron ball", NO_KILLER_PREFIX);
             exercise(A_STR, FALSE);
             litter();
         }
     }
+}
+
+void
+bc_sanity_check()
+{
+    int otyp;
+    unsigned save_nameknown;
+    const char *onam;
+
+    if (Punished && (!uball || !uchain)) {
+        impossible("Punished without %s%s%s?",
+                   !uball ? "iron ball" : "",
+                   (!uball && !uchain) ? " and " : "",
+                   !uchain ? "attached chain" : "");
+    } else if (!Punished && (uball || uchain)) {
+        impossible("Attached %s%s%s without being Punished?",
+                   uchain ? "chain" : "",
+                   (uchain && uball) ? " and " : "",
+                   uball ? "iron ball" : "");
+    }
+    /* ball is free when swallowed, changing levels, other times? */
+    if (uball && (uball->otyp != HEAVY_IRON_BALL
+                  || (uball->where != OBJ_FLOOR
+                      && uball->where != OBJ_INVENT
+                      && uball->where != OBJ_FREE)
+                  || (uball->owornmask & W_BALL) == 0L
+                  || (uball->owornmask & ~(W_BALL | W_WEAPON)) != 0L)) {
+        otyp = uball->otyp;
+        if (otyp < STRANGE_OBJECT || otyp >= NUM_OBJECTS
+            || !OBJ_NAME(objects[otyp])) {
+            onam = "glorkum";
+        } else {
+            save_nameknown = objects[otyp].oc_name_known;
+            objects[otyp].oc_name_known = 1;
+            onam = simple_typename(otyp);
+            objects[otyp].oc_name_known = save_nameknown;
+        }
+        impossible("uball: type %d (%s), where %d, wornmask=0x%08lx",
+                   otyp, onam, uball->where, uball->owornmask);
+    }
+    /* similar check to ball except can't be in inventory */
+    if (uchain && (uchain->otyp != IRON_CHAIN
+                   || (uchain->where != OBJ_FLOOR
+                       && uchain->where != OBJ_FREE)
+                   /* [could simplify this to owornmask != W_CHAIN] */
+                   || (uchain->owornmask & W_CHAIN) == 0L
+                   || (uchain->owornmask & ~W_CHAIN) != 0L)) {
+        otyp = uchain->otyp;
+        if (otyp < STRANGE_OBJECT || otyp >= NUM_OBJECTS
+            || !OBJ_NAME(objects[otyp])) {
+            onam = "glorkum";
+        } else {
+            save_nameknown = objects[otyp].oc_name_known;
+            objects[otyp].oc_name_known = 1;
+            onam = simple_typename(otyp);
+            objects[otyp].oc_name_known = save_nameknown;
+        }
+        impossible("uchain: type %d (%s), where %d, wornmask=0x%08lx",
+                   otyp, onam, uchain->where, uchain->owornmask);
+    }
+    /* [check bc_order too?] */
 }
 
 /*ball.c*/

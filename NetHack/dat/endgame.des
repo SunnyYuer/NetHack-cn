@@ -1,4 +1,4 @@
-# NetHack 3.6	endgame.des	$NHDT-Date: 1432512783 2015/05/25 00:13:03 $  $NHDT-Branch: master $:$NHDT-Revision: 1.13 $
+# NetHack 3.6	endgame.des	$NHDT-Date: 1546303680 2019/01/01 00:48:00 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.14 $
 #	Copyright (c) 1989 by Jean-Christophe Collet
 #	Copyright (c) 1992,1993 by Izchak Miller, David Cohrs,
 #                      and Timo Hakulinen
@@ -11,9 +11,9 @@
 
 MAZE:"earth",' '
 FLAGS: noteleport,hardfloor,shortsighted
-MESSAGE: "做的好, 凡人!"
-MESSAGE: "但现在你必须面对最后的考验..."
-MESSAGE: "证明自己的价值或毁灭!"
+MESSAGE: "Well done, mortal!"
+MESSAGE: "But now thou must face the final Test..."
+MESSAGE: "Prove thyself worthy or perish!"
 
 GEOMETRY:center,center
 # The player lands, upon arrival, in the
@@ -48,7 +48,7 @@ REPLACE_TERRAIN:(0,0,75,19), ' ', ('.', unlit), 5%
 
 #  Since there are no stairs, this forces the hero's initial placement
 TELEPORT_REGION:(69,16,69,16),(0,0,0,0)
-PORTAL:(0,0,75,19),(65,13,75,19),"气"
+PORTAL:(0,0,75,19),(65,13,75,19),"air"
 #  Some helpful monsters.  Making sure a
 #  pick axe and at least one wand of digging
 #  are available.
@@ -131,8 +131,8 @@ MAZE:"air",' '
 FLAGS: noteleport,hardfloor,shortsighted
 # The following messages are somewhat obtuse, to make then
 # equally meaningful if the player can see or not.
-MESSAGE: "好奇怪的感觉!"
-MESSAGE: "你注意到这里没有重力."
+MESSAGE: "What a strange feeling!"
+MESSAGE: "You notice that there is no gravity here."
 GEOMETRY:center,center
 # The player lands, upon arrival, in the
 # lower-left area.  The location of the
@@ -167,7 +167,7 @@ ENDMAP
 # the preceding level; the exit portal is placed inside the down region.
 TELEPORT_REGION:levregion(01,00,24,20),levregion(25,00,79,20),up
 TELEPORT_REGION:levregion(56,00,79,20),levregion(01,00,55,20),down
-PORTAL:levregion(57,01,78,19),(0,0,0,0),"火"
+PORTAL:levregion(57,01,78,19),(0,0,0,0),"fire"
 REGION:(00,00,75,19),lit,"ordinary"
 MONSTER:('E',"air elemental"),random,hostile
 MONSTER:('E',"air elemental"),random,hostile
@@ -259,7 +259,7 @@ MAP
 .................................LL....................LL...................
 ENDMAP
 TELEPORT_REGION:(69,16,69,16),(0,0,0,0)
-PORTAL:(0,0,75,19),(65,13,75,19),"水"
+PORTAL:(0,0,75,19),(65,13,75,19),"water"
 
 TRAP:"fire",random
 TRAP:"fire",random
@@ -381,7 +381,7 @@ OBJECT:('`',"boulder"),random
 
 MAZE:"water",' '
 FLAGS: noteleport,hardfloor,shortsighted
-MESSAGE: "你发现自己悬浮在被水包围的气泡中."
+MESSAGE: "You find yourself suspended in an air bubble surrounded by water."
 GEOMETRY:center,center
 # The player lands upon arrival to an air bubble
 # within the leftmost third of the level.  The
@@ -411,7 +411,7 @@ WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 ENDMAP
 TELEPORT_REGION:(0,0,25,19),(0,0,0,0)
-PORTAL:(51,0,75,19),(0,0,0,0),"星界"
+PORTAL:(51,0,75,19),(0,0,0,0),"astral"
 # A fisherman's dream...
 MONSTER:(';',"giant eel"),random
 MONSTER:(';',"giant eel"),random
@@ -478,9 +478,9 @@ MONSTER:('E',"water elemental"),random,hostile
 
 MAZE:"astral",' '
 FLAGS: noteleport,hardfloor,nommap,shortsighted,solidify
-MESSAGE: "你到达了星界!"
-MESSAGE: "这里坐落着%d 的圣殿."
-MESSAGE: "你感觉到空气中的警觉, 敌意, 兴奋感!"
+MESSAGE: "You arrive on the Astral Plane!"
+MESSAGE: "Here the High Temple of %d is located."
+MESSAGE: "You sense alarm, hostility, and excitement in the air!"
 GEOMETRY:center,center
 MAP
                               ---------------                              
@@ -505,15 +505,36 @@ MAP
                              -----------------                             
 ENDMAP
 
-IF [75%] {
-  TERRAIN:fillrect (17,14, 30,18),'.'
-  TERRAIN:fillrect (44,14, 57,18),'.'
-  WALLIFY
-
-  $hall = selection:floodfill(37,18)
-  LOOP [6 + 3d4] {
-    MONSTER:('A',"Angel"),rndcoord($hall),noalign,hostile
-    [50%]: MONSTER:random,rndcoord($hall),hostile
+# chance to alter above map and turn the wings of the bottom-center into
+# a pair of big (5x15) rooms
+$loopindx = 0
+LOOP [2] {
+  $loopindx = $loopindx + 1
+# 3.6.[01]: 75% chance that both sides opened up, 25% that neither did;
+# 3.6.2: 60% twice == 36% chance that both sides open up, 24% left side
+# only, 24% right side only, 16% that neither side opens up
+  IF [60%] {
+    IF [$loopindx == 1] {
+      TERRAIN:fillrect (17,14, 30,18),'.'
+      WALLIFY
+# temporarily close off the area to be filled so that it doesn't cover
+# the entire entry area
+      TERRAIN:(33,18), '|'
+      $hall = selection:floodfill(30,16)
+# re-connect the opened wing with the rest of the map
+      TERRAIN:(33,18), '.'
+    } ELSE {
+      TERRAIN:fillrect (44,14, 57,18),'.'
+      WALLIFY
+      TERRAIN:(41,18), '|'
+      $hall = selection:floodfill(44,16)
+      TERRAIN:(41,18), '.'
+    }
+# extra monsters; was [6 + 3d4] when both wings were opened up at once
+    LOOP [3 + 2d3] {
+      MONSTER:('A',"Angel"),rndcoord($hall),noalign,hostile
+      [50%]: MONSTER:random,rndcoord($hall),hostile
+    }
   }
 }
 

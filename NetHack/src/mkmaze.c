@@ -1,4 +1,4 @@
-/* NetHack 3.6	mkmaze.c	$NHDT-Date: 1518718417 2018/02/15 18:13:37 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.55 $ */
+/* NetHack 3.6	mkmaze.c	$NHDT-Date: 1555022325 2019/04/11 22:38:45 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.68 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Pasi Kallinen, 2018. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -25,6 +25,10 @@ STATIC_DCL boolean FDECL(put_lregion_here, (XCHAR_P, XCHAR_P, XCHAR_P,
 STATIC_DCL void NDECL(baalz_fixup);
 STATIC_DCL void NDECL(setup_waterlevel);
 STATIC_DCL void NDECL(unsetup_waterlevel);
+STATIC_DCL void FDECL(check_ransacked, (char *));
+STATIC_DCL void FDECL(migr_booty_item, (int, const char *));
+STATIC_DCL void FDECL(migrate_orc, (struct monst *, unsigned long));
+STATIC_DCL void NDECL(stolen_booty);
 
 /* adjust a coordinate one step in the specified direction */
 #define mz_move(X, Y, dir) \
@@ -322,6 +326,8 @@ xchar rtype;
 boolean oneshot;
 d_level *lev;
 {
+    struct monst *mtmp;
+
     if (bad_location(x, y, nlx, nly, nhx, nhy)) {
         if (!oneshot) {
             return FALSE; /* caller should try again */
@@ -342,11 +348,12 @@ d_level *lev;
     case LR_UPTELE:
     case LR_DOWNTELE:
         /* "something" means the player in this case */
-        if (MON_AT(x, y)) {
+        if ((mtmp = m_at(x, y)) != 0) {
             /* move the monster if no choice, or just try again */
-            if (oneshot)
-                (void) rloc(m_at(x, y), FALSE);
-            else
+            if (oneshot) {
+                if (!rloc(mtmp, TRUE))
+                    m_into_limbo(mtmp);
+            } else
                 return FALSE;
         }
         u_on_newpos(x, y);
@@ -610,12 +617,201 @@ fixup_special()
     } else if (on_level(&u.uz, &baalzebub_level)) {
         /* custom wallify the "beetle" potion of the level */
         baalz_fixup();
+    } else if (u.uz.dnum == mines_dnum && ransacked) {
+       stolen_booty();
     }
 
     if (lregions)
         free((genericptr_t) lregions), lregions = 0;
     num_lregions = 0;
 }
+
+void
+check_ransacked(s)
+char *s;
+{
+    /* this kludge only works as long as orctown is minetn-1 */
+    ransacked = (u.uz.dnum == mines_dnum && !strcmp(s, "minetn-1"));
+}
+
+#define ORC_LEADER 1
+static const char *orcfruit[] = { "paddle cactus", "dwarven root" };
+
+void
+migrate_orc(mtmp, mflags)
+struct monst *mtmp;
+unsigned long mflags;
+{
+    int nlev, max_depth, cur_depth;
+    d_level dest;
+
+    cur_depth = (int) depth(&u.uz);
+    max_depth = dunlevs_in_dungeon(&u.uz)
+                + (dungeons[u.uz.dnum].depth_start - 1);
+    if (mflags == ORC_LEADER) {
+        /* Note that the orc leader will take possession of any
+         * remaining stuff not already delivered to other
+         * orcs between here and the bottom of the mines.
+         */
+        nlev = max_depth;
+        /* once in a blue moon, he won't be at the very bottom */
+        if (!rn2(40))
+            nlev--;
+        mtmp->mspare1 = MIGR_LEFTOVERS;
+    } else {
+        nlev = rn2((max_depth - cur_depth) + 1) + cur_depth;
+        if (nlev == cur_depth)
+            nlev++;
+        if (nlev > max_depth)
+            nlev = max_depth;
+        mtmp->mspare1 = 0L;
+    }
+    get_level(&dest, nlev);
+    migrate_to_level(mtmp, ledger_no(&dest), MIGR_RANDOM, (coord *) 0);
+}
+
+void
+shiny_orc_stuff(mtmp)
+struct monst *mtmp;
+{
+    int gemprob, goldprob, otyp;
+    struct obj *otmp;
+    boolean is_captain = (mtmp->data == &mons[PM_ORC_CAPTAIN]);
+
+    /* probabilities */
+    goldprob = is_captain ? 600 : 300;
+    gemprob = goldprob / 4;
+    if (rn2(1000) < goldprob) {
+        if ((otmp = mksobj(GOLD_PIECE, FALSE, FALSE)) != 0) {
+            otmp->quan = 1L + rnd(goldprob);
+            otmp->owt = weight(otmp);
+            add_to_minv(mtmp, otmp);
+        }
+    }
+    if (rn2(1000) < gemprob) {
+        if ((otmp = mkobj(GEM_CLASS, FALSE)) != 0) {
+            if (otmp->otyp == ROCK)
+                dealloc_obj(otmp);
+            else
+                add_to_minv(mtmp, otmp);
+        }
+    }
+    if (is_captain || !rn2(8)) {
+        otyp = shiny_obj(RING_CLASS);
+        if (otyp != STRANGE_OBJECT && (otmp = mksobj(otyp, FALSE, FALSE)) != 0)
+            add_to_minv(mtmp, otmp);
+    }
+}
+void
+migr_booty_item(otyp, gang)
+int otyp;
+const char *gang;
+{
+    struct obj *otmp;
+
+    otmp = mksobj_migr_to_species(otyp, (unsigned long) M2_ORC, FALSE, FALSE);
+    if (otmp && gang) {
+        new_oname(otmp, strlen(gang) + 1); /* removes old name if present */
+        Strcpy(ONAME(otmp), gang);
+        if (otyp >= TRIPE_RATION && otyp <= TIN) {
+            if (otyp == SLIME_MOLD)
+                otmp->spe = fruitadd((char *) orcfruit[rn2(SIZE(orcfruit))],
+                                     (struct fruit *) 0);
+            otmp->quan += (long) rn2(3);
+            otmp->owt = weight(otmp);
+        }
+    }
+}
+
+void
+stolen_booty(VOID_ARGS)
+{
+    char *gang, gang_name[BUFSZ];
+    struct monst *mtmp;
+    int cnt, i, otyp;
+
+    /*
+     * --------------------------------------------------------
+     * Mythos:
+     *
+     *      A tragic accident has occurred in Frontier Town...
+     *      It has been overrun by orcs.
+     *
+     *      The booty that the orcs took from the town is now
+     *      in the possession of the orcs that did this and
+     *      have long since fled the level.
+     * --------------------------------------------------------
+     */
+
+    gang = rndorcname(gang_name);
+    /* create the stuff that the gang took */
+    cnt = rnd(4);
+    for (i = 0; i < cnt; ++i)
+        migr_booty_item(rn2(4) ? TALLOW_CANDLE : WAX_CANDLE, gang);
+    cnt = rnd(3);
+    for (i = 0; i < cnt; ++i)
+        migr_booty_item(SKELETON_KEY, gang);
+    otyp = rn2((GAUNTLETS_OF_DEXTERITY - LEATHER_GLOVES) + 1) + LEATHER_GLOVES;
+    migr_booty_item(otyp, gang);
+    cnt = rnd(10);
+    for (i = 0; i < cnt; ++i) {
+        /* Food items - but no lembas! (or some other weird things) */
+        otyp = rn2((TIN - TRIPE_RATION) + 1) + TRIPE_RATION;
+        if (otyp != LEMBAS_WAFER && otyp != GLOB_OF_GRAY_OOZE
+            && otyp != GLOB_OF_BROWN_PUDDING && otyp != GLOB_OF_GREEN_SLIME
+            && otyp != GLOB_OF_BLACK_PUDDING && otyp != MEAT_STICK
+            && otyp != MEATBALL && otyp != MEAT_STICK && otyp != MEAT_RING
+            && otyp != HUGE_CHUNK_OF_MEAT && otyp != CORPSE)
+            migr_booty_item(otyp, gang);
+    }
+    migr_booty_item(rn2(2) ? LONG_SWORD : SILVER_SABER, gang);
+    /* create the leader of the orc gang */
+    mtmp = makemon(&mons[PM_ORC_CAPTAIN], 0, 0, MM_NONAME);
+    if (mtmp) {
+        mtmp = christen_monst(mtmp, upstart(gang));
+        mtmp->mpeaceful = 0;
+        shiny_orc_stuff(mtmp);
+        migrate_orc(mtmp, ORC_LEADER);
+    }
+    /* Make most of the orcs on the level be part of the invading gang */
+    for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
+        if (DEADMONSTER(mtmp))
+            continue;
+
+        if (is_orc(mtmp->data) && !has_mname(mtmp) && rn2(10)) {
+            /*
+             * We'll consider the orc captain from the level
+             * .des file to be the captain of a rival orc horde
+             * who is there to see what has transpired, and to
+             * contemplate future action.
+             *
+             * Don't christen the orc captain as a subordinate
+             * member of the main orc horde.
+             */
+            if (mtmp->data != &mons[PM_ORC_CAPTAIN])
+                mtmp = christen_orc(mtmp, upstart(gang), "");
+        }
+    }
+    /* Lastly, ensure there's several more orcs from the gang along the way.
+     * The mechanics are such that they aren't actually identified as
+     * members of the invading gang until they get their spoils assigned
+     * to the inventory; handled during that assignment.
+     */
+    cnt = rn2(10) + 5;
+    for (i = 0; i < cnt; ++i) {
+        int mtyp;
+
+        mtyp = rn2((PM_ORC_SHAMAN - PM_ORC) + 1) + PM_ORC;
+        mtmp = makemon(&mons[mtyp], 0, 0, MM_NONAME);
+        if (mtmp) {
+            shiny_orc_stuff(mtmp);
+            migrate_orc(mtmp, 0UL);
+        }
+    }
+    ransacked = 0;
+}
+
+#undef ORC_LEADER
 
 boolean
 maze_inbounds(x, y)
@@ -763,76 +959,6 @@ int wallthick;
     }
 }
 
-char *
-cnspetoen(s, ensp)
-register const char *s;
-char *ensp;
-{
-    if(!strcmp(s, "矿坑小镇")) return "minetn";
-    if(!strcmp(s, "矿坑底层")) return "minend";
-    if(!strcmp(s, "神谕")) return "oracle";
-    if(!cnstrcmp(s, "仓库番"))
-    {
-        strcpy(ensp, "soko");
-        ensp[4] = s[strlen("仓库番")];
-        ensp[5] = '\0';
-        return ensp;
-    }
-    if(!strcmp(s, "大房间")) return "bigrm";
-    if(strstr(s, "开始"))
-    {
-        strcpy(ensp, s);
-        ensp[4]='\0';
-        strcat(ensp, "strt");
-        return ensp;
-    }
-    if(strstr(s, "中心"))
-    {
-        strcpy(ensp, s);
-        ensp[4]='\0';
-        strcat(ensp, "loca");
-        return ensp;
-    }
-    if(strstr(s, "终点"))
-    {
-        strcpy(ensp, s);
-        ensp[4]='\0';
-        strcat(ensp, "goal");
-        return ensp;
-    }
-    if(!strcmp(s, "诺克斯")) return "knox";
-    if(!strcmp(s, "美杜莎")) return "medusa";
-    if(!strcmp(s, "城堡")) return "castle";
-    if(!strcmp(s, "山谷")) return "valley";
-    if(!strcmp(s, "阿斯莫德")) return "asmodeus";
-    if(!strcmp(s, "巴力西卜")) return "baalz";
-    if(!strcmp(s, "朱比烈斯")) return "juiblex";
-    if(!strcmp(s, "奥迦斯")) return "orcus";
-    if(!strcmp(s, "塔1")) return "tower1";
-    if(!strcmp(s, "塔2")) return "tower2";
-    if(!strcmp(s, "塔3")) return "tower3";
-    if(!cnstrcmp(s, "巫师塔"))
-    {
-        strcpy(ensp, "wizard");
-        ensp[6] = s[strlen("巫师塔")];
-        ensp[7] = '\0';
-        return ensp;
-    }
-    if(!cnstrcmp(s, "伪巫师塔"))
-    {
-        strcpy(ensp, "fakewiz");
-        ensp[7] = s[strlen("伪巫师塔")];
-        ensp[8] = '\0';
-        return ensp;
-    }
-    if(!strcmp(s, "密室")) return "sanctum";
-    if(!strcmp(s, "土")) return "earth";
-    if(!strcmp(s, "气")) return "air";
-    if(!strcmp(s, "火")) return "fire";
-    if(!strcmp(s, "水")) return "water";
-    if(!strcmp(s, "星界")) return "astral";
-    return strcpy(ensp, s);
-}
 
 void
 makemaz(s)
@@ -840,15 +966,14 @@ const char *s;
 {
     int x, y;
     char protofile[20];
-    char ensp[20];
     s_level *sp = Is_special(&u.uz);
     coord mm;
 
     if (*s) {
         if (sp && sp->rndlevs)
-            Sprintf(protofile, "%s-%d", cnspetoen(s, ensp), rnd((int) sp->rndlevs));
+            Sprintf(protofile, "%s-%d", s, rnd((int) sp->rndlevs));
         else
-            Strcpy(protofile, cnspetoen(s, ensp));
+            Strcpy(protofile, s);
     } else if (*(dungeons[u.uz.dnum].proto)) {
         if (dunlevs_in_dungeon(&u.uz) > 1) {
             if (sp && sp->rndlevs)
@@ -890,6 +1015,7 @@ const char *s;
     }
 
     if (*protofile) {
+        check_ransacked(protofile);
         Strcat(protofile, LEV_EXT);
         if (load_special(protofile)) {
             /* some levels can end up with monsters
@@ -1246,7 +1372,7 @@ fumaroles()
         }
     }
     if (snd && !Deaf)
-        Norep("你听见%s长嘶声!", loud ? "响亮的" : "");
+        Norep("You hear a %swhoosh!", loud ? "loud " : "");
 }
 
 /*
@@ -1441,7 +1567,7 @@ water_friction()
         eff = TRUE;
     }
     if (eff)
-        pline("水的湍流影响了你的行动.");
+        pline("Water turbulence affects your movements.");
 }
 
 void
@@ -1518,19 +1644,19 @@ xchar x, y;
         ltyp = db_under_typ(lev->drawbridgemask);
 
     if (ltyp == LAVAPOOL)
-        return hliquid("熔岩");
+        return hliquid("lava");
     else if (ltyp == ICE)
-        return "冰";
+        return "ice";
     else if (ltyp == POOL)
-        return "一池水";
+        return "pool of water";
     else if (ltyp == WATER || Is_waterlevel(&u.uz))
         ; /* fall through to default return value */
     else if (Is_juiblex_level(&u.uz))
-        return "沼泽";
+        return "swamp";
     else if (ltyp == MOAT && !Is_medusa_level(&u.uz))
-        return "护城河";
+        return "moat";
 
-    return hliquid("水");
+    return hliquid("water");
 }
 
 STATIC_OVL void
@@ -1755,6 +1881,7 @@ boolean ini;
 
             case CONS_MON: {
                 struct monst *mon = (struct monst *) cons->list;
+
                 (void) mnearto(mon, cons->x, cons->y, TRUE);
                 break;
             }

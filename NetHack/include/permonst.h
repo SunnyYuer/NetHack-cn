@@ -1,4 +1,4 @@
-/* NetHack 3.6	permonst.h	$NHDT-Date: 1432512778 2015/05/25 00:12:58 $  $NHDT-Branch: master $:$NHDT-Revision: 1.9 $ */
+/* NetHack 3.6	permonst.h	$NHDT-Date: 1539804913 2018/10/17 19:35:13 $  $NHDT-Branch: keni-makedefsm $:$NHDT-Revision: 1.12 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Kenneth Lorber, Kensington, Maryland, 2015. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -40,8 +40,7 @@ struct attack {
 #include "monflag.h"
 
 struct permonst {
-    const char *ename;          /* english full name */
-    const char *mname;          /* chinese full name */
+    const char *mname;          /* full name */
     char mlet;                  /* symbol */
     schar mlevel,               /* base monster level */
         mmove,                  /* move speed */
@@ -59,6 +58,7 @@ struct permonst {
     unsigned long mflags1,      /* boolean bitflags */
         mflags2;                /* more boolean bitflags */
     unsigned short mflags3;     /* yet more boolean bitflags */
+    uchar difficulty;		/* toughness (formerly from  makedefs -m) */
 #ifdef TEXTCOLOR
     uchar mcolor; /* color to use */
 #endif

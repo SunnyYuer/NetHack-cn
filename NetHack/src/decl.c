@@ -1,4 +1,4 @@
-/* NetHack 3.6	decl.c	$NHDT-Date: 1446975463 2015/11/08 09:37:43 $  $NHDT-Branch: master $:$NHDT-Revision: 1.62 $ */
+/* NetHack 3.6	decl.c	$NHDT-Date: 1547025164 2019/01/09 09:12:44 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.141 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Michael Allison, 2009. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -17,6 +17,7 @@ int locknum = 0; /* max num of simultaneous users */
 #ifdef DEF_PAGER
 char *catmore = 0; /* default pager */
 #endif
+char chosen_windowtype[WINTYPELEN];
 
 NEARDATA int bases[MAXOCLASSES] = DUMMY;
 
@@ -57,6 +58,7 @@ NEARDATA char pl_fruit[PL_FSIZ] = DUMMY;
 NEARDATA struct fruit *ffruit = (struct fruit *) 0;
 
 NEARDATA char tune[6] = DUMMY;
+NEARDATA boolean ransacked = 0;
 
 const char *occtxt = DUMMY;
 const char quitchars[] = " \r\n\033";
@@ -118,6 +120,7 @@ NEARDATA boolean mrg_to_wielded = FALSE;
 /* weapon picked is merged with wielded one */
 
 NEARDATA boolean in_steed_dismounting = FALSE;
+NEARDATA boolean has_strong_rngseed = FALSE;
 
 NEARDATA coord bhitpos = DUMMY;
 NEARDATA coord doors[DOORMAX] = { DUMMY };
@@ -196,10 +199,10 @@ NEARDATA struct obj *migrating_objs = (struct obj *) 0;
 NEARDATA struct obj *billobjs = (struct obj *) 0;
 
 /* used to zero all elements of a struct obj and a struct monst */
-NEARDATA struct obj zeroobj = DUMMY;
-NEARDATA struct monst zeromonst = DUMMY;
+NEARDATA const struct obj zeroobj = DUMMY;
+NEARDATA const struct monst zeromonst = DUMMY;
 /* used to zero out union any; initializer deliberately omitted */
-NEARDATA anything zeroany;
+NEARDATA const anything zeroany;
 
 /* originally from dog.c */
 NEARDATA char dogname[PL_PSIZ] = DUMMY;
@@ -212,52 +215,54 @@ NEARDATA struct monst *mydogs = (struct monst *) 0;
 NEARDATA struct monst *migrating_mons = (struct monst *) 0;
 
 NEARDATA struct mvitals mvitals[NUMMONS];
+NEARDATA long domove_attempting = 0L;
+NEARDATA long domove_succeeded = 0L;
 
 NEARDATA struct c_color_names c_color_names = {
-    "黑色",  "琥珀色", "金色", "淡蓝色", "红色",   "绿色",
-    "银色", "蓝色",  "紫色", "白色",      "橙色"
+    "black",  "amber", "golden", "light blue", "red",   "green",
+    "silver", "blue",  "purple", "white",      "orange"
 };
 
 struct menucoloring *menu_colorings = NULL;
 
 const char *c_obj_colors[] = {
-    "黑色的",          /* CLR_BLACK */
-    "红色的",            /* CLR_RED */
-    "绿色的",          /* CLR_GREEN */
-    "褐色的",          /* CLR_BROWN */
-    "蓝色的",           /* CLR_BLUE */
-    "洋红色",        /* CLR_MAGENTA */
-    "蓝绿色",           /* CLR_CYAN */
-    "灰色的",           /* CLR_GRAY */
-    "透明的",    /* no_color */
-    "橙色的",         /* CLR_ORANGE */
-    "亮绿色",   /* CLR_BRIGHT_GREEN */
-    "黄色的",         /* CLR_YELLOW */
-    "亮蓝色",    /* CLR_BRIGHT_BLUE */
-    "亮洋红色", /* CLR_BRIGHT_MAGENTA */
-    "亮蓝绿色",    /* CLR_BRIGHT_CYAN */
-    "白色的",          /* CLR_WHITE */
+    "black",          /* CLR_BLACK */
+    "red",            /* CLR_RED */
+    "green",          /* CLR_GREEN */
+    "brown",          /* CLR_BROWN */
+    "blue",           /* CLR_BLUE */
+    "magenta",        /* CLR_MAGENTA */
+    "cyan",           /* CLR_CYAN */
+    "gray",           /* CLR_GRAY */
+    "transparent",    /* no_color */
+    "orange",         /* CLR_ORANGE */
+    "bright green",   /* CLR_BRIGHT_GREEN */
+    "yellow",         /* CLR_YELLOW */
+    "bright blue",    /* CLR_BRIGHT_BLUE */
+    "bright magenta", /* CLR_BRIGHT_MAGENTA */
+    "bright cyan",    /* CLR_BRIGHT_CYAN */
+    "white",          /* CLR_WHITE */
 };
 
-struct c_common_strings c_common_strings = { "无事发生.",
-                                             "试得足够多了!",
-                                             "%s那个是件傻傻的事.",
-                                             "颤抖了片刻.",
-                                             "什么东西",
-                                             "什么东西",
-                                             "你可以移动了.",
-                                             "不用了.",
-                                             "视野迅速清晰了.",
-                                             { "", "你的" } };
+struct c_common_strings c_common_strings = { "Nothing happens.",
+                                             "That's enough tries!",
+                                             "That is a silly thing to %s.",
+                                             "shudder for a moment.",
+                                             "something",
+                                             "Something",
+                                             "You can move again.",
+                                             "Never mind.",
+                                             "vision quickly clears.",
+                                             { "the", "your" } };
 
 /* NOTE: the order of these words exactly corresponds to the
    order of oc_material values #define'd in objclass.h. */
-const char *materialnm[] = { "神秘的", "透明的",  "蜡制的",        "有机的",
-                             "肉",      "纸",   "布",      "皮革",
-                             "木",     "骨",    "龙皮", "铁",
-                             "金属",      "铜",  "银",     "金",
-                             "白金",   "秘银", "塑料",    "玻璃",
-                             "宝石",   "石" };
+const char *materialnm[] = { "mysterious", "liquid",  "wax",        "organic",
+                             "flesh",      "paper",   "cloth",      "leather",
+                             "wooden",     "bone",    "dragonhide", "iron",
+                             "metal",      "copper",  "silver",     "gold",
+                             "platinum",   "mithril", "plastic",    "glass",
+                             "gemstone",   "stone" };
 
 /* Vision */
 NEARDATA boolean vision_full_recalc = 0;
@@ -275,7 +280,7 @@ char *fqn_prefix[PREFIX_COUNT] = { (char *) 0, (char *) 0, (char *) 0,
                                    (char *) 0, (char *) 0, (char *) 0,
                                    (char *) 0, (char *) 0, (char *) 0,
                                    (char *) 0 };
-
+                                   
 #ifdef PREFIXES_IN_USE
 char *fqn_prefix_names[PREFIX_COUNT] = {
     "hackdir",  "leveldir", "savedir",    "bonesdir",  "datadir",

@@ -1,4 +1,4 @@
-/* NetHack 3.6	potion.c	$NHDT-Date: 1520797133 2018/03/11 19:38:53 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.144 $ */
+/* NetHack 3.6	potion.c	$NHDT-Date: 1549074254 2019/02/02 02:24:14 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.160 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2013. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -69,7 +69,7 @@ boolean talk;
 
     if (!xtime && old) {
         if (talk)
-            You_feel("现在不那么%s.", Hallucination ? "幻觉的" : "混乱的");
+            You_feel("less %s now.", Hallucination ? "trippy" : "confused");
     }
     if ((xtime && !old) || (!xtime && old))
         context.botl = TRUE;
@@ -89,15 +89,15 @@ boolean talk;
 
     if (!xtime && old) {
         if (talk)
-            You_feel("现在%s.",
-                     Hallucination ? "不那么摇晃了" : "有些稳定了");
+            You_feel("%s now.",
+                     Hallucination ? "less wobbly" : "a bit steadier");
     }
     if (xtime && !old) {
         if (talk) {
             if (u.usteed)
-                You("在在坐骑上摇晃.");
+                You("wobble in the saddle.");
             else
-                You("%s...", stagger(youmonst.data, "摇摇晃晃"));
+                You("%s...", stagger(youmonst.data, "stagger"));
         }
     }
     if ((!xtime && old) || (xtime && !old))
@@ -106,6 +106,9 @@ boolean talk;
     set_itimeout(&HStun, xtime);
 }
 
+/* Sick is overloaded with both fatal illness and food poisoning (via
+   u.usick_type bit mask), but delayed killer can only support one or
+   the other at a time.  They should become separate intrinsics.... */
 void
 make_sick(xtime, cause, talk, type)
 long xtime;
@@ -113,9 +116,10 @@ const char *cause; /* sickness cause */
 boolean talk;
 int type;
 {
+    struct kinfo *kptr;
     long old = Sick;
 
-#if 0
+#if 0   /* tell player even if hero is unconscious */
     if (Unaware)
         talk = FALSE;
 #endif
@@ -124,11 +128,11 @@ int type;
             return;
         if (!old) {
             /* newly sick */
-            You_feel("致命的生病.");
+            You_feel("deathly sick.");
         } else {
             /* already sick */
             if (talk)
-                You_feel("%s糟了.", xtime <= Sick / 2L ? "非常" : "更加");
+                You_feel("%s worse.", xtime <= Sick / 2L ? "much" : "even");
         }
         set_itimeout(&Sick, xtime);
         u.usick_type |= type;
@@ -138,21 +142,30 @@ int type;
         u.usick_type &= ~type;
         if (u.usick_type) { /* only partly cured */
             if (talk)
-                You_feel("稍微好些了.");
+                You_feel("somewhat better.");
             set_itimeout(&Sick, Sick * 2); /* approximation */
         } else {
             if (talk)
-                You_feel("痊愈了.  轻松多了!");
+                You_feel("cured.  What a relief!");
             Sick = 0L; /* set_itimeout(&Sick, 0L) */
         }
         context.botl = TRUE;
     }
 
+    kptr = find_delayed_killer(SICK);
     if (Sick) {
         exercise(A_CON, FALSE);
-        delayed_killer(SICK, KILLED_BY_AN, cause);
+        /* setting delayed_killer used to be unconditional, but that's
+           not right when make_sick(0) is called to cure food poisoning
+           if hero was also fatally ill; this is only approximate */
+        if (xtime || !old || !kptr) {
+            int kpfx = ((cause && !strcmp(cause, "#wizintrinsic"))
+                        ? KILLED_BY : KILLED_BY_AN);
+
+            delayed_killer(SICK, kpfx, cause);
+        }
     } else
-        dealloc_killer(find_delayed_killer(SICK));
+        dealloc_killer(kptr);
 }
 
 void
@@ -162,7 +175,7 @@ const char *msg;
 {
     long old = Slimed;
 
-#if 0
+#if 0   /* tell player even if hero is unconscious */
     if (Unaware)
         msg = 0;
 #endif
@@ -170,7 +183,7 @@ const char *msg;
     if ((xtime != 0L) ^ (old != 0L)) {
         context.botl = TRUE;
         if (msg)
-            pline1(msg);
+            pline("%s", msg);
     }
     if (!Slimed)
         dealloc_killer(find_delayed_killer(SLIMED));
@@ -186,7 +199,7 @@ const char *killername;
 {
     long old = Stoned;
 
-#if 0
+#if 0   /* tell player even if hero is unconscious */
     if (Unaware)
         msg = 0;
 #endif
@@ -194,7 +207,7 @@ const char *killername;
     if ((xtime != 0L) ^ (old != 0L)) {
         context.botl = TRUE;
         if (msg)
-            pline1(msg);
+            pline("%s", msg);
     }
     if (!Stoned)
         dealloc_killer(find_delayed_killer(STONED));
@@ -216,11 +229,11 @@ boolean talk;
     context.botl = TRUE;
     if (!xtime && old)
         if (talk)
-            You_feel("现在完全不那么恶心了.");
+            You_feel("much less nauseated now.");
 }
 
-static const char vismsg[] = "视野似乎%s了片刻, 但现在是%s.";
-static const char eyemsg[] = "%s暂时的%s.";
+static const char vismsg[] = "vision seems to %s for a moment but is %s now.";
+static const char eyemsg[] = "%s momentarily %s.";
 
 void
 make_blinded(xtime, talk)
@@ -244,9 +257,9 @@ boolean talk;
     if (can_see_now && !u_could_see) { /* regaining sight */
         if (talk) {
             if (Hallucination)
-                pline("非常奇怪!  一切都再次无边的变化!");
+                pline("Far out!  Everything is all cosmic again!");
             else
-                You("又能看见了.");
+                You("can see again.");
         }
     } else if (old && !xtime) {
         /* clearing temporary blindness without toggling blindness */
@@ -257,9 +270,9 @@ boolean talk;
                 eyes = body_part(EYE);
                 if (eyecount(youmonst.data) != 1)
                     eyes = makeplural(eyes);
-                Your(eyemsg, eyes, vtense(eyes, "发痒"));
+                Your(eyemsg, eyes, vtense(eyes, "itch"));
             } else { /* Eyes of the Overworld */
-                Your(vismsg, "明亮", Hallucination ? "更伤心的" : "正常的");
+                Your(vismsg, "brighten", Hallucination ? "sadder" : "normal");
             }
         }
     }
@@ -267,9 +280,9 @@ boolean talk;
     if (u_could_see && !can_see_now) { /* losing sight */
         if (talk) {
             if (Hallucination)
-                pline("啊, 迷幻!  一切都是黑的!  救命!");
+                pline("Oh, bummer!  Everything is dark!  Help!");
             else
-                pline("一片黑暗的乌云落在你身上.");
+                pline("A cloud of darkness falls upon you.");
         }
         /* Before the hero goes blind, set the ball&chain variables. */
         if (Punished)
@@ -283,9 +296,9 @@ boolean talk;
                 eyes = body_part(EYE);
                 if (eyecount(youmonst.data) != 1)
                     eyes = makeplural(eyes);
-                Your(eyemsg, eyes, vtense(eyes, "抽动"));
+                Your(eyemsg, eyes, vtense(eyes, "twitch"));
             } else { /* Eyes of the Overworld */
-                Your(vismsg, "昏暗", Hallucination ? "更高兴的" : "正常的");
+                Your(vismsg, "dim", Hallucination ? "happier" : "normal");
             }
         }
     }
@@ -293,30 +306,41 @@ boolean talk;
     set_itimeout(&Blinded, xtime);
 
     if (u_could_see ^ can_see_now) { /* one or the other but not both */
-        context.botl = TRUE;
-        vision_full_recalc = 1; /* blindness just got toggled */
-        /* this vision recalculation used to be deferred until
-           moveloop(), but that made it possible for vision
-           irregularities to occur (cited case was force bolt
-           hitting adjacent potion of blindness and then a
-           secret door; hero was blinded by vapors but then
-           got the message "a door appears in the wall") */
-        vision_recalc(0);
-        if (Blind_telepat || Infravision)
-            see_monsters();
-
-        /* avoid either of the sequences
-           "Sting starts glowing", [become blind], "Sting stops quivering" or
-           "Sting starts quivering", [regain sight], "Sting stops glowing"
-           by giving "Sting is quivering" when becoming blind or
-           "Sting is glowing" when regaining sight so that the eventual
-           "stops" message matches */
-        if (warn_obj_cnt && uwep && (EWarn_of_mon & W_WEP) != 0L)
-            Sting_effects(-1);
-        /* update dknown flag for inventory picked up while blind */
-        if (can_see_now)
-            learn_unseen_invent();
+        toggle_blindness();
     }
+}
+
+/* blindness has just started or just ended--caller enforces that;
+   called by Blindf_on(), Blindf_off(), and make_blinded() */
+void
+toggle_blindness()
+{
+    boolean Stinging = (uwep && (EWarn_of_mon & W_WEP) != 0L);
+
+    /* blindness has just been toggled */
+    context.botl = TRUE; /* status conditions need update */
+    vision_full_recalc = 1; /* vision has changed */
+    /* this vision recalculation used to be deferred until moveloop(),
+       but that made it possible for vision irregularities to occur
+       (cited case was force bolt hitting an adjacent potion of blindness
+       and then a secret door; hero was blinded by vapors but then got the
+       message "a door appears in the wall" because wall spot was IN_SIGHT) */
+    vision_recalc(0);
+    if (Blind_telepat || Infravision || Stinging)
+        see_monsters(); /* also counts EWarn_of_mon monsters */
+    /*
+     * Avoid either of the sequences
+     * "Sting starts glowing", [become blind], "Sting stops quivering" or
+     * "Sting starts quivering", [regain sight], "Sting stops glowing"
+     * by giving "Sting is quivering" when becoming blind or
+     * "Sting is glowing" when regaining sight so that the eventual
+     * "stops" message matches the most recent "Sting is ..." one.
+     */
+    if (Stinging)
+        Sting_effects(-1);
+    /* update dknown flag for inventory picked up while blind */
+    if (!Blind)
+        learn_unseen_invent();
 }
 
 boolean
@@ -332,9 +356,9 @@ long mask; /* nonzero if resistance status should change by mask */
     if (Unaware)
         talk = FALSE;
 
-    message = (!xtime) ? "现在一切%s都如此的无聊."
-                       : "哦哇!  一切%s都是如此无边的变化!";
-    verb = (!Blind) ? "看起来" : "感觉";
+    message = (!xtime) ? "Everything %s SO boring now."
+                       : "Oh wow!  Everything %s so cosmic!";
+    verb = (!Blind) ? "looks" : "feels";
 
     if (mask) {
         if (HHallucination)
@@ -358,9 +382,9 @@ long mask; /* nonzero if resistance status should change by mask */
 
                 if (eyecount(youmonst.data) != 1)
                     eyes = makeplural(eyes);
-                Your(eyemsg, eyes, vtense(eyes, "发痒"));
+                Your(eyemsg, eyes, vtense(eyes, "itch"));
             } else { /* Grayswandir */
-                Your(vismsg, "失去光泽", "正常的");
+                Your(vismsg, "flatten", "normal");
             }
         }
     }
@@ -405,7 +429,7 @@ boolean talk;
     if ((xtime != 0L) ^ (old != 0L)) {
         context.botl = TRUE;
         if (talk)
-            You(old ? "又能听见了." : "不能听见任何声音.");
+            You(old ? "can hear again." : "are unable to hear anything.");
     }
 }
 
@@ -413,10 +437,10 @@ void
 self_invis_message()
 {
     pline("%s %s.",
-          Hallucination ? "真荒诞!  你"
-                        : "哇!  突然地, 你",
-          See_invisible ? "能看见透明的自己"
-                        : "看不见自己了");
+          Hallucination ? "Far out, man!  You"
+                        : "Gee!  All of a sudden, you",
+          See_invisible ? "can see right through yourself"
+                        : "can't see yourself");
 }
 
 STATIC_OVL void
@@ -425,20 +449,20 @@ ghost_from_bottle()
     struct monst *mtmp = makemon(&mons[PM_GHOST], u.ux, u.uy, NO_MM_FLAGS);
 
     if (!mtmp) {
-        pline("这个瓶子原来是空的.");
+        pline("This bottle turns out to be empty.");
         return;
     }
     if (Blind) {
-        pline("当你打开了瓶子, %s浮现出来.", something);
+        pline("As you open the bottle, %s emerges.", something);
         return;
     }
-    pline("当你打开了瓶子, 一个巨大的%s 浮现出来!",
-          Hallucination ? rndmonnam(NULL) : (const char *) "鬼魂");
+    pline("As you open the bottle, an enormous %s emerges!",
+          Hallucination ? rndmonnam(NULL) : (const char *) "ghost");
     if (flags.verbose)
-        You("害怕得要死, 无法移动了.");
+        You("are frightened to death, and unable to move.");
     nomul(-3);
-    multi_reason = "害怕得要死";
-    nomovemsg = "你重获了你的镇静.";
+    multi_reason = "being frightened to death";
+    nomovemsg = "You regain your composure.";
 }
 
 /* "Quaffing is like drinking, except you spill more." - Terry Pratchett */
@@ -449,14 +473,14 @@ dodrink()
     const char *potion_descr;
 
     if (Strangled) {
-        pline("如果你不能呼吸空气, 你如何喝液体?");
+        pline("If you can't breathe air, how can you drink liquid?");
         return 0;
     }
     /* Is there a fountain to drink from here? */
     if (IS_FOUNTAIN(levl[u.ux][u.uy].typ)
         /* not as low as floor level but similar restrictions apply */
         && can_reach_floor(FALSE)) {
-        if (yn("饮用泉水?") == 'y') {
+        if (yn("Drink from the fountain?") == 'y') {
             drinkfountain();
             return 1;
         }
@@ -465,20 +489,20 @@ dodrink()
     if (IS_SINK(levl[u.ux][u.uy].typ)
         /* not as low as floor level but similar restrictions apply */
         && can_reach_floor(FALSE)) {
-        if (yn("饮用水槽的水?") == 'y') {
+        if (yn("Drink from the sink?") == 'y') {
             drinksink();
             return 1;
         }
     }
     /* Or are you surrounded by water? */
     if (Underwater && !u.uswallow) {
-        if (yn("喝你周围的水?") == 'y') {
-            pline("你知道什么生存在这水里吗?");
+        if (yn("Drink the water around you?") == 'y') {
+            pline("Do you know what lives in this water?");
             return 1;
         }
     }
 
-    otmp = getobj(beverages, "喝");  //drink
+    otmp = getobj(beverages, "drink");
     if (!otmp)
         return 0;
 
@@ -500,13 +524,13 @@ dodrink()
 
     potion_descr = OBJ_DESCR(objects[otmp->otyp]);
     if (potion_descr) {
-        if (!strcmp(potion_descr, "乳白色")
+        if (!strcmp(potion_descr, "milky")
             && !(mvitals[PM_GHOST].mvflags & G_GONE)
             && !rn2(POTION_OCCUPANT_CHANCE(mvitals[PM_GHOST].born))) {
             ghost_from_bottle();
             useup(otmp);
             return 1;
-        } else if (!strcmp(potion_descr, "冒烟的")
+        } else if (!strcmp(potion_descr, "smoky")
                    && !(mvitals[PM_DJINNI].mvflags & G_GONE)
                    && !rn2(POTION_OCCUPANT_CHANCE(mvitals[PM_DJINNI].born))) {
             djinni_from_bottle(otmp);
@@ -530,8 +554,8 @@ register struct obj *otmp;
 
     if (nothing) {
         unkn++;
-        You("片刻有一种%s感觉, 然后消退了.",
-            Hallucination ? "正常的" : "奇特的");
+        You("have a %s feeling for a moment, then it passes.",
+            Hallucination ? "normal" : "peculiar");
     }
     if (otmp->dknown && !objects[otmp->otyp].oc_name_known) {
         if (!unkn) {
@@ -555,14 +579,14 @@ register struct obj *otmp;
     case SPE_RESTORE_ABILITY:
         unkn++;
         if (otmp->cursed) {
-            pline("额!  这让你感觉平庸!");
+            pline("Ulch!  This makes you feel mediocre!");
             break;
         } else {
             /* unlike unicorn horn, overrides Fixed_abil */
-            pline("哇!  这让你感觉%s!",
+            pline("Wow!  This makes you feel %s!",
                   (otmp->blessed)
-                      ? (unfixable_trouble_count(FALSE) ? "好些" : "极好")
-                      : "很好");
+                      ? (unfixable_trouble_count(FALSE) ? "better" : "great")
+                      : "good");
             i = rn2(A_MAX); /* start at a random point */
             for (ii = 0; ii < A_MAX; ii++) {
                 lim = AMAX(i);
@@ -584,8 +608,7 @@ register struct obj *otmp;
                the spell or with a unihorn; this is better than full healing
                in that it can restore all of them, not just half, and a
                blessed potion restores them all at once */
-            if (otmp->otyp == POT_RESTORE_ABILITY &&
-                u.ulevel < u.ulevelmax) {
+            if (otmp->otyp == POT_RESTORE_ABILITY && u.ulevel < u.ulevelmax) {
                 do {
                     pluslvl(FALSE);
                 } while (u.ulevel < u.ulevelmax && otmp->blessed);
@@ -595,13 +618,13 @@ register struct obj *otmp;
     case POT_HALLUCINATION:
         if (Hallucination || Halluc_resistance)
             nothing++;
-        (void) make_hallucinated(
-            itimeout_incr(HHallucination, rn1(200, 600 - 300 * bcsign(otmp))),
-            TRUE, 0L);
+        (void) make_hallucinated(itimeout_incr(HHallucination,
+                                          rn1(200, 600 - 300 * bcsign(otmp))),
+                                 TRUE, 0L);
         break;
     case POT_WATER:
         if (!otmp->blessed && !otmp->cursed) {
-            pline("这尝起来像%s.", hliquid("水"));
+            pline("This tastes like %s.", hliquid("water"));
             u.uhunger += rnd(10);
             newuhs(FALSE);
             break;
@@ -610,19 +633,19 @@ register struct obj *otmp;
         if (is_undead(youmonst.data) || is_demon(youmonst.data)
             || u.ualign.type == A_CHAOTIC) {
             if (otmp->blessed) {
-                pline("这烧得像%s!", hliquid("酸"));
+                pline("This burns like %s!", hliquid("acid"));
                 exercise(A_CON, FALSE);
                 if (u.ulycn >= LOW_PM) {
-                    Your("对%s 的倾向消失了!",
+                    Your("affinity to %s disappears!",
                          makeplural(mons[u.ulycn].mname));
                     if (youmonst.data == &mons[u.ulycn])
                         you_unwere(FALSE);
                     set_ulycn(NON_PM); /* cure lycanthropy */
                 }
-                losehp(Maybe_Half_Phys(d(2, 6)), "圣水",
+                losehp(Maybe_Half_Phys(d(2, 6)), "potion of holy water",
                        KILLED_BY_AN);
             } else if (otmp->cursed) {
-                You_feel("对你自己非常骄傲.");
+                You_feel("quite proud of yourself.");
                 healup(d(2, 6), 0, 0, 0);
                 if (u.ulycn >= LOW_PM && !Upolyd)
                     you_were();
@@ -630,7 +653,7 @@ register struct obj *otmp;
             }
         } else {
             if (otmp->blessed) {
-                You_feel("充满敬畏.");
+                You_feel("full of awe.");
                 make_sick(0L, (char *) 0, TRUE, SICK_ALL);
                 exercise(A_WIS, TRUE);
                 exercise(A_CON, TRUE);
@@ -639,11 +662,11 @@ register struct obj *otmp;
                 /* make_confused(0L, TRUE); */
             } else {
                 if (u.ualign.type == A_LAWFUL) {
-                    pline("这烧得像%s!", hliquid("酸"));
-                    losehp(Maybe_Half_Phys(d(2, 6)), "邪水",
+                    pline("This burns like %s!", hliquid("acid"));
+                    losehp(Maybe_Half_Phys(d(2, 6)), "potion of unholy water",
                            KILLED_BY_AN);
                 } else
-                    You_feel("充满恐惧.");
+                    You_feel("full of dread.");
                 if (u.ulycn >= LOW_PM && !Upolyd)
                     you_were();
                 exercise(A_CON, FALSE);
@@ -652,9 +675,9 @@ register struct obj *otmp;
         break;
     case POT_BOOZE:
         unkn++;
-        pline("啊!  这尝起来像%s%s!",
-              otmp->odiluted ? "掺水的 " : "",
-              Hallucination ? "蒲公英酒" : "液态火");
+        pline("Ooph!  This tastes like %s%s!",
+              otmp->odiluted ? "watered down " : "",
+              Hallucination ? "dandelion wine" : "liquid fire");
         if (!otmp->blessed)
             make_confused(itimeout_incr(HConfusion, d(3, 8)), FALSE);
         /* the whiskey makes us feel better */
@@ -664,32 +687,32 @@ register struct obj *otmp;
         newuhs(FALSE);
         exercise(A_WIS, FALSE);
         if (otmp->cursed) {
-            You("失去知觉.");
+            You("pass out.");
             multi = -rnd(15);
-            nomovemsg = "你醒来时头痛.";
+            nomovemsg = "You awake with a headache.";
         }
         break;
     case POT_ENLIGHTENMENT:
         if (otmp->cursed) {
             unkn++;
-            You("有一种不安的感觉...");
+            You("have an uneasy feeling...");
             exercise(A_WIS, FALSE);
         } else {
             if (otmp->blessed) {
                 (void) adjattrib(A_INT, 1, FALSE);
                 (void) adjattrib(A_WIS, 1, FALSE);
             }
-            You_feel("自知的...");
+            You_feel("self-knowledgeable...");
             display_nhwindow(WIN_MESSAGE, FALSE);
             enlightenment(MAGICENLIGHTENMENT, ENL_GAMEINPROGRESS);
-            pline_The("感觉减弱了.");
+            pline_The("feeling subsides.");
             exercise(A_WIS, TRUE);
         }
         break;
     case SPE_INVISIBILITY:
         /* spell cannot penetrate mummy wrapping */
         if (BInvis && uarmc->otyp == MUMMY_WRAPPING) {
-            You_feel("在%s 之下相当痒.", yname(uarmc));
+            You_feel("rather itchy under %s.", yname(uarmc));
             break;
         }
         /* FALLTHRU */
@@ -705,7 +728,7 @@ register struct obj *otmp;
             incr_itimeout(&HInvis, rn1(15, 31));
         newsym(u.ux, u.uy); /* update position */
         if (otmp->cursed) {
-            pline("由于某种原因, 你感觉你的存在为人所知了.");
+            pline("For some reason, you feel your presence is known.");
             aggravate();
         }
         break;
@@ -715,14 +738,14 @@ register struct obj *otmp;
 
         unkn++;
         if (otmp->cursed)
-            pline("哟!  这尝起来%s.",
-                  Hallucination ? "过熟的" : "恶臭的");
+            pline("Yecch!  This tastes %s.",
+                  Hallucination ? "overripe" : "rotten");
         else
             pline(
                 Hallucination
-                    ? "这尝起来像%s10%% %s 含量的纯天然饮料."
-                    : "这尝起来像%s%s.",
-                otmp->odiluted ? "再造的 " : "", fruitname(TRUE));
+                    ? "This tastes like 10%% real %s%s all-natural beverage."
+                    : "This tastes like %s%s.",
+                otmp->odiluted ? "reconstituted " : "", fruitname(TRUE));
         if (otmp->otyp == POT_FRUIT_JUICE) {
             u.uhunger += (otmp->odiluted ? 5 : 10) * (2 + bcsign(otmp));
             newuhs(FALSE);
@@ -742,33 +765,33 @@ register struct obj *otmp;
         see_monsters();       /* see invisible monsters */
         newsym(u.ux, u.uy);   /* see yourself! */
         if (msg && !Blind) {  /* Blind possible if polymorphed */
-            You("你能看见透明的自己, 但你是可见的!");
+            You("can see through yourself, but you are visible!");
             unkn--;
         }
         break;
     }
     case POT_PARALYSIS:
         if (Free_action) {
-            You("瞬间僵硬了下.");
+            You("stiffen momentarily.");
         } else {
             if (Levitation || Is_airlevel(&u.uz) || Is_waterlevel(&u.uz))
-                You("不能动地飘浮着.");
+                You("are motionlessly suspended.");
             else if (u.usteed)
-                You("就地被冰冻了!");
+                You("are frozen in place!");
             else
-                Your("%s 被冻结到%s!", makeplural(body_part(FOOT)),
+                Your("%s are frozen to the %s!", makeplural(body_part(FOOT)),
                      surface(u.ux, u.uy));
             nomul(-(rn1(10, 25 - 12 * bcsign(otmp))));
-            multi_reason = "被一瓶药水冰冻";
+            multi_reason = "frozen by a potion";
             nomovemsg = You_can_move_again;
             exercise(A_DEX, FALSE);
         }
         break;
     case POT_SLEEPING:
         if (Sleep_resistance || Free_action) {
-            You("打呵欠.");
+            You("yawn.");
         } else {
-            You("突然睡着了!");
+            You("suddenly fall asleep!");
             fall_asleep(-rn1(10, 25 - 12 * bcsign(otmp)), TRUE);
         }
         break;
@@ -798,7 +821,7 @@ register struct obj *otmp;
             }
             see_monsters();
             if (unkn)
-                You_feel("孤单的.");
+                You_feel("lonely.");
             break;
         }
         if (monster_detect(otmp, 0))
@@ -812,27 +835,27 @@ register struct obj *otmp;
         exercise(A_WIS, TRUE);
         break;
     case POT_SICKNESS:
-        pline("啊!  这个东西尝起来像毒药.");
+        pline("Yecch!  This stuff tastes like poison.");
         if (otmp->blessed) {
-            pline("( 但实际上它是有点不新鲜的%s.)", fruitname(TRUE));
+            pline("(But in fact it was mildly stale %s.)", fruitname(TRUE));
             if (!Role_if(PM_HEALER)) {
                 /* NB: blessed otmp->fromsink is not possible */
-                losehp(1, "轻微污染的药水", KILLED_BY_AN);
+                losehp(1, "mildly contaminated potion", KILLED_BY_AN);
             }
         } else {
             if (Poison_resistance)
-                pline("( 但实际上它是被生物污染的%s.)",
+                pline("(But in fact it was biologically contaminated %s.)",
                       fruitname(TRUE));
             if (Role_if(PM_HEALER)) {
-                pline("幸运的是, 你有免疫.");
+                pline("Fortunately, you have been immunized.");
             } else {
                 char contaminant[BUFSZ];
                 int typ = rn2(A_MAX);
 
                 Sprintf(contaminant, "%s%s",
-                        (Poison_resistance) ? "稍微" : "",
-                        (otmp->fromsink) ? "污染的自来水"
-                                         : "污染的药水");
+                        (Poison_resistance) ? "mildly " : "",
+                        (otmp->fromsink) ? "contaminated tap water"
+                                         : "contaminated potion");
                 if (!Fixed_abil) {
                     poisontell(typ, FALSE);
                     (void) adjattrib(typ, Poison_resistance ? -1 : -rn1(4, 3),
@@ -854,17 +877,17 @@ register struct obj *otmp;
             }
         }
         if (Hallucination) {
-            You("被电回你的感官!");
+            You("are shocked back to your senses!");
             (void) make_hallucinated(0L, FALSE, 0L);
         }
         break;
     case POT_CONFUSION:
         if (!Confusion) {
             if (Hallucination) {
-                pline("好一个古怪的幻觉!");
+                pline("What a trippy feeling!");
                 unkn++;
             } else
-                pline("哈, 什么?  我在哪儿?");
+                pline("Huh, What?  Where am I?");
         } else
             nothing++;
         make_confused(itimeout_incr(HConfusion,
@@ -873,7 +896,7 @@ register struct obj *otmp;
         break;
     case POT_GAIN_ABILITY:
         if (otmp->cursed) {
-            pline("啊!  那个药水尝起来令人作呕!");
+            pline("Ulch!  That potion tasted foul!");
             unkn++;
         } else if (Fixed_abil) {
             nothing++;
@@ -892,18 +915,18 @@ register struct obj *otmp;
         }
         break;
     case POT_SPEED:
+        /* skip when mounted; heal_legs() would heal steed's legs */
         if (Wounded_legs && !otmp->cursed && !u.usteed) {
-            /* heal_legs() would heal steeds legs */
-            heal_legs();
+            heal_legs(0);
             unkn++;
             break;
         }
         /* FALLTHRU */
     case SPE_HASTE_SELF:
         if (!Very_fast) { /* wwf@doe.carleton.ca */
-            You("突然移动得%s快些了.", Fast ? "" : "非常 ");
+            You("are suddenly moving %sfaster.", Fast ? "" : "much ");
         } else {
-            Your("%s 获得了新活力.", makeplural(body_part(LEG)));
+            Your("%s get new energy.", makeplural(body_part(LEG)));
             unkn++;
         }
         exercise(A_DEX, TRUE);
@@ -922,7 +945,7 @@ register struct obj *otmp;
             /* they went up a level */
             if ((ledger_no(&u.uz) == 1 && u.uhave.amulet)
                 || Can_rise_up(u.ux, u.uy, &u.uz)) {
-                const char *riseup = "升了起来, 穿过了%s!";
+                const char *riseup = "rise up, through the %s!";
 
                 if (ledger_no(&u.uz) == 1) {
                     You(riseup, ceiling(u.ux, u.uy));
@@ -933,14 +956,14 @@ register struct obj *otmp;
 
                     get_level(&newlevel, newlev);
                     if (on_level(&newlevel, &u.uz)) {
-                        pline("它尝起来很糟糕.");
+                        pline("It tasted bad.");
                         break;
                     } else
                         You(riseup, ceiling(u.ux, u.uy));
                     goto_level(&newlevel, FALSE, FALSE, FALSE);
                 }
             } else
-                You("有一种不安的感觉.");
+                You("have an uneasy feeling.");
             break;
         }
         pluslvl(FALSE);
@@ -950,13 +973,13 @@ register struct obj *otmp;
             u.uexp = rndexp(TRUE);
         break;
     case POT_HEALING:
-        You_feel("好些了.");
+        You_feel("better.");
         healup(d(6 + 2 * bcsign(otmp), 4), !otmp->cursed ? 1 : 0,
                !!otmp->blessed, !otmp->cursed);
         exercise(A_CON, TRUE);
         break;
     case POT_EXTRA_HEALING:
-        You_feel("好多了.");
+        You_feel("much better.");
         healup(d(6 + 2 * bcsign(otmp), 8),
                otmp->blessed ? 5 : !otmp->cursed ? 2 : 0, !otmp->cursed,
                TRUE);
@@ -965,7 +988,7 @@ register struct obj *otmp;
         exercise(A_STR, TRUE);
         break;
     case POT_FULL_HEALING:
-        You_feel("完全愈合了.");
+        You_feel("completely healed.");
         healup(400, 4 + 4 * bcsign(otmp), !otmp->cursed, TRUE);
         /* Restore one lost level if blessed */
         if (otmp->blessed && u.ulevel < u.ulevelmax) {
@@ -1015,9 +1038,9 @@ register struct obj *otmp;
             } else if (has_ceiling(&u.uz)) {
                 int dmg = rnd(!uarmh ? 10 : !is_metallic(uarmh) ? 6 : 3);
 
-                You("的%s撞到了%s.", body_part(HEAD),
+                You("hit your %s on the %s.", body_part(HEAD),
                     ceiling(u.ux, u.uy));
-                losehp(Maybe_Half_Phys(dmg), "撞到天花板",
+                losehp(Maybe_Half_Phys(dmg), "colliding with the ceiling",
                        KILLED_BY);
                 nothing = 0; /* not nothing after all */
             }
@@ -1039,9 +1062,9 @@ register struct obj *otmp;
         int num;
 
         if (otmp->cursed)
-            You_feel("无生气.");
+            You_feel("lackluster.");
         else
-            pline("魔法能量流过你的身体.");
+            pline("Magical energies course through your body.");
 
         /* old: num = rnd(5) + 5 * otmp->blessed + 1;
          *      blessed:  +7..11 max & current (+9 avg)
@@ -1072,33 +1095,33 @@ register struct obj *otmp;
 
         if (otmp->lamplit) {
             if (likes_fire(youmonst.data)) {
-                pline("啊, 提神的饮料.");
+                pline("Ahh, a refreshing drink.");
                 good_for_you = TRUE;
             } else {
-                You("的%s 被烧伤.", body_part(FACE));
+                You("burn your %s.", body_part(FACE));
                 /* fire damage */
-                losehp(d(Fire_resistance ? 1 : 3, 4), "燃烧的油药水",
+                losehp(d(Fire_resistance ? 1 : 3, 4), "burning potion of oil",
                        KILLED_BY_AN);
             }
         } else if (otmp->cursed)
-            pline("这尝起来像蓖麻油.");
+            pline("This tastes like castor oil.");
         else
-            pline("那是光滑的!");
+            pline("That was smooth!");
         exercise(A_WIS, good_for_you);
         break;
     }
     case POT_ACID:
         if (Acid_resistance) {
             /* Not necessarily a creature who _likes_ acid */
-            pline("这尝起来是%s.", Hallucination ? "刺鼻的" : "酸的");
+            pline("This tastes %s.", Hallucination ? "tangy" : "sour");
         } else {
             int dmg;
 
-            pline("这烧得%s!",
-                  otmp->blessed ? " 有一点" : otmp->cursed ? " 许多"
-                                                             : " 像酸");
+            pline("This burns%s!",
+                  otmp->blessed ? " a little" : otmp->cursed ? " a lot"
+                                                             : " like acid");
             dmg = d(otmp->cursed ? 2 : 1, otmp->blessed ? 4 : 8);
-            losehp(Maybe_Half_Phys(dmg), "酸药水", KILLED_BY_AN);
+            losehp(Maybe_Half_Phys(dmg), "potion of acid", KILLED_BY_AN);
             exercise(A_CON, FALSE);
         }
         if (Stoned)
@@ -1106,7 +1129,7 @@ register struct obj *otmp;
         unkn++; /* holy/unholy water can burn like acid too */
         break;
     case POT_POLYMORPH:
-        You_feel("有些%s.", Hallucination ? "正常" : "奇怪");
+        You_feel("a little %s.", Hallucination ? "normal" : "strange");
         if (!Unchanging)
             polyself(0);
         break;
@@ -1138,6 +1161,8 @@ register boolean curesick, cureblind;
            mundane 'dirt', but if it doesn't, blindness isn't cured */
         u.ucreamed = 0;
         make_blinded(0L, TRUE);
+        /* heal deafness too */
+        make_deaf(0L, TRUE);
     }
     if (curesick) {
         make_vomiting(0L, TRUE);
@@ -1153,8 +1178,8 @@ struct obj *obj;
 const char *txt;
 {
     if (flags.beginner || !txt)
-        You("片刻有一种%s感觉, 然后它消失了.",
-            Hallucination ? "正常的" : "奇怪的");
+        You("have a %s feeling for a moment, then it passes.",
+            Hallucination ? "normal" : "strange");
     else
         pline1(txt);
 
@@ -1168,8 +1193,8 @@ const char *txt;
     useup(obj);
 }
 
-const char *bottlenames[] = { "瓶子", "小药瓶", "酒壶", "玻璃水瓶",
-                              "细颈瓶",  "广口瓶",   "小瓶" };
+const char *bottlenames[] = { "bottle", "phial", "flagon", "carafe",
+                              "flask",  "jar",   "vial" };
 
 const char *
 bottlename()
@@ -1208,7 +1233,7 @@ const char *objphrase; /* "Your widget glows" or "Steed's saddle glows" */
     } else if (potion->cursed) {
         if (targobj->blessed) {
             func = unbless;
-            glowcolor = "棕色的";
+            glowcolor = "brown";
             costchange = COST_UNBLSS;
         } else if (!targobj->cursed) {
             func = curse;
@@ -1231,9 +1256,9 @@ const char *objphrase; /* "Your widget glows" or "Steed's saddle glows" */
         if (useeit) {
             glowcolor = hcolor(glowcolor);
             if (altfmt)
-                pline("%s的光芒带有一个%s光环.", objphrase, glowcolor);
+                pline("%s with %s aura.", objphrase, an(glowcolor));
             else
-                pline("%s %s光芒.", objphrase, glowcolor);
+                pline("%s %s.", objphrase, glowcolor);
             iflags.last_msg = PLNMSG_OBJ_GLOWS;
             targobj->bknown = !Hallucination;
         }
@@ -1272,11 +1297,11 @@ int how;
     if (isyou) {
         tx = u.ux, ty = u.uy;
         distance = 0;
-        pline_The("%s砸在你的%s上然后破碎了.", botlnam,
+        pline_The("%s crashes on your %s and breaks into shards.", botlnam,
                   body_part(HEAD));
         losehp(Maybe_Half_Phys(rnd(2)),
-               (how == POTHIT_OTHER_THROW) ? "推进的药水" /* scatter */
-                                           : "投掷的药水",
+               (how == POTHIT_OTHER_THROW) ? "propelled potion" /* scatter */
+                                           : "thrown potion",
                KILLED_BY_AN);
     } else {
         tx = mon->mx, ty = mon->my;
@@ -1290,23 +1315,23 @@ int how;
             hit_saddle = TRUE;
         distance = distu(tx, ty);
         if (!cansee(tx, ty)) {
-            pline("破碎声!");
+            pline("Crash!");
         } else {
             char *mnam = mon_nam(mon);
             char buf[BUFSZ];
 
             if (hit_saddle && saddle) {
-                Sprintf(buf, "%s 鞍",
+                Sprintf(buf, "%s saddle",
                         s_suffix(x_monnam(mon, ARTICLE_THE, (char *) 0,
                                           (SUPPRESS_IT | SUPPRESS_SADDLE),
                                           FALSE)));
             } else if (has_head(mon->data)) {
                 Sprintf(buf, "%s %s", s_suffix(mnam),
-                        (notonhead ? "身体" : "头"));
+                        (notonhead ? "body" : "head"));
             } else {
                 Strcpy(buf, mnam);
             }
-            pline_The("%s砸在%s上然后破碎了.", botlnam,
+            pline_The("%s crashes on %s and breaks into shards.", botlnam,
                       buf);
         }
         if (rn2(5) && mon->mhp > 1 && !hit_saddle)
@@ -1315,7 +1340,7 @@ int how;
 
     /* oil doesn't instantly evaporate; Neither does a saddle hit */
     if (obj->otyp != POT_OIL && !hit_saddle && cansee(tx, ty))
-        pline("%s了.", Tobjnam(obj, "蒸发"));
+        pline("%s.", Tobjnam(obj, "evaporate"));
 
     if (isyou) {
         switch (obj->otyp) {
@@ -1324,7 +1349,7 @@ int how;
                 explode_oil(obj, u.ux, u.uy);
             break;
         case POT_POLYMORPH:
-            You_feel("有点%s.", Hallucination ? "正常" : "奇怪");
+            You_feel("a little %s.", Hallucination ? "normal" : "strange");
             if (!Unchanging && !Antimagic)
                 polyself(0);
             break;
@@ -1332,11 +1357,11 @@ int how;
             if (!Acid_resistance) {
                 int dmg;
 
-                pline("这烧伤了%s!",
-                      obj->blessed ? "一点"
-                                   : obj->cursed ? "许多" : "");
+                pline("This burns%s!",
+                      obj->blessed ? " a little"
+                                   : obj->cursed ? " a lot" : "");
                 dmg = d(obj->cursed ? 2 : 1, obj->blessed ? 4 : 8);
-                losehp(Maybe_Half_Phys(dmg), "酸药水", KILLED_BY_AN);
+                losehp(Maybe_Half_Phys(dmg), "potion of acid", KILLED_BY_AN);
             }
             break;
         }
@@ -1351,7 +1376,7 @@ int how;
 
         switch (obj->otyp) {
         case POT_WATER:
-            Sprintf(saddle_glows, "%s %s", buf, aobjnam(saddle, "发出"));
+            Sprintf(saddle_glows, "%s %s", buf, aobjnam(saddle, "glow"));
             affected = H2Opotion_dip(obj, saddle, useeit, saddle_glows);
             break;
         case POT_POLYMORPH:
@@ -1359,7 +1384,7 @@ int how;
             break;
         }
         if (useeit && !affected)
-            pline("%s %s湿了.", buf, aobjnam(saddle, "变"));
+            pline("%s %s wet.", buf, aobjnam(saddle, "get"));
     } else {
         boolean angermon = your_fault, cureblind = FALSE;
 
@@ -1379,12 +1404,12 @@ int how;
             /*FALLTHRU*/
         case POT_RESTORE_ABILITY:
         case POT_GAIN_ABILITY:
-        do_healing:
+ do_healing:
             angermon = FALSE;
             if (mon->mhp < mon->mhpmax) {
                 mon->mhp = mon->mhpmax;
                 if (canseemon(mon))
-                    pline("%s 再次看起来健康和强壮的.", Monnam(mon));
+                    pline("%s looks sound and hale again.", Monnam(mon));
             }
             if (cureblind)
                 mcureblindness(mon, canseemon(mon));
@@ -1398,10 +1423,10 @@ int how;
                 /* most common case */
                 || resists_poison(mon)) {
                 if (canseemon(mon))
-                    pline("%s 看起来没有受伤.", Monnam(mon));
+                    pline("%s looks unharmed.", Monnam(mon));
                 break;
             }
-        do_illness:
+ do_illness:
             if ((mon->mhpmax > 3) && !resist(mon, POTION_CLASS, 0, NOTELL))
                 mon->mhpmax /= 2;
             if ((mon->mhp > 2) && !resist(mon, POTION_CLASS, 0, NOTELL))
@@ -1409,7 +1434,7 @@ int how;
             if (mon->mhp > mon->mhpmax)
                 mon->mhp = mon->mhpmax;
             if (canseemon(mon))
-                pline("%s 看起来相当生病的.", Monnam(mon));
+                pline("%s looks rather ill.", Monnam(mon));
             break;
         case POT_CONFUSION:
         case POT_BOOZE:
@@ -1428,7 +1453,7 @@ int how;
         case POT_SLEEPING:
             /* wakeup() doesn't rouse victims of temporary sleep */
             if (sleep_monst(mon, rnd(12), POTION_CLASS)) {
-                pline("%s 陷入了沉睡.", Monnam(mon));
+                pline("%s falls asleep.", Monnam(mon));
                 slept_monst(mon);
             }
             break;
@@ -1458,20 +1483,20 @@ int how;
             if (is_undead(mon->data) || is_demon(mon->data)
                 || is_were(mon->data) || is_vampshifter(mon)) {
                 if (obj->blessed) {
-                    pline("%s 在痛苦中%s!", Monnam(mon),
-                          is_silent(mon->data) ? "翻滚" : "尖叫");
+                    pline("%s %s in pain!", Monnam(mon),
+                          is_silent(mon->data) ? "writhes" : "shrieks");
                     if (!is_silent(mon->data))
                         wake_nearto(tx, ty, mon->data->mlevel * 10);
                     mon->mhp -= d(2, 6);
                     /* should only be by you */
-                    if (mon->mhp < 1)
+                    if (DEADMONSTER(mon))
                         killed(mon);
                     else if (is_were(mon->data) && !is_human(mon->data))
                         new_were(mon); /* revert to human */
                 } else if (obj->cursed) {
                     angermon = FALSE;
                     if (canseemon(mon))
-                        pline("%s 看起来更健康了.", Monnam(mon));
+                        pline("%s looks healthier.", Monnam(mon));
                     mon->mhp += d(2, 6);
                     if (mon->mhp > mon->mhpmax)
                         mon->mhp = mon->mhpmax;
@@ -1484,10 +1509,10 @@ int how;
                 (void) split_mon(mon, (struct monst *) 0);
             } else if (mon->data == &mons[PM_IRON_GOLEM]) {
                 if (canseemon(mon))
-                    pline("%s 生锈了.", Monnam(mon));
+                    pline("%s rusts.", Monnam(mon));
                 mon->mhp -= d(1, 6);
                 /* should only be by you */
-                if (mon->mhp < 1)
+                if (DEADMONSTER(mon))
                     killed(mon);
             }
             break;
@@ -1497,12 +1522,12 @@ int how;
             break;
         case POT_ACID:
             if (!resists_acid(mon) && !resist(mon, POTION_CLASS, 0, NOTELL)) {
-                pline("%s 在痛苦中%s!", Monnam(mon),
-                      is_silent(mon->data) ? "翻滚" : "尖叫");
+                pline("%s %s in pain!", Monnam(mon),
+                      is_silent(mon->data) ? "writhes" : "shrieks");
                 if (!is_silent(mon->data))
                     wake_nearto(tx, ty, mon->data->mlevel * 10);
                 mon->mhp -= d(obj->cursed ? 2 : 1, obj->blessed ? 4 : 8);
-                if (mon->mhp < 1) {
+                if (DEADMONSTER(mon)) {
                     if (your_fault)
                         killed(mon);
                     else
@@ -1523,7 +1548,7 @@ int how;
         */
         }
         /* target might have been killed */
-        if (mon->mhp > 0) {
+        if (!DEADMONSTER(mon)) {
             if (angermon)
                 wakeup(mon, TRUE);
             else
@@ -1574,13 +1599,13 @@ register struct obj *obj;
     case POT_GAIN_ABILITY:
         if (obj->cursed) {
             if (!breathless(youmonst.data))
-                pline("额!  那个药水闻起来很糟!");
+                pline("Ulch!  That potion smells terrible!");
             else if (haseyes(youmonst.data)) {
                 const char *eyes = body_part(EYE);
 
                 if (eyecount(youmonst.data) != 1)
                     eyes = makeplural(eyes);
-                Your("%s %s!", eyes, vtense(eyes, "刺痛"));
+                Your("%s %s!", eyes, vtense(eyes, "sting"));
             }
             break;
         } else {
@@ -1619,8 +1644,10 @@ register struct obj *obj;
             u.uhp++, context.botl = 1;
         if (obj->blessed)
             cureblind = TRUE;
-        if (cureblind)
+        if (cureblind) {
             make_blinded(0L, !u.ucreamed);
+            make_deaf(0L, TRUE);
+        }
         exercise(A_CON, TRUE);
         break;
     case POT_SICKNESS:
@@ -1641,54 +1668,54 @@ register struct obj *obj;
         }
         break;
     case POT_HALLUCINATION:
-        You("有一种瞬间的幻视.");
+        You("have a momentary vision.");
         break;
     case POT_CONFUSION:
     case POT_BOOZE:
         if (!Confusion)
-            You_feel("稍微晕眩的.");
+            You_feel("somewhat dizzy.");
         make_confused(itimeout_incr(HConfusion, rnd(5)), FALSE);
         break;
     case POT_INVISIBILITY:
         if (!Blind && !Invis) {
             kn++;
-            pline("有一瞬间你%s!",
-                  See_invisible ? "能看见透明的自己"
-                                : "看不到你自己");
+            pline("For an instant you %s!",
+                  See_invisible ? "could see right through yourself"
+                                : "couldn't see yourself");
         }
         break;
     case POT_PARALYSIS:
         kn++;
         if (!Free_action) {
-            pline("%s 似乎在牵制着你.", Something);
+            pline("%s seems to be holding you.", Something);
             nomul(-rnd(5));
-            multi_reason = "被一瓶药水冰冻";
+            multi_reason = "frozen by a potion";
             nomovemsg = You_can_move_again;
             exercise(A_DEX, FALSE);
         } else
-            You("有一瞬间僵硬了.");
+            You("stiffen momentarily.");
         break;
     case POT_SLEEPING:
         kn++;
         if (!Free_action && !Sleep_resistance) {
-            You_feel("相当的累.");
+            You_feel("rather tired.");
             nomul(-rnd(5));
-            multi_reason = "因魔力的药水睡过头";
+            multi_reason = "sleeping off a magical draught";
             nomovemsg = You_can_move_again;
             exercise(A_DEX, FALSE);
         } else
-            You("打哈欠.");
+            You("yawn.");
         break;
     case POT_SPEED:
         if (!Fast)
-            Your("膝盖现在似乎更加灵活了.");
+            Your("knees seem more flexible now.");
         incr_itimeout(&HFast, rnd(5));
         exercise(A_DEX, TRUE);
         break;
     case POT_BLINDNESS:
         if (!Blind && !Unaware) {
             kn++;
-            pline("突然变黑了.");
+            pline("It suddenly gets dark.");
         }
         make_blinded(itimeout_incr(Blinded, rnd(5)), FALSE);
         if (!Blind && !Unaware)
@@ -1832,7 +1859,7 @@ register struct obj *o1, *o2;
 int
 dodip()
 {
-    static const char Dip_[] = "浸";
+    static const char Dip_[] = "Dip ";
     register struct obj *potion, *obj;
     struct obj *singlepotion;
     uchar here;
@@ -1843,12 +1870,12 @@ dodip()
 
     allowall[0] = ALL_CLASSES;
     allowall[1] = '\0';
-    if (!(obj = getobj(allowall, "浸")))  //dip
+    if (!(obj = getobj(allowall, "dip")))
         return 0;
-    if (inaccessible_equipment(obj, "浸", FALSE))
+    if (inaccessible_equipment(obj, "dip", FALSE))
         return 0;
 
-    shortestname = (is_plural(obj) || pair_of(obj)) ? "它们" : "它";
+    shortestname = (is_plural(obj) || pair_of(obj)) ? "them" : "it";
     /*
      * Bypass safe_qbuf() since it doesn't handle varying suffix without
      * an awful lot of support work.  Format the object once, even though
@@ -1866,7 +1893,7 @@ dodip()
     here = levl[u.ux][u.uy].typ;
     /* Is there a fountain to dip into here? */
     if (IS_FOUNTAIN(here)) {
-        Sprintf(qbuf, "%s%s 到喷泉里?", Dip_,
+        Sprintf(qbuf, "%s%s into the fountain?", Dip_,
                 flags.verbose ? obuf : shortestname);
         /* "Dip <the object> into the fountain?" */
         if (yn(qbuf) == 'y') {
@@ -1876,7 +1903,7 @@ dodip()
     } else if (is_pool(u.ux, u.uy)) {
         const char *pooltype = waterbody_name(u.ux, u.uy);
 
-        Sprintf(qbuf, "%s%s 到%s里?", Dip_,
+        Sprintf(qbuf, "%s%s into the %s?", Dip_,
                 flags.verbose ? obuf : shortestname, pooltype);
         /* "Dip <the object> into the {pool, moat, &c}?" */
         if (yn(qbuf) == 'y') {
@@ -1896,18 +1923,18 @@ dodip()
     }
 
     /* "What do you want to dip <the object> into? [xyz or ?*] " */
-    Sprintf(qbuf, "把%s浸到", flags.verbose ? obuf : shortestname);
+    Sprintf(qbuf, "dip %s into", flags.verbose ? obuf : shortestname);
     potion = getobj(beverages, qbuf);
     if (!potion)
         return 0;
     if (potion == obj && potion->quan == 1L) {
-        pline("那是一个药水瓶, 不是克莱因瓶!");
+        pline("That is a potion bottle, not a Klein bottle!");
         return 0;
     }
     potion->in_use = TRUE; /* assume it will be used up */
     if (potion->otyp == POT_WATER) {
         boolean useeit = !Blind || (obj == ublindf && Blindfolded_only);
-        const char *obj_glows = Yobjnam2(obj, "发出");
+        const char *obj_glows = Yobjnam2(obj, "glow");
 
         if (H2Opotion_dip(potion, obj, useeit, obj_glows))
             goto poof;
@@ -1920,32 +1947,28 @@ dodip()
                            5, 95)) {
             pline1(nothing_happens);
         } else {
-            boolean was_wep, was_swapwep, was_quiver;
             short save_otyp = obj->otyp;
 
             /* KMH, conduct */
             u.uconduct.polypiles++;
 
-            was_wep = (obj == uwep);
-            was_swapwep = (obj == uswapwep);
-            was_quiver = (obj == uquiver);
-
             obj = poly_obj(obj, STRANGE_OBJECT);
 
-            if (was_wep)
-                setuwep(obj);
-            else if (was_swapwep)
-                setuswapwep(obj);
-            else if (was_quiver)
-                setuqwep(obj);
-
-            if (obj->otyp != save_otyp) {
+            /*
+             * obj might be gone:
+             *  poly_obj() -> set_wear() -> Amulet_on() -> useup()
+             * if obj->otyp is worn amulet and becomes AMULET_OF_CHANGE.
+             */
+            if (!obj) {
+                makeknown(POT_POLYMORPH);
+                return 1;
+            } else if (obj->otyp != save_otyp) {
                 makeknown(POT_POLYMORPH);
                 useup(potion);
                 prinv((char *) 0, obj, 0L);
                 return 1;
             } else {
-                pline("似乎没有什么要发生.");
+                pline("Nothing seems to happen.");
                 goto poof;
             }
         }
@@ -1959,7 +1982,7 @@ dodip()
 
         magic = (mixture != STRANGE_OBJECT) ? objects[mixture].oc_magic
             : (objects[obj->otyp].oc_magic || objects[potion->otyp].oc_magic);
-        Strcpy(qbuf, ""); /* assume full stack */
+        Strcpy(qbuf, "The"); /* assume full stack */
         if (amt > (magic ? 3 : 7)) {
             /* trying to dip multiple potions will usually affect only a
                subset; pick an amount between 3 and 8, inclusive, for magic
@@ -1971,13 +1994,15 @@ dodip()
 
             if ((long) amt < obj->quan) {
                 obj = splitobj(obj, (long) amt);
-                Sprintf(qbuf, "%ld 个", obj->quan);
+                Sprintf(qbuf, "%ld of the", obj->quan);
             }
         }
         /* [N of] the {obj(s)} mix(es) with [one of] {the potion}... */
-        pline("%s %s 和%s%s%s...", qbuf, simpleonames(obj),
-              (potion->quan > 1L) ? "一个" : "",
-              thesimpleoname(potion), otense(obj, "混合"));
+        pline("%s %s %s with %s%s...", qbuf, simpleonames(obj),
+              otense(obj, "mix"), (potion->quan > 1L) ? "one of " : "",
+              thesimpleoname(potion));
+        /* get rid of 'dippee' before potential perm_invent updates */
+        useup(potion); /* now gone */
         /* Mixing potions is dangerous...
            KMH, balance patch -- acid is particularly unstable */
         if (obj->cursed || obj->otyp == POT_ACID || !rn2(10)) {
@@ -1986,15 +2011,14 @@ dodip()
                around for potionbreathe() [and we can't set obj->in_use
                to 'amt' because that's not implemented] */
             obj->in_use = 1;
-            pline("嘣!  它们爆炸了!");
+            pline("BOOM!  They explode!");
             wake_nearto(u.ux, u.uy, (BOLT_LIM + 1) * (BOLT_LIM + 1));
             exercise(A_STR, FALSE);
             if (!breathless(youmonst.data) || haseyes(youmonst.data))
                 potionbreathe(obj);
             useupall(obj);
-            useup(potion);
             losehp(amt + rnd(9), /* not physical damage */
-                   "炼金术爆炸", KILLED_BY_AN);
+                   "alchemic blast", KILLED_BY_AN);
             return 1;
         }
 
@@ -2022,22 +2046,20 @@ dodip()
             }
             default:
                 useupall(obj);
-                useup(potion);
                 if (!Blind)
-                    pline_The("混合物明亮地发光然后蒸发了.");
+                    pline_The("mixture glows brightly and evaporates.");
                 return 1;
             }
         }
         obj->odiluted = (obj->otyp != POT_WATER);
 
         if (obj->otyp == POT_WATER && !Hallucination) {
-            pline_The("混合物冒泡%s.", Blind ? "" : ", 然后清澈了");
+            pline_The("mixture bubbles%s.", Blind ? "" : ", then clears");
         } else if (!Blind) {
-            pline_The("混合物看起来是%s.",
+            pline_The("mixture looks %s.",
                       hcolor(OBJ_DESCR(objects[obj->otyp])));
         }
 
-        useup(potion);
         /* this is required when 'obj' was split off from a bigger stack,
            so that 'obj' will now be assigned its own inventory slot;
            it has a side-effect of merging 'obj' into another compatible
@@ -2045,22 +2067,22 @@ dodip()
            been made in order to get the merge result for both cases;
            as a consequence, mixing while Fumbling drops the mixture */
         freeinv(obj);
-        (void) hold_another_object(obj, "你掉落了 %s!", doname(obj),
+        (void) hold_another_object(obj, "You drop %s!", doname(obj),
                                    (const char *) 0);
         return 1;
     }
 
     if (potion->otyp == POT_ACID && obj->otyp == CORPSE
         && obj->corpsenm == PM_LICHEN && !Blind) {
-        pline("%s边缘的周围%s了%s.", The(cxname(obj)),
-              otense(obj, "变为"),
+        pline("%s %s %s around the edges.", The(cxname(obj)),
+              otense(obj, "turn"),
               potion->odiluted ? hcolor(NH_ORANGE) : hcolor(NH_RED));
         potion->in_use = FALSE; /* didn't go poof */
         return 1;
     }
 
     if (potion->otyp == POT_WATER && obj->otyp == TOWEL) {
-        pline_The("毛巾把它吸收了!");
+        pline_The("towel soaks it up!");
         /* wetting towel already done via water_damage() in H2Opotion_dip */
         goto poof;
     }
@@ -2070,16 +2092,16 @@ dodip()
             char buf[BUFSZ];
 
             if (potion->quan > 1L)
-                Sprintf(buf, "一个%s", the(xname(potion)));
+                Sprintf(buf, "One of %s", the(xname(potion)));
             else
                 Strcpy(buf, The(xname(potion)));
-            pline("%s 在%s上形成了涂层.", buf, the(xname(obj)));
+            pline("%s forms a coating on %s.", buf, the(xname(obj)));
             obj->opoisoned = TRUE;
             goto poof;
         } else if (obj->opoisoned && (potion->otyp == POT_HEALING
                                       || potion->otyp == POT_EXTRA_HEALING
                                       || potion->otyp == POT_FULL_HEALING)) {
-            pline("涂层磨损了%s.", the(xname(obj)));
+            pline("A coating wears off %s.", the(xname(obj)));
             obj->opoisoned = 0;
             goto poof;
         }
@@ -2096,7 +2118,7 @@ dodip()
         if (potion->lamplit) { /* burning */
             fire_damage(obj, TRUE, u.ux, u.uy);
         } else if (potion->cursed) {
-            pline_The("药水溅出来, 你的%s被覆盖上了油.",
+            pline_The("potion spills and covers your %s with oil.",
                       makeplural(body_part(FINGER)));
             incr_itimeout(&Glib, d(2, 10));
         } else if (obj->oclass != WEAPON_CLASS && !is_weptool(obj)) {
@@ -2109,13 +2131,13 @@ dodip()
         } else if ((!is_rustprone(obj) && !is_corrodeable(obj))
                    || is_ammo(obj) || (!obj->oeroded && !obj->oeroded2)) {
             /* uses up potion, doesn't set obj->greased */
-            pline("%s %s着油性光泽.", Yname2(obj),
-                  otense(obj, "闪烁"));
+            pline("%s %s with an oily sheen.", Yname2(obj),
+                  otense(obj, "gleam"));
         } else {
-            pline("%s %s不那么%s.", Yname2(obj), otense(obj, "现在"),
+            pline("%s %s less %s.", Yname2(obj), otense(obj, "are"),
                   (obj->oeroded && obj->oeroded2)
-                      ? "腐蚀和生锈的"
-                      : obj->oeroded ? "生锈的" : "腐蚀的");
+                      ? "corroded and rusty"
+                      : obj->oeroded ? "rusty" : "corroded");
             if (obj->oeroded > 0)
                 obj->oeroded--;
             if (obj->oeroded2 > 0)
@@ -2127,7 +2149,7 @@ dodip()
         useup(potion);
         return 1;
     }
-more_dips:
+ more_dips:
 
     /* Allow filling of MAGIC_LAMPs to prevent identification by player */
     if ((obj->otyp == OIL_LAMP || obj->otyp == MAGIC_LAMP)
@@ -2145,12 +2167,15 @@ more_dips:
             obj->age = 0;
         }
         if (obj->age > 1000L) {
-            pline("%s %s满的.", Yname2(obj), otense(obj, "是"));
+            pline("%s %s full.", Yname2(obj), otense(obj, "are"));
             potion->in_use = FALSE; /* didn't go poof */
         } else {
-            You("用油装满了%s.", yname(obj));
+            You("fill %s with oil.", yname(obj));
             check_unpaid(potion);        /* Yendorian Fuel Tax */
-            obj->age += 2 * potion->age; /* burns more efficiently */
+            /* burns more efficiently in a lamp than in a bottle;
+               diluted potion provides less benefit but we don't attempt
+               to track that the lamp now also has some non-oil in it */
+            obj->age += (!potion->odiluted ? 4L : 3L) * potion->age / 2L;
             if (obj->age > 1500L)
                 obj->age = 1500L;
             useup(potion);
@@ -2195,14 +2220,12 @@ more_dips:
         } else {
             singlepotion->dknown = !Hallucination;
             if (mixture == POT_WATER && singlepotion->dknown)
-                Sprintf(newbuf, "清澈了");
+                Sprintf(newbuf, "clears");
             else
-                Sprintf(newbuf, "变为了%s",
+                Sprintf(newbuf, "turns %s",
                         hcolor(OBJ_DESCR(objects[mixture])));
-            pline_The("%s%s药水%s.",
-                      more_than_one ? "你浸入的那瓶" : "", 
-                      oldbuf,
-                      newbuf);
+            pline_The("%spotion%s %s.", oldbuf,
+                      more_than_one ? " that you dipped into" : "", newbuf);
             if (!objects[old_otyp].oc_uname
                 && !objects[old_otyp].oc_name_known && old_dknown) {
                 struct obj fakeobj;
@@ -2214,17 +2237,19 @@ more_dips:
             }
         }
         obj_extract_self(singlepotion);
-        singlepotion =
-            hold_another_object(singlepotion, "你变戏法并掉落了%s!",
-                                doname(singlepotion), (const char *) 0);
+        singlepotion = hold_another_object(singlepotion,
+                                           "You juggle and drop %s!",
+                                           doname(singlepotion),
+                                           (const char *) 0);
+        nhUse(singlepotion);
         update_inventory();
         return 1;
     }
 
-    pline("有趣...");
+    pline("Interesting...");
     return 1;
 
-poof:
+ poof:
     if (!objects[potion->otyp].oc_name_known
         && !objects[potion->otyp].oc_uname)
         docall(potion);
@@ -2261,16 +2286,16 @@ struct obj *obj;
     int chance;
 
     if (!(mtmp = makemon(&mons[PM_DJINNI], u.ux, u.uy, NO_MM_FLAGS))) {
-        pline("原来是空的.");
+        pline("It turns out to be empty.");
         return;
     }
 
     if (!Blind) {
-        pline("在一团烟雾中, %s 浮现出来!", a_monnam(mtmp));
-        pline("%s 说.", Monnam(mtmp));
+        pline("In a cloud of smoke, %s emerges!", a_monnam(mtmp));
+        pline("%s speaks.", Monnam(mtmp));
     } else {
-        You("闻到刺鼻的气味.");
-        pline("%s 说.", Something);
+        You("smell acrid fumes.");
+        pline("%s speaks.", Something);
     }
 
     chance = rn2(5);
@@ -2282,27 +2307,27 @@ struct obj *obj;
 
     switch (chance) {
     case 0:
-        verbalize("我欠你一个人情.  我满足你一个愿望!");
+        verbalize("I am in your debt.  I will grant one wish!");
         /* give a wish and discard the monster (mtmp set to null) */
         mongrantswish(&mtmp);
         break;
     case 1:
-        verbalize("谢谢你放我出来!");
+        verbalize("Thank you for freeing me!");
         (void) tamedog(mtmp, (struct obj *) 0);
         break;
     case 2:
-        verbalize("你释放了我!");
+        verbalize("You freed me!");
         mtmp->mpeaceful = TRUE;
         set_malign(mtmp);
         break;
     case 3:
-        verbalize("时间差不多了!");
+        verbalize("It is about time!");
         if (canspotmon(mtmp))
-            pline("%s 消失了.", Monnam(mtmp));
+            pline("%s vanishes.", Monnam(mtmp));
         mongone(mtmp);
         break;
     default:
-        verbalize("你打扰了我, 笨蛋!");
+        verbalize("You disturbed me, fool!");
         mtmp->mpeaceful = FALSE;
         set_malign(mtmp);
         break;
@@ -2321,7 +2346,7 @@ struct monst *mon,  /* monster being split */
 
     reason[0] = '\0';
     if (mtmp)
-        Sprintf(reason, "因%s热量",
+        Sprintf(reason, " from %s heat",
                 (mtmp == &youmonst) ? the_your[1]
                                     : (const char *) s_suffix(mon_nam(mtmp)));
 
@@ -2331,7 +2356,7 @@ struct monst *mon,  /* monster being split */
             mtmp2->mhpmax = u.mhmax / 2;
             u.mhmax -= mtmp2->mhpmax;
             context.botl = 1;
-            You("%s繁殖了!", reason);
+            You("multiply%s!", reason);
         }
     } else {
         mtmp2 = clone_mon(mon, 0, 0);
@@ -2339,7 +2364,7 @@ struct monst *mon,  /* monster being split */
             mtmp2->mhpmax = mon->mhpmax / 2;
             mon->mhpmax -= mtmp2->mhpmax;
             if (canspotmon(mon))
-                pline("%s %s繁殖了!", Monnam(mon), reason);
+                pline("%s multiplies%s!", Monnam(mon), reason);
         }
     }
     return mtmp2;

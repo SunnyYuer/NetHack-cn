@@ -1,4 +1,4 @@
-/* NetHack 3.6	pager.c	$NHDT-Date: 1523142395 2018/04/07 23:06:35 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.123 $ */
+/* NetHack 3.6	pager.c	$NHDT-Date: 1555627307 2019/04/18 22:41:47 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.151 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2018. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -16,8 +16,10 @@ STATIC_DCL void FDECL(look_at_monster, (char *, char *,
                                         struct monst *, int, int));
 STATIC_DCL struct permonst *FDECL(lookat, (int, int, char *, char *));
 STATIC_DCL void FDECL(checkfile, (char *, struct permonst *,
-                                  BOOLEAN_P, BOOLEAN_P));
+                                  BOOLEAN_P, BOOLEAN_P, char *));
 STATIC_DCL void FDECL(look_all, (BOOLEAN_P,BOOLEAN_P));
+STATIC_DCL void FDECL(do_supplemental_info, (char *, struct permonst *,
+                                             BOOLEAN_P));
 STATIC_DCL void NDECL(whatdoes_help);
 STATIC_DCL void NDECL(docontact);
 STATIC_DCL void NDECL(dispfile_help);
@@ -65,7 +67,7 @@ const char *new_str;
     space_left = BUFSZ - strlen(buf) - 1;
     if (space_left < 1)
         return 0;
-    (void) strncat(buf, "或", space_left);
+    (void) strncat(buf, " or ", space_left);
     (void) strncat(buf, new_str, space_left - 4);
     return 1;
 }
@@ -81,13 +83,13 @@ char *outbuf;
     race[0] = '\0';
     if (!Upolyd)
         Sprintf(race, "%s ", urace.adj);
-    Sprintf(outbuf, "%s%s%s 叫做 %s",
+    Sprintf(outbuf, "%s%s%s called %s",
             /* being blinded may hide invisibility from self */
-            (Invis && (senseself() || !Blind)) ? "隐形的" : "", race,
+            (Invis && (senseself() || !Blind)) ? "invisible " : "", race,
             mons[u.umonnum].mname, plname);
     if (u.usteed)
-        Sprintf(eos(outbuf), ", 骑着%s", y_monnam(u.usteed));
-    if (u.uundetected || (Upolyd && youmonst.m_ap_type))
+        Sprintf(eos(outbuf), ", mounted on %s", y_monnam(u.usteed));
+    if (u.uundetected || (Upolyd && U_AP_TYPE))
         mhidden_description(&youmonst, FALSE, eos(outbuf));
     return outbuf;
 }
@@ -107,45 +109,47 @@ char *outbuf;
                                                     : glyph_at(x, y);
 
     *outbuf = '\0';
-    if (mon->m_ap_type == M_AP_FURNITURE
-        || mon->m_ap_type == M_AP_OBJECT) {
-        Strcpy(outbuf, ", 模仿");
-        if (mon->m_ap_type == M_AP_FURNITURE) {
-            Strcat(outbuf, defsyms[mon->mappearance].explanation);
-        } else if (mon->m_ap_type == M_AP_OBJECT
+    if (M_AP_TYPE(mon) == M_AP_FURNITURE
+        || M_AP_TYPE(mon) == M_AP_OBJECT) {
+        Strcpy(outbuf, ", mimicking ");
+        if (M_AP_TYPE(mon) == M_AP_FURNITURE) {
+            Strcat(outbuf, an(defsyms[mon->mappearance].explanation));
+        } else if (M_AP_TYPE(mon) == M_AP_OBJECT
                    /* remembered glyph, not glyph_at() which is 'mon' */
                    && glyph_is_object(glyph)) {
-        objfrommap:
+ objfrommap:
             otmp = (struct obj *) 0;
             fakeobj = object_from_map(glyph, x, y, &otmp);
             Strcat(outbuf, (otmp && otmp->otyp != STRANGE_OBJECT)
                               ? ansimpleoname(otmp)
-                              : obj_descr[STRANGE_OBJECT].oc_name);
-            if (fakeobj)
+                              : an(obj_descr[STRANGE_OBJECT].oc_name));
+            if (fakeobj) {
+                otmp->where = OBJ_FREE; /* object_from_map set to OBJ_FLOOR */
                 dealloc_obj(otmp);
+            }
         } else {
             Strcat(outbuf, something);
         }
-    } else if (mon->m_ap_type == M_AP_MONSTER) {
+    } else if (M_AP_TYPE(mon) == M_AP_MONSTER) {
         if (altmon)
-            Sprintf(outbuf, ", 假装成一个%s",
-                    mons[mon->mappearance].mname);
+            Sprintf(outbuf, ", masquerading as %s",
+                    an(mons[mon->mappearance].mname));
     } else if (isyou ? u.uundetected : mon->mundetected) {
-        Strcpy(outbuf, ", 藏在");
+        Strcpy(outbuf, ", hiding");
         if (hides_under(mon->data)) {
+            Strcat(outbuf, " under ");
             /* remembered glyph, not glyph_at() which is 'mon' */
             if (glyph_is_object(glyph))
                 goto objfrommap;
             Strcat(outbuf, something);
-            Strcat(outbuf, "之下");
         } else if (is_hider(mon->data)) {
-            Sprintf(eos(outbuf), "%s上",
+            Sprintf(eos(outbuf), " on the %s",
                     (is_flyer(mon->data) || mon->data->mlet == S_PIERCER)
-                       ? "天花板"
+                       ? "ceiling"
                        : surface(x, y)); /* trapper */
         } else {
             if (mon->data->mlet == S_EEL && is_pool(x, y))
-                Strcat(outbuf, "浑水里");
+                Strcat(outbuf, " in murky water");
         }
     }
 }
@@ -156,7 +160,7 @@ object_from_map(glyph, x, y, obj_p)
 int glyph, x, y;
 struct obj **obj_p;
 {
-    boolean fakeobj = FALSE;
+    boolean fakeobj = FALSE, mimic_obj = FALSE;
     struct monst *mtmp;
     struct obj *otmp;
     int glyphotyp = glyph_to_obj(glyph);
@@ -170,9 +174,10 @@ struct obj **obj_p;
 
     /* there might be a mimic here posing as an object */
     mtmp = m_at(x, y);
-    if (mtmp && is_obj_mappear(mtmp, (unsigned) glyphotyp))
+    if (mtmp && is_obj_mappear(mtmp, (unsigned) glyphotyp)) {
         otmp = 0;
-    else
+        mimic_obj = TRUE;
+    } else
         mtmp = 0;
 
     if (!otmp || otmp->otyp != glyphotyp) {
@@ -187,6 +192,16 @@ struct obj **obj_p;
             otmp->spe = context.current_fruit; /* give it a type */
         if (mtmp && has_mcorpsenm(mtmp)) /* mimic as corpse/statue */
             otmp->corpsenm = MCORPSENM(mtmp);
+        else if (otmp->otyp == CORPSE && glyph_is_body(glyph))
+            otmp->corpsenm = glyph - GLYPH_BODY_OFF;
+        else if (otmp->otyp == STATUE && glyph_is_statue(glyph))
+            otmp->corpsenm = glyph - GLYPH_STATUE_OFF;
+        if (otmp->otyp == LEASH)
+            otmp->leashmon = 0;
+        /* extra fields needed for shop price with doname() formatting */
+        otmp->where = OBJ_FLOOR;
+        otmp->ox = x, otmp->oy = y;
+        otmp->no_charge = (otmp->otyp == STRANGE_OBJECT && costly_spot(x, y));
     }
     /* if located at adjacent spot, mark it as having been seen up close
        (corpse type will be known even if dknown is 0, so we don't need a
@@ -200,7 +215,11 @@ struct obj **obj_p;
         /* terrain mode views what's already known, doesn't learn new stuff */
         && !iflags.terrainmode) /* so don't set dknown when in terrain mode */
         otmp->dknown = 1; /* if a pile, clearly see the top item only */
-
+    if (fakeobj && mtmp && mimic_obj &&
+        (otmp->dknown || (M_AP_FLAG(mtmp) & M_AP_F_DKNOWN))) {
+            mtmp->m_ap_type |= M_AP_F_DKNOWN;
+            otmp->dknown = 1;
+    }
     *obj_p = otmp;
     return fakeobj; /* when True, caller needs to dealloc *obj_p */
 }
@@ -215,25 +234,28 @@ int x, y, glyph;
 
     if (otmp) {
         Strcpy(buf, (otmp->otyp != STRANGE_OBJECT)
-                     ? distant_name(otmp, doname_vague_quan)
+                     ? distant_name(otmp, otmp->dknown ? doname_with_price
+                                                       : doname_vague_quan)
                      : obj_descr[STRANGE_OBJECT].oc_name);
-        if (fakeobj)
+        if (fakeobj) {
+            otmp->where = OBJ_FREE; /* object_from_map set it to OBJ_FLOOR */
             dealloc_obj(otmp), otmp = 0;
+        }
     } else
         Strcpy(buf, something); /* sanity precaution */
 
     if (otmp && otmp->where == OBJ_BURIED)
-        Strcat(buf, " ( 埋葬的)");
+        Strcat(buf, " (buried)");
     else if (levl[x][y].typ == STONE || levl[x][y].typ == SCORR)
-        Strcat(buf, " 嵌在石头里");
+        Strcat(buf, " embedded in stone");
     else if (IS_WALL(levl[x][y].typ) || levl[x][y].typ == SDOOR)
-        Strcat(buf, " 嵌在墙壁里");
+        Strcat(buf, " embedded in a wall");
     else if (closed_door(x, y))
-        Strcat(buf, " 嵌在门里");
+        Strcat(buf, " embedded in a door");
     else if (is_pool(x, y))
-        Strcat(buf, " 在水里");
+        Strcat(buf, " in water");
     else if (is_lava(x, y))
-        Strcat(buf, " 在熔岩里"); /* [can this ever happen?] */
+        Strcat(buf, " in molten lava"); /* [can this ever happen?] */
     return;
 }
 
@@ -250,39 +272,39 @@ int x, y;
               ? coyotename(mtmp, monnambuf)
               : distant_monnam(mtmp, ARTICLE_NONE, monnambuf);
     Sprintf(buf, "%s%s%s",
-            (mtmp->mtame && accurate)
-                ? "驯服的"
-                : (mtmp->mpeaceful && accurate)
-                    ? "和平的"
-                    : "",
-            name,
             (mtmp->mx != x || mtmp->my != y)
-                ? ((mtmp->isshk && accurate) ? "尾巴" : "尾巴")
-                : "");
+                ? ((mtmp->isshk && accurate) ? "tail of " : "tail of a ")
+                : "",
+            (mtmp->mtame && accurate)
+                ? "tame "
+                : (mtmp->mpeaceful && accurate)
+                    ? "peaceful "
+                    : "",
+            name);
     if (u.ustuck == mtmp) {
         if (u.uswallow || iflags.save_uswallow) /* monster detection */
             Strcat(buf, is_animal(mtmp->data)
-                          ? ", 吞咽你" : ", 吞噬你");
+                          ? ", swallowing you" : ", engulfing you");
         else
             Strcat(buf, (Upolyd && sticks(youmonst.data))
-                          ? ", 受牵制" : ", 牵制着你");
+                          ? ", being held" : ", holding you");
     }
     if (mtmp->mleashed)
-        Strcat(buf, ", 被你拴着");
+        Strcat(buf, ", leashed to you");
 
     if (mtmp->mtrapped && cansee(mtmp->mx, mtmp->my)) {
         struct trap *t = t_at(mtmp->mx, mtmp->my);
         int tt = t ? t->ttyp : NO_TRAP;
 
         /* newsym lets you know of the trap, so mention it here */
-        if (tt == BEAR_TRAP || tt == PIT || tt == SPIKED_PIT || tt == WEB)
-            Sprintf(eos(buf), ", 受困于%s",
-                    defsyms[trap_to_defsym(tt)].explanation);
+        if (tt == BEAR_TRAP || is_pit(tt) || tt == WEB)
+            Sprintf(eos(buf), ", trapped in %s",
+                    an(defsyms[trap_to_defsym(tt)].explanation));
     }
 
     /* we know the hero sees a monster at this location, but if it's shown
        due to persistant monster detection he might remember something else */
-    if (mtmp->mundetected || mtmp->m_ap_type)
+    if (mtmp->mundetected || M_AP_TYPE(mtmp))
         mhidden_description(mtmp, FALSE, eos(buf));
 
     if (monbuf) {
@@ -291,57 +313,57 @@ int x, y;
         monbuf[0] = '\0';
         if (how_seen != 0 && how_seen != MONSEEN_NORMAL) {
             if (how_seen & MONSEEN_NORMAL) {
-                Strcat(monbuf, "正常视力");
+                Strcat(monbuf, "normal vision");
                 how_seen &= ~MONSEEN_NORMAL;
                 /* how_seen can't be 0 yet... */
                 if (how_seen)
                     Strcat(monbuf, ", ");
             }
             if (how_seen & MONSEEN_SEEINVIS) {
-                Strcat(monbuf, "看见隐形");
+                Strcat(monbuf, "see invisible");
                 how_seen &= ~MONSEEN_SEEINVIS;
                 if (how_seen)
                     Strcat(monbuf, ", ");
             }
             if (how_seen & MONSEEN_INFRAVIS) {
-                Strcat(monbuf, "夜视");
+                Strcat(monbuf, "infravision");
                 how_seen &= ~MONSEEN_INFRAVIS;
                 if (how_seen)
                     Strcat(monbuf, ", ");
             }
             if (how_seen & MONSEEN_TELEPAT) {
-                Strcat(monbuf, "感知");
+                Strcat(monbuf, "telepathy");
                 how_seen &= ~MONSEEN_TELEPAT;
                 if (how_seen)
                     Strcat(monbuf, ", ");
             }
             if (how_seen & MONSEEN_XRAYVIS) {
                 /* Eyes of the Overworld */
-                Strcat(monbuf, "阴阳眼");
+                Strcat(monbuf, "astral vision");
                 how_seen &= ~MONSEEN_XRAYVIS;
                 if (how_seen)
                     Strcat(monbuf, ", ");
             }
             if (how_seen & MONSEEN_DETECT) {
-                Strcat(monbuf, "怪物探测");
+                Strcat(monbuf, "monster detection");
                 how_seen &= ~MONSEEN_DETECT;
                 if (how_seen)
                     Strcat(monbuf, ", ");
             }
             if (how_seen & MONSEEN_WARNMON) {
                 if (Hallucination) {
-                    Strcat(monbuf, "偏执性妄想");
+                    Strcat(monbuf, "paranoid delusion");
                 } else {
                     unsigned long mW = (context.warntype.obj
                                         | context.warntype.polyd),
                                   m2 = mtmp->data->mflags2;
-                    const char *whom = ((mW & M2_HUMAN & m2) ? "人类"
-                                        : (mW & M2_ELF & m2) ? "精灵"
-                                          : (mW & M2_ORC & m2) ? "兽人"
-                                            : (mW & M2_DEMON & m2) ? "恶魔"
+                    const char *whom = ((mW & M2_HUMAN & m2) ? "human"
+                                        : (mW & M2_ELF & m2) ? "elf"
+                                          : (mW & M2_ORC & m2) ? "orc"
+                                            : (mW & M2_DEMON & m2) ? "demon"
                                               : mtmp->data->mname);
 
-                    Sprintf(eos(monbuf), "%s警报", makeplural(whom));
+                    Sprintf(eos(monbuf), "warned of %s", makeplural(whom));
                 }
                 how_seen &= ~MONSEEN_WARNMON;
                 if (how_seen)
@@ -372,7 +394,8 @@ char *buf, *monbuf;
     buf[0] = monbuf[0] = '\0';
     glyph = glyph_at(x, y);
     if (u.ux == x && u.uy == y && canspotself()
-        && !(iflags.save_uswallow && glyph == mon_to_glyph(u.ustuck))
+        && !(iflags.save_uswallow &&
+             glyph == mon_to_glyph(u.ustuck, rn2_on_display_rng))
         && (!iflags.terrainmode || (iflags.terrainmode & TER_MON) != 0)) {
         /* fill in buf[] */
         (void) self_lookat(buf);
@@ -399,19 +422,19 @@ char *buf, *monbuf;
                 how |= 4;
 
             if (how)
-                Sprintf(eos(buf), " [ 看见: %s%s%s%s%s]",
-                        (how & 1) ? "夜视" : "",
+                Sprintf(eos(buf), " [seen: %s%s%s%s%s]",
+                        (how & 1) ? "infravision" : "",
                         /* add comma if telep and infrav */
                         ((how & 3) > 2) ? ", " : "",
-                        (how & 2) ? "感知" : "",
+                        (how & 2) ? "telepathy" : "",
                         /* add comma if detect and (infrav or telep or both) */
                         ((how & 7) > 4) ? ", " : "",
-                        (how & 4) ? "怪物探测" : "");
+                        (how & 4) ? "monster detection" : "");
         }
     } else if (u.uswallow) {
         /* when swallowed, we're only called for spots adjacent to hero,
            and blindness doesn't prevent hero from feeling what holds him */
-        Sprintf(buf, "%s的内部", a_monnam(u.ustuck));
+        Sprintf(buf, "interior of %s", a_monnam(u.ustuck));
         pm = u.ustuck->data;
     } else if (glyph_is_monster(glyph)) {
         bhitpos.x = x;
@@ -426,7 +449,7 @@ char *buf, *monbuf;
     } else if (glyph_is_object(glyph)) {
         look_at_object(buf, x, y, glyph); /* fill in buf[] */
     } else if (glyph_is_trap(glyph)) {
-        int tnum = what_trap(glyph_to_trap(glyph));
+        int tnum = what_trap(glyph_to_trap(glyph), rn2_on_display_rng);
 
         /* Trap detection displays a bear trap at locations having
          * a trapped door or trapped container or both.
@@ -434,9 +457,9 @@ char *buf, *monbuf;
          * chests so that they can have their own glyphs and tiles.
          */
         if (trapped_chest_at(tnum, x, y))
-            Strcpy(buf, "有陷阱的箱子"); /* might actually be a large box */
+            Strcpy(buf, "trapped chest"); /* might actually be a large box */
         else if (trapped_door_at(tnum, x, y))
-            Strcpy(buf, "有陷阱的门"); /* not "trap door"... */
+            Strcpy(buf, "trapped door"); /* not "trap door"... */
         else
             Strcpy(buf, defsyms[trap_to_defsym(tnum)].explanation);
     } else if (glyph_is_warning(glyph)) {
@@ -444,45 +467,45 @@ char *buf, *monbuf;
 
         Strcpy(buf, def_warnsyms[warnindx].explanation);
     } else if (!glyph_is_cmap(glyph)) {
-        Strcpy(buf, "未探索区域");
+        Strcpy(buf, "unexplored area");
     } else
         switch (glyph_to_cmap(glyph)) {
         case S_altar:
-            Sprintf(buf, "%s %s祭坛",
+            Sprintf(buf, "%s %saltar",
                     /* like endgame high priests, endgame high altars
                        are only recognizable when immediately adjacent */
                     (Is_astralevel(&u.uz) && distu(x, y) > 2)
-                        ? "结盟的"
+                        ? "aligned"
                         : align_str(
                               Amask2align(levl[x][y].altarmask & ~AM_SHRINE)),
                     ((levl[x][y].altarmask & AM_SHRINE)
                      && (Is_astralevel(&u.uz) || Is_sanctum(&u.uz)))
-                        ? "主 "
+                        ? "high "
                         : "");
             break;
         case S_ndoor:
             if (is_drawbridge_wall(x, y) >= 0)
-                Strcpy(buf, "打开的吊桥闸门");
+                Strcpy(buf, "open drawbridge portcullis");
             else if ((levl[x][y].doormask & ~D_TRAPPED) == D_BROKEN)
-                Strcpy(buf, "坏掉的门");
+                Strcpy(buf, "broken door");
             else
-                Strcpy(buf, "门口");
+                Strcpy(buf, "doorway");
             break;
         case S_cloud:
             Strcpy(buf,
-                   Is_airlevel(&u.uz) ? "云区域" : "雾/ 蒸气 云");
+                   Is_airlevel(&u.uz) ? "cloudy area" : "fog/vapor cloud");
             break;
         case S_stone:
             if (!levl[x][y].seenv) {
-                Strcpy(buf, "未探索的");
+                Strcpy(buf, "unexplored");
                 break;
             } else if (Underwater && !Is_waterlevel(&u.uz)) {
                 /* "unknown" == previously mapped but not visible when
                    submerged; better terminology appreciated... */
-                Strcpy(buf, (distu(x, y) <= 2) ? "陆地" : "未知");
+                Strcpy(buf, (distu(x, y) <= 2) ? "land" : "unknown");
                 break;
             } else if (levl[x][y].typ == STONE || levl[x][y].typ == SCORR) {
-                Strcpy(buf, "石头");
+                Strcpy(buf, "stone");
                 break;
             }
             /*FALLTHRU*/
@@ -505,10 +528,11 @@ char *buf, *monbuf;
  *       Therefore, we create a copy of inp _just_ for data.base lookup.
  */
 STATIC_OVL void
-checkfile(inp, pm, user_typed_name, without_asking)
+checkfile(inp, pm, user_typed_name, without_asking, supplemental_name)
 char *inp;
 struct permonst *pm;
 boolean user_typed_name, without_asking;
+char *supplemental_name;
 {
     dlb *fp;
     char buf[BUFSZ], newstr[BUFSZ], givenname[BUFSZ];
@@ -518,14 +542,14 @@ boolean user_typed_name, without_asking;
 
     fp = dlb_fopen(DATAFILE, "r");
     if (!fp) {
-        pline("Cannot open data file!");
+        pline("Cannot open 'data' file!");
         return;
     }
     /* If someone passed us garbage, prevent fault. */
     if (!inp || strlen(inp) > (BUFSZ - 1)) {
         impossible("bad do_look buffer passed (%s)!",
                    !inp ? "null" : "too long");
-        return;
+        goto checkfile_done;
     }
 
     /* To prevent the need for entries in data.base like *ngel to account
@@ -550,16 +574,16 @@ boolean user_typed_name, without_asking;
      * that wishing already understands and most of this duplicates
      * stuff already done for wish handling or monster generation.
      */
-    if (!cnstrcmp(eos((char *) dbase_str) - strlen("的内部"), "的内部"))
-        dbase_str[strlen(dbase_str)-strlen("的内部")] = '\0';
+    if (!strncmp(dbase_str, "interior of ", 12))
+        dbase_str += 12;
     if (!strncmp(dbase_str, "a ", 2))
         dbase_str += 2;
     else if (!strncmp(dbase_str, "an ", 3))
         dbase_str += 3;
     else if (!strncmp(dbase_str, "the ", 4))
         dbase_str += 4;
-    else if (!cnstrcmp(dbase_str, "一些"))
-        dbase_str += strlen("一些");
+    else if (!strncmp(dbase_str, "some ", 5))
+        dbase_str += 5;
     else if (digit(*dbase_str)) {
         /* remove count prefix ("2 ya") which can come from looking at map */
         while (digit(*dbase_str))
@@ -567,30 +591,32 @@ boolean user_typed_name, without_asking;
         if (*dbase_str == ' ')
             ++dbase_str;
     }
-    if (!cnstrcmp(dbase_str, "驯服的"))
-        dbase_str += strlen("驯服的");
-    else if (!cnstrcmp(dbase_str, "和平的"))
-        dbase_str += strlen("和平的");
-    if (!cnstrcmp(dbase_str, "隐形的"))
-        dbase_str += strlen("隐形的");
-    if (!cnstrcmp(dbase_str, "装有鞍的"))
-        dbase_str += strlen("装有鞍的");
-    if (!cnstrcmp(dbase_str, "受祝福的 "))
-        dbase_str += strlen("受祝福的 ");
-    else if (!cnstrcmp(dbase_str, "未诅咒的 "))
-        dbase_str += strlen("未诅咒的 ");
-    else if (!cnstrcmp(dbase_str, "被诅咒的 "))
-        dbase_str += strlen("被诅咒的 ");
-    if (!cnstrcmp(dbase_str, "空的"))
-        dbase_str += strlen("空的");
-    if (!cnstrcmp(dbase_str, "部分使用的"))
-        dbase_str += strlen("部分使用的");
-    else if (!cnstrcmp(dbase_str, "部分食用的"))
-        dbase_str += strlen("部分食用的");
-    if (!cnstrcmp(dbase_str, "雕像之"))
-        dbase_str[strlen("雕像")] = '\0';
-    else if (!cnstrcmp(dbase_str, "小雕像之"))
-        dbase_str[strlen("小雕像")] = '\0';
+    if (!strncmp(dbase_str, "pair of ", 8))
+        dbase_str += 8;
+    if (!strncmp(dbase_str, "tame ", 5))
+        dbase_str += 5;
+    else if (!strncmp(dbase_str, "peaceful ", 9))
+        dbase_str += 9;
+    if (!strncmp(dbase_str, "invisible ", 10))
+        dbase_str += 10;
+    if (!strncmp(dbase_str, "saddled ", 8))
+        dbase_str += 8;
+    if (!strncmp(dbase_str, "blessed ", 8))
+        dbase_str += 8;
+    else if (!strncmp(dbase_str, "uncursed ", 9))
+        dbase_str += 9;
+    else if (!strncmp(dbase_str, "cursed ", 7))
+        dbase_str += 7;
+    if (!strncmp(dbase_str, "empty ", 6))
+        dbase_str += 6;
+    if (!strncmp(dbase_str, "partly used ", 12))
+        dbase_str += 12;
+    else if (!strncmp(dbase_str, "partly eaten ", 13))
+        dbase_str += 13;
+    if (!strncmp(dbase_str, "statue of ", 10))
+        dbase_str[6] = '\0';
+    else if (!strncmp(dbase_str, "figurine of ", 12))
+        dbase_str[8] = '\0';
     /* remove enchantment ("+0 aklys"); [for 3.6.0 and earlier, this wasn't
        needed because looking at items on the map used xname() rather than
        doname() hence known enchantment was implicitly suppressed] */
@@ -606,8 +632,8 @@ boolean user_typed_name, without_asking;
        "wet towel"; for "moist towel", we also want to ask about "wet towel".
        (note: strncpy() only terminates output string if the specified
        count is bigger than the length of the substring being copied) */
-    if (!cnstrcmp(dbase_str, "潮湿的毛巾"))
-        dbase_str += strlen("潮"); /* skip "mo" replace "ist" */
+    if (!strncmp(dbase_str, "moist towel", 11))
+        (void) strncpy(dbase_str += 2, "wet", 3); /* skip "mo" replace "ist" */
 
     /* Make sure the name is non-empty. */
     if (*dbase_str) {
@@ -615,20 +641,30 @@ boolean user_typed_name, without_asking;
         int chk_skip, pass = 1;
         boolean yes_to_moreinfo, found_in_file, pass1found_in_file,
                 skipping_entry;
-        char *ap, *alt = 0; /* alternate description */
+        char *sp, *ap, *alt = 0; /* alternate description */
 
         /* adjust the input to remove "named " and "called " */
-        if ((ep = strstri(dbase_str, "名为")) != 0) {
-            alt = ep + strlen("名为");
-            if ((ap = strstri(dbase_str, "被称为")) != 0 && ap < ep)
+        if ((ep = strstri(dbase_str, " named ")) != 0) {
+            alt = ep + 7;
+            if ((ap = strstri(dbase_str, " called ")) != 0 && ap < ep)
                 ep = ap; /* "named" is alt but truncate at "called" */
-        } else if ((ep = strstri(dbase_str, " 叫做 ")) != 0) {
-            copynchars(givenname, ep + strlen(" 叫做 "), BUFSZ - 1);
+        } else if ((ep = strstri(dbase_str, " called ")) != 0) {
+            copynchars(givenname, ep + 8, BUFSZ - 1);
             alt = givenname;
+            if (supplemental_name && (sp = strstri(inp, " called ")) != 0)
+                copynchars(supplemental_name, sp + 8, BUFSZ - 1);
         } else
             ep = strstri(dbase_str, ", ");
         if (ep && ep > dbase_str)
             *ep = '\0';
+        /* remove article from 'alt' name ("a pair of lenses named
+           The Eyes of the Overworld" simplified above to "lenses named
+           The Eyes of the Overworld", now reduced to "The Eyes of the
+           Overworld", skip "The" as with base name processing) */
+        if (alt && (!strncmpi(alt, "a ", 2)
+                    || !strncmpi(alt, "an ", 3)
+                    || !strncmpi(alt, "the ", 4)))
+            alt = index(alt, ' ') + 1;
         /* remove charges or "(lit)" or wizmode "(N aum)" */
         if ((ep = strstri(dbase_str, " (")) != 0 && ep > dbase_str)
             *ep = '\0';
@@ -713,7 +749,7 @@ boolean user_typed_name, without_asking;
                     char *entrytext = pass ? alt : dbase_str;
                     char question[QBUFSZ];
 
-                    Strcpy(question, "更多信息关于\"");
+                    Strcpy(question, "More info about \"");
                     /* +2 => length of "\"?" */
                     copynchars(eos(question), entrytext,
                                (int) (sizeof question - 1
@@ -741,7 +777,7 @@ boolean user_typed_name, without_asking;
                     destroy_nhwindow(datawin), datawin = WIN_ERR;
                 }
             } else if (user_typed_name && pass == 0 && !pass1found_in_file)
-                pline("我不知道这些东西的任何信息.");
+                pline("I don't have any information on those things.");
         }
     }
     goto checkfile_done; /* skip error feedback */
@@ -756,15 +792,16 @@ boolean user_typed_name, without_asking;
 }
 
 int
-do_screen_description(cc, looked, sym, out_str, firstmatch)
+do_screen_description(cc, looked, sym, out_str, firstmatch, for_supplement)
 coord cc;
 boolean looked;
 int sym;
 char *out_str;
 const char **firstmatch;
+struct permonst **for_supplement;
 {
-    static const char mon_interior[] = "怪物的内部",
-                      unreconnoitered[] = "未侦察的";
+    static const char mon_interior[] = "the interior of a monster",
+                      unreconnoitered[] = "unreconnoitered";
     static char look_buf[BUFSZ];
     char prefix[BUFSZ];
     int i, alt_i, glyph = NO_GLYPH,
@@ -838,17 +875,17 @@ const char **firstmatch;
 
     /* Check for monsters */
     if (!iflags.terrainmode || (iflags.terrainmode & TER_MON) != 0) {
-        for (i = 0; i < MAXMCLASSES; i++) {
+        for (i = 1; i < MAXMCLASSES; i++) {
             if (sym == (looked ? showsyms[i + SYM_OFF_M] : def_monsyms[i].sym)
-                && def_monsyms[i].explain) {
+                && def_monsyms[i].explain && *def_monsyms[i].explain) {
                 need_to_look = TRUE;
                 if (!found) {
                     Sprintf(out_str, "%s%s",
-                            prefix, def_monsyms[i].explain);
+                            prefix, an(def_monsyms[i].explain));
                     *firstmatch = def_monsyms[i].explain;
                     found++;
                 } else {
-                    found += append_str(out_str, def_monsyms[i].explain);
+                    found += append_str(out_str, an(def_monsyms[i].explain));
                 }
             }
         }
@@ -859,7 +896,7 @@ const char **firstmatch;
                        && cc.x == u.ux && cc.y == u.uy)
                     : (sym == def_monsyms[S_HUMAN].sym && !flags.showrace))
             && !(Race_if(PM_HUMAN) || Race_if(PM_ELF)) && !Upolyd)
-            found += append_str(out_str, "你"); /* tack on "or you" */
+            found += append_str(out_str, "you"); /* tack on "or you" */
     }
 
     /* Now check for objects */
@@ -875,23 +912,28 @@ const char **firstmatch;
                 }
                 if (!found) {
                     Sprintf(out_str, "%s%s",
-                            prefix, def_oc_syms[i].explain);
+                            prefix, an(def_oc_syms[i].explain));
                     *firstmatch = def_oc_syms[i].explain;
                     found++;
                 } else {
-                    found += append_str(out_str, def_oc_syms[i].explain);
+                    found += append_str(out_str, an(def_oc_syms[i].explain));
                 }
             }
         }
     }
 
     if (sym == DEF_INVISIBLE) {
+        extern const char altinvisexplain[]; /* drawing.c */
+        /* for active clairvoyance, use alternate "unseen creature" */
+        boolean usealt = (EDetect_monsters & I_SPECIAL) != 0L;
+        const char *unseen_explain = !usealt ? invisexplain : altinvisexplain;
+
         if (!found) {
-            Sprintf(out_str, "%s%s", prefix, invisexplain);
-            *firstmatch = invisexplain;
+            Sprintf(out_str, "%s%s", prefix, an(unseen_explain));
+            *firstmatch = unseen_explain;
             found++;
         } else {
-            found += append_str(out_str, invisexplain);
+            found += append_str(out_str, an(unseen_explain));
         }
     }
 
@@ -901,7 +943,7 @@ const char **firstmatch;
         /* when sym is the default background character, we process
            i == 0 three times: unexplored, stone, dark part of a room */
         if (alt_i < 2) {
-            x_str = !alt_i++ ? "未探索的" : submerged ? "未知" : "石头";
+            x_str = !alt_i++ ? "unexplored" : submerged ? "unknown" : "stone";
             i = 0; /* for second iteration, undo loop increment */
             /* alt_i is now 1 or 2 */
         } else {
@@ -909,27 +951,27 @@ const char **firstmatch;
                 i = 0; /* undo loop increment */
             x_str = defsyms[i].explanation;
             if (submerged && !strcmp(x_str, defsyms[0].explanation))
-                x_str = "陆地"; /* replace "dark part of a room" */
+                x_str = "land"; /* replace "dark part of a room" */
             /* alt_i is now 3 or more and no longer of interest */
         }
         if (sym == (looked ? showsyms[i] : defsyms[i].sym) && *x_str) {
             /* avoid "an unexplored", "an stone", "an air", "a water",
                "a floor of a room", "a dark part of a room";
                article==2 => "the", 1 => "an", 0 => (none) */
-            int article = strstri(x_str, "房间的") ? 2
+            int article = strstri(x_str, " of a room") ? 2
                           : !(alt_i <= 2
-                              || strcmp(x_str, "天空") == 0
-                              || strcmp(x_str, "陆地") == 0
-                              || strcmp(x_str, "水") == 0);
+                              || strcmp(x_str, "air") == 0
+                              || strcmp(x_str, "land") == 0
+                              || strcmp(x_str, "water") == 0);
 
             if (!found) {
                 if (is_cmap_trap(i)) {
-                    Sprintf(out_str, "%s陷阱", prefix);
+                    Sprintf(out_str, "%sa trap", prefix);
                     hit_trap = TRUE;
                 } else {
                     Sprintf(out_str, "%s%s", prefix,
-                            article == 2 ? x_str
-                            : article == 1 ? x_str : x_str);
+                            article == 2 ? the(x_str)
+                            : article == 1 ? an(x_str) : x_str);
                 }
                 *firstmatch = x_str;
                 found++;
@@ -940,8 +982,8 @@ const char **firstmatch;
                        && (i != S_vibrating_square || Inhell
                            || (looked && glyph_is_trap(glyph)
                                && glyph_to_trap(glyph) == VIBRATING_SQUARE))) {
-                found += append_str(out_str, (article == 2) ? x_str
-                                             : (article == 1) ? x_str
+                found += append_str(out_str, (article == 2) ? the(x_str)
+                                             : (article == 1) ? an(x_str)
                                                : x_str);
                 if (is_cmap_trap(i))
                     hit_trap = TRUE;
@@ -966,7 +1008,7 @@ const char **firstmatch;
             /* Kludge: warning trumps boulders on the display.
                Reveal the boulder too or player can get confused */
             if (looked && sobj_at(BOULDER, cc.x, cc.y))
-                Strcat(out_str, " 和巨石在同一个位置");
+                Strcat(out_str, " co-located with a boulder");
             break; /* out of for loop*/
         }
     }
@@ -975,22 +1017,22 @@ const char **firstmatch;
     if (skipped_venom && found < 2) {
         x_str = def_oc_syms[VENOM_CLASS].explain;
         if (!found) {
-            Sprintf(out_str, "%s%s", prefix, x_str);
+            Sprintf(out_str, "%s%s", prefix, an(x_str));
             *firstmatch = x_str;
             found++;
         } else {
-            found += append_str(out_str, x_str);
+            found += append_str(out_str, an(x_str));
         }
     }
 
     /* handle optional boulder symbol as a special case */
     if (iflags.bouldersym && sym == iflags.bouldersym) {
         if (!found) {
-            *firstmatch = "巨石";
-            Sprintf(out_str, "%s%s", prefix, *firstmatch);
+            *firstmatch = "boulder";
+            Sprintf(out_str, "%s%s", prefix, an(*firstmatch));
             found++;
         } else {
-            found += append_str(out_str, "巨石");
+            found += append_str(out_str, "boulder");
         }
     }
 
@@ -1000,24 +1042,28 @@ const char **firstmatch;
      */
 
     if (found > 4)
-        Sprintf(out_str, "%s", "那可能会是很多东西");
+        Sprintf(out_str, "%s", "That can be many things");
 
  didlook:
     if (looked) {
+        struct permonst *pm = (struct permonst *)0;
+
         if (found > 1 || need_to_look) {
             char monbuf[BUFSZ];
             char temp_buf[BUFSZ];
 
-            (void) lookat(cc.x, cc.y, look_buf, monbuf);
+            pm = lookat(cc.x, cc.y, look_buf, monbuf);
+            if (pm && for_supplement)
+                *for_supplement = pm;
             *firstmatch = look_buf;
             if (*(*firstmatch)) {
-                Sprintf(temp_buf, " ( %s)", *firstmatch);
+                Sprintf(temp_buf, " (%s)", *firstmatch);
                 (void) strncat(out_str, temp_buf,
                                BUFSZ - strlen(out_str) - 1);
                 found = 1; /* we have something to look up */
             }
             if (monbuf[0]) {
-                Sprintf(temp_buf, " [ 看见: %s]", monbuf);
+                Sprintf(temp_buf, " [seen: %s]", monbuf);
                 (void) strncat(out_str, temp_buf,
                                BUFSZ - strlen(out_str) - 1);
             }
@@ -1028,7 +1074,7 @@ const char **firstmatch;
 }
 
 /* also used by getpos hack in do_name.c */
-const char what_is_an_unknown_object[] = "未知对象";
+const char what_is_an_unknown_object[] = "an unknown object";
 
 int
 do_look(mode, click_cc)
@@ -1039,13 +1085,16 @@ coord *click_cc;
     boolean clicklook = (mode == 2); /* right mouse-click method */
     char out_str[BUFSZ] = DUMMY;
     const char *firstmatch = 0;
-    struct permonst *pm = 0;
+    struct permonst *pm = 0, *supplemental_pm = 0;
     int i = '\0', ans = 0;
     int sym;              /* typed symbol or converted glyph */
     int found;            /* count of matching syms found */
     coord cc;             /* screen pos of unknown glyph */
     boolean save_verbose; /* saved value of flags.verbose */
     boolean from_screen;  /* question from the screen */
+
+    cc.x = 0;
+    cc.y = 0;
 
     if (!clicklook) {
         if (quick) {
@@ -1064,15 +1113,15 @@ coord *click_cc;
                versions: "Specify unknown object by cursor?" */
             add_menu(win, NO_GLYPH, &any,
                      flags.lootabc ? 0 : any.a_char, 'y', ATR_NONE,
-                     "地图上的东西", MENU_UNSELECTED);
+                     "something on the map", MENU_UNSELECTED);
             any.a_char = 'i';
             add_menu(win, NO_GLYPH, &any,
                      flags.lootabc ? 0 : any.a_char, 0, ATR_NONE,
-                     "你携带的东西", MENU_UNSELECTED);
+                     "something you're carrying", MENU_UNSELECTED);
             any.a_char = '?';
             add_menu(win, NO_GLYPH, &any,
                      flags.lootabc ? 0 : any.a_char, 'n', ATR_NONE,
-                     "其他的东西 ( 符号或名称)", MENU_UNSELECTED);
+                     "something else (by symbol or name)", MENU_UNSELECTED);
             if (!u.uswallow && !Hallucination) {
                 any = zeroany;
                 add_menu(win, NO_GLYPH, &any, 0, 0, ATR_NONE,
@@ -1085,21 +1134,21 @@ coord *click_cc;
                 any.a_char = 'm';
                 add_menu(win, NO_GLYPH, &any,
                          flags.lootabc ? 0 : any.a_char, 0, ATR_NONE,
-                         "附近的怪物", MENU_UNSELECTED);
+                         "nearby monsters", MENU_UNSELECTED);
                 any.a_char = 'M';
                 add_menu(win, NO_GLYPH, &any,
                          flags.lootabc ? 0 : any.a_char, 0, ATR_NONE,
-                         "地图上显示的所有怪物", MENU_UNSELECTED);
+                         "all monsters shown on map", MENU_UNSELECTED);
                 any.a_char = 'o';
                 add_menu(win, NO_GLYPH, &any,
                          flags.lootabc ? 0 : any.a_char, 0, ATR_NONE,
-                         "附近的物品", MENU_UNSELECTED);
+                         "nearby objects", MENU_UNSELECTED);
                 any.a_char = 'O';
                 add_menu(win, NO_GLYPH, &any,
                          flags.lootabc ? 0 : any.a_char, 0, ATR_NONE,
-                         "地图上显示的所有物品", MENU_UNSELECTED);
+                         "all objects shown on map", MENU_UNSELECTED);
             }
-            end_menu(win, "你想查看什么:");
+            end_menu(win, "What do you want to look at:");
             if (select_menu(win, PICK_ONE, &pick_list) > 0) {
                 i = pick_list->item.a_char;
                 free((genericptr_t) pick_list);
@@ -1133,12 +1182,12 @@ coord *click_cc;
                     break;
                 }
             if (*out_str)
-                checkfile(out_str, pm, TRUE, TRUE);
+                checkfile(out_str, pm, TRUE, TRUE, (char *) 0);
             return 0;
           }
         case '?':
             from_screen = FALSE;
-            getlin("指定什么? ( 输入符号或文字)", out_str);
+            getlin("Specify what? (type the word)", out_str);
             if (strcmp(out_str, " ")) /* keep single space as-is */
                 /* remove leading and trailing whitespace and
                    condense consecutive internal whitespace */
@@ -1147,7 +1196,7 @@ coord *click_cc;
                 return 0;
 
             if (out_str[1]) { /* user typed in a complete string */
-                checkfile(out_str, pm, TRUE, TRUE);
+                checkfile(out_str, pm, TRUE, TRUE, (char *) 0);
                 return 0;
             }
             sym = out_str[0];
@@ -1187,10 +1236,10 @@ coord *click_cc;
         if (from_screen || clicklook) {
             if (from_screen) {
                 if (flags.verbose)
-                    pline("请移动光标到%s.",
+                    pline("Please move the cursor to %s.",
                           what_is_an_unknown_object);
                 else
-                    pline("选择一个对象.");
+                    pline("Pick an object.");
 
                 ans = getpos(&cc, quick, what_is_an_unknown_object);
                 if (ans < 0 || cc.x < 0)
@@ -1200,27 +1249,45 @@ coord *click_cc;
         }
 
         found = do_screen_description(cc, (from_screen || clicklook), sym,
-                                      out_str, &firstmatch);
+                                      out_str, &firstmatch, &supplemental_pm);
 
         /* Finally, print out our explanation. */
         if (found) {
             /* use putmixed() because there may be an encoded glyph present */
             putmixed(WIN_MESSAGE, 0, out_str);
+#ifdef DUMPLOG
+            {
+                char dmpbuf[BUFSZ];
+
+                /* putmixed() bypasses pline() so doesn't write to DUMPLOG;
+                   tty puts it into ^P recall, so it ought to be there;
+                   DUMPLOG is plain text, so override graphics character;
+                   at present, force space, but we ought to use defsyms[]
+                   value for the glyph the graphics character came from */
+                (void) decode_mixed(dmpbuf, out_str);
+                if (dmpbuf[0] < ' ' || dmpbuf[0] >= 127) /* ASCII isprint() */
+                    dmpbuf[0] = ' ';
+                dumplogmsg(dmpbuf);
+            }
+#endif
 
             /* check the data file for information about this thing */
             if (found == 1 && ans != LOOK_QUICK && ans != LOOK_ONCE
                 && (ans == LOOK_VERBOSE || (flags.help && !quick))
                 && !clicklook) {
-                char temp_buf[BUFSZ];
+                char temp_buf[BUFSZ], supplemental_name[BUFSZ];
 
+                supplemental_name[0] = '\0';
                 Strcpy(temp_buf, firstmatch);
                 checkfile(temp_buf, pm, FALSE,
-                          (boolean) (ans == LOOK_VERBOSE));
+                          (boolean) (ans == LOOK_VERBOSE), supplemental_name);
+                if (supplemental_pm)
+                    do_supplemental_info(supplemental_name, supplemental_pm,
+                                         (boolean) (ans == LOOK_VERBOSE));
             }
         } else {
-            pline("我从未听说过这样的东西.");
+            pline("I've never heard of such things.");
         }
-
     } while (from_screen && !quick && ans != LOOK_ONCE && !clicklook);
 
     flags.verbose = save_verbose;
@@ -1315,6 +1382,94 @@ boolean do_mons; /* True => monsters, False => objects */
     destroy_nhwindow(win);
 }
 
+static const char *suptext1[] = {
+    "%s is a member of a marauding horde of orcs",
+    "rumored to have brutally attacked and plundered",
+    "the ordinarily sheltered town that is located ",
+    "deep within The Gnomish Mines.",
+    "",
+    "The members of that vicious horde proudly and ",
+    "defiantly acclaim their allegiance to their",
+    "leader %s in their names.",
+    (char *) 0,
+};
+
+static const char *suptext2[] = {
+    "\"%s\" is the common dungeon name of",
+    "a nefarious orc who is known to acquire property",
+    "from thieves and sell it off for profit.",
+    "",
+    "The perpetrator was last seen hanging around the",
+    "stairs leading to the Gnomish Mines.",
+    (char *) 0,
+};
+
+void
+do_supplemental_info(name, pm, without_asking)
+char *name;
+struct permonst *pm;
+boolean without_asking;
+{
+    const char **textp;
+    winid datawin = WIN_ERR;
+    char *entrytext = name, *bp = (char *) 0, *bp2 = (char *) 0;
+    char question[QBUFSZ];
+    boolean yes_to_moreinfo = FALSE;
+    boolean is_marauder = (name && pm && is_orc(pm));
+
+    /*
+     * Provide some info on some specific things
+     * meant to support in-game mythology, and not
+     * available from data.base or other sources.
+     */
+    if (is_marauder && (strlen(name) < (BUFSZ - 1))) {
+        char fullname[BUFSZ];
+
+        bp = strstri(name, " of ");
+        bp2 = strstri(name, " the Fence");
+
+        if (bp || bp2) {
+            Strcpy(fullname, name);
+            if (!without_asking) {
+                Strcpy(question, "More info about \"");
+                /* +2 => length of "\"?" */
+                copynchars(eos(question), entrytext,
+                    (int) (sizeof question - 1 - (strlen(question) + 2)));
+                Strcat(question, "\"?");
+                if (yn(question) == 'y')
+                yes_to_moreinfo = TRUE;
+            }
+            if (yes_to_moreinfo) {
+                int i, subs = 0;
+                const char *gang = (char *) 0;
+
+                if (bp) {
+                    textp = suptext1;
+                    gang = bp + 4;
+                    *bp = '\0';
+                } else {
+                    textp = suptext2;
+                    gang = "";
+                }
+                datawin = create_nhwindow(NHW_MENU);
+                for (i = 0; textp[i]; i++) {
+                    char buf[BUFSZ];
+                    const char *txt;
+
+                    if (strstri(textp[i], "%s") != 0) {
+                        Sprintf(buf, textp[i], subs++ ? gang : fullname);
+                        txt = buf;
+                    } else
+                        txt = textp[i];
+                    putstr(datawin, 0, txt);
+                }
+                display_nhwindow(datawin, FALSE);
+                destroy_nhwindow(datawin), datawin = WIN_ERR;
+            }
+        }
+    }
+}
+
 /* the '/' command */
 int
 dowhatis()
@@ -1347,7 +1502,7 @@ doidtrap()
         boolean chesttrap = trapped_chest_at(tt, x, y);
 
         if (chesttrap || trapped_door_at(tt, x, y)) {
-            pline("那是有陷阱的%s.", chesttrap ? "箱子" : "门");
+            pline("That is a trapped %s.", chesttrap ? "chest" : "door");
             return 0; /* trap ID'd, but no time elapses */
         }
     }
@@ -1358,27 +1513,26 @@ doidtrap()
                 break;
             tt = trap->ttyp;
             if (u.dz) {
-                if (u.dz < 0 ? (tt == TRAPDOOR || tt == HOLE)
-                             : tt == ROCKTRAP)
+                if (u.dz < 0 ? is_hole(tt) : tt == ROCKTRAP)
                     break;
             }
-            tt = what_trap(tt);
-            pline("那是%s%s%s.",
-                  defsyms[trap_to_defsym(tt)].explanation,
-                  !trap->madeby_u ? "" : "由你所",
+            tt = what_trap(tt, rn2_on_display_rng);
+            pline("That is %s%s%s.",
+                  an(defsyms[trap_to_defsym(tt)].explanation),
                   !trap->madeby_u
                      ? ""
                      : (tt == WEB)
-                        ? "编织"
+                        ? " woven"
                         /* trap doors & spiked pits can't be made by
                            player, and should be considered at least
                            as much "set" as "dug" anyway */
                         : (tt == HOLE || tt == PIT)
-                           ? "挖掘"
-                           : "设置");
+                           ? " dug"
+                           : " set",
+                  !trap->madeby_u ? "" : " by you");
             return 0;
         }
-    pline("那里没有陷阱.");
+    pline("I can't see a trap there.");
     return 0;
 }
 
@@ -1392,7 +1546,7 @@ doidtrap()
     commands:  basic letters vs digits, 'g' vs 'G' for '5', phone
     keypad vs normal layout of digits, and QWERTZ keyboard swap between
     y/Y/^Y/M-y/M-Y/M-^Y and z/Z/^Z/M-z/M-Z/M-^Z.)
-    
+
     The interpretor understands
      '&#' for comment,
      '&? option' for 'if' (also '&? !option'
@@ -1403,7 +1557,7 @@ doidtrap()
      '&:' for 'else' (also '&: #comment';
                       0 or 1 instance for a given 'if'), and
      '&.' for 'endif' (also '&. #comment'; required for each 'if').
-    
+
     The option handling is a bit of a mess, with no generality for
     which options to deal with and only a comma separated list of
     integer values for the '=value' part.  number_pad is the only
@@ -1659,7 +1813,7 @@ dowhatdoes()
     char q, *reslt;
 
     if (!once) {
-        pline("用'&'或者'?'来获取更多信息.%s",
+        pline("Ask about '&' or '?' to get more info.%s",
 #ifdef ALTMETA
               iflags.altmeta ? "  (For ESC, type it twice.)" :
 #endif
@@ -1669,7 +1823,7 @@ dowhatdoes()
 #if defined(UNIX) || defined(VMS)
     introff(); /* disables ^C but not ^\ */
 #endif
-    q = yn_function("要查看哪个命令的说明?", (char *) 0, '\0');
+    q = yn_function("What command?", (char *) 0, '\0');
 #ifdef ALTMETA
     if (q == '\033' && iflags.altmeta) {
         /* in an ideal world, we would know whether another keystroke
@@ -1690,14 +1844,14 @@ dowhatdoes()
             whatdoes_help();
         pline("%s", reslt);
     } else {
-        pline("没有这种命令'%s', char code %d (0%03o or 0x%02x).",
+        pline("No such command '%s', char code %d (0%03o or 0x%02x).",
               visctrl(q), (uchar) q, (uchar) q, (uchar) q);
     }
     return 0;
 }
 
 STATIC_OVL void
-docontact()
+docontact(VOID_ARGS)
 {
     winid cwin = create_nhwindow(NHW_TEXT);
     char buf[BUFSZ];
@@ -1727,67 +1881,67 @@ docontact()
 }
 
 void
-dispfile_help()
+dispfile_help(VOID_ARGS)
 {
     display_file(HELP, TRUE);
 }
 
 void
-dispfile_shelp()
+dispfile_shelp(VOID_ARGS)
 {
     display_file(SHELP, TRUE);
 }
 
 void
-dispfile_optionfile()
+dispfile_optionfile(VOID_ARGS)
 {
     display_file(OPTIONFILE, TRUE);
 }
 
 void
-dispfile_license()
+dispfile_license(VOID_ARGS)
 {
     display_file(LICENSE, TRUE);
 }
 
 void
-dispfile_debughelp()
+dispfile_debughelp(VOID_ARGS)
 {
     display_file(DEBUGHELP, TRUE);
 }
 
 void
-hmenu_doextversion()
+hmenu_doextversion(VOID_ARGS)
 {
     (void) doextversion();
 }
 
 void
-hmenu_dohistory()
+hmenu_dohistory(VOID_ARGS)
 {
     (void) dohistory();
 }
 
 void
-hmenu_dowhatis()
+hmenu_dowhatis(VOID_ARGS)
 {
     (void) dowhatis();
 }
 
 void
-hmenu_dowhatdoes()
+hmenu_dowhatdoes(VOID_ARGS)
 {
     (void) dowhatdoes();
 }
 
 void
-hmenu_doextlist()
+hmenu_doextlist(VOID_ARGS)
 {
     (void) doextlist();
 }
 
 void
-domenucontrols()
+domenucontrols(VOID_ARGS)
 {
     winid cwin = create_nhwindow(NHW_TEXT);
     show_menu_controls(cwin, FALSE);
@@ -1797,27 +1951,27 @@ domenucontrols()
 
 /* data for dohelp() */
 static struct {
-    void (*f)();
+    void NDECL((*f));
     const char *text;
 } help_menu_items[] = {
-    { hmenu_doextversion, "关于NetHack( 版本信息)." },
-    { dispfile_help, "游戏和命令的长描述." },
-    { dispfile_shelp, "游戏命令列表." },
-    { hmenu_dohistory, "NetHack 简史." },
-    { hmenu_dowhatis, "游戏显示的字符信息." },
-    { hmenu_dowhatdoes, "给定键信息." },
-    { option_help, "游戏选项列表." },
-    { dispfile_optionfile, "游戏选项的更长解释." },
-    { dokeylist, "键盘命令的完整列表" },
-    { hmenu_doextlist, "扩展命令列表." },
-    { domenucontrols, "列表菜单控制键" },
-    { dispfile_license, "NetHack 许可协议." },
-    { docontact, "支持信息." },
+    { hmenu_doextversion, "About NetHack (version information)." },
+    { dispfile_help, "Long description of the game and commands." },
+    { dispfile_shelp, "List of game commands." },
+    { hmenu_dohistory, "Concise history of NetHack." },
+    { hmenu_dowhatis, "Info on a character in the game display." },
+    { hmenu_dowhatdoes, "Info on what a given key does." },
+    { option_help, "List of game options." },
+    { dispfile_optionfile, "Longer explanation of game options." },
+    { dokeylist, "Full list of keyboard commands" },
+    { hmenu_doextlist, "List of extended commands." },
+    { domenucontrols, "List menu control keys" },
+    { dispfile_license, "The NetHack license." },
+    { docontact, "Support information." },
 #ifdef PORT_HELP
-    { port_help, "%s 端具体的帮助和命令." },
+    { port_help, "%s-specific help and commands." },
 #endif
-    { dispfile_debughelp, "向导模式命令列表." },
-    { NULL, (char *) 0 }
+    { dispfile_debughelp, "List of wizard-mode commands." },
+    { (void NDECL((*))) 0, (char *) 0 }
 };
 
 /* the '?' command */
@@ -1830,7 +1984,6 @@ dohelp()
     menu_item *selected;
     anything any;
     int sel;
-    char *bufptr;
 
     any = zeroany; /* zero all bits */
     start_menu(tmpwin);
@@ -1840,21 +1993,20 @@ dohelp()
             continue;
         if (help_menu_items[i].text[0] == '%') {
             Sprintf(helpbuf, help_menu_items[i].text, PORT_ID);
-            bufptr = helpbuf;
         } else {
-            bufptr = (char *)help_menu_items[i].text;
+            Strcpy(helpbuf, help_menu_items[i].text);
         }
         any.a_int = i + 1;
         add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE,
-                 bufptr, MENU_UNSELECTED);
+                 helpbuf, MENU_UNSELECTED);
     }
-    end_menu(tmpwin, "选择一项:");
+    end_menu(tmpwin, "Select one item:");
     n = select_menu(tmpwin, PICK_ONE, &selected);
     destroy_nhwindow(tmpwin);
     if (n > 0) {
         sel = selected[0].item.a_int - 1;
         free((genericptr_t) selected);
-        (void)(*help_menu_items[sel].f)();
+        (void) (*help_menu_items[sel].f)();
     }
     return 0;
 }

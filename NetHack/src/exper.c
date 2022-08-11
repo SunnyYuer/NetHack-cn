@@ -1,4 +1,4 @@
-/* NetHack 3.6	exper.c	$NHDT-Date: 1553296396 2019/03/22 23:13:16 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.32 $ */
+/* NetHack 3.6	exper.c	$NHDT-Date: 1562114352 2019/07/03 00:39:12 $  $NHDT-Branch: NetHack-3.6 $:$NHDT-Revision: 1.33 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2007. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -14,6 +14,8 @@ long
 newuexp(lev)
 int lev;
 {
+    if (lev < 1) /* for newuexp(u.ulevel - 1) when u.ulevel is 1 */
+        return 0L;
     if (lev < 10)
         return (10L * (1L << lev));
     if (lev < 20)
@@ -177,6 +179,11 @@ register int exper, rexp;
         u.uexp = newexp;
         if (flags.showexp)
             context.botl = TRUE;
+        /* even when experience points aren't being shown, experience level
+           might be highlighted with a percentage highlight rule and that
+           percentage depends upon experience points */
+        if (!context.botl && exp_percent_changing())
+            context.botl = TRUE;
     }
     /* newrexp will always differ from oldrexp unless they're LONG_MAX */
     if (newrexp != oldrexp) {
@@ -199,13 +206,13 @@ const char *drainer; /* cause of death, if drain should be fatal */
 
     /* override life-drain resistance when handling an explicit
        wizard mode request to reduce level; never fatal though */
-    if (drainer && !strcmp(drainer, "#改变等级"))
+    if (drainer && !strcmp(drainer, "#levelchange"))
         drainer = 0;
     else if (resists_drli(&youmonst))
         return;
 
     if (u.ulevel > 1) {
-        pline("%s 等级%d.", Goodbye(), u.ulevel--);
+        pline("%s level %d.", Goodbye(), u.ulevel--);
         /* remove intrinsic abilities */
         adjabil(u.ulevel + 1, u.ulevel);
         reset_rndmonst(NON_PM); /* new monster selection */
@@ -273,7 +280,7 @@ boolean incr; /* true iff via incremental experience growth */
     int hpinc, eninc;
 
     if (!incr)
-        You_feel("更有经验了.");
+        You_feel("more experienced.");
 
     /* increase hit points (when polymorphed, do monster form first
        in order to retain normal human/whatever increase for later) */
@@ -302,8 +309,8 @@ boolean incr; /* true iff via incremental experience growth */
             u.uexp = newuexp(u.ulevel);
         }
         ++u.ulevel;
-        pline("恭喜%s等级 %d.",
-              u.ulevelmax < u.ulevel ? "升为" : "回到",
+        pline("Welcome %sto experience level %d.",
+              (u.ulevelmax < u.ulevel) ? "" : "back ",
               u.ulevel);
         if (u.ulevelmax < u.ulevel)
             u.ulevelmax = u.ulevel;

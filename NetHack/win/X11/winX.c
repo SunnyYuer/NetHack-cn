@@ -95,9 +95,6 @@ static XtSignalId X11_sig_id;
 #endif
 #endif
 
-/* this is only needed until X11_status_* routines are written */
-extern NEARDATA winid WIN_STATUS;
-
 /* Interface definition, for windows.c */
 struct window_procs X11_procs = {
     "X11",
@@ -107,6 +104,7 @@ struct window_procs X11_procs = {
     WC2_FLUSH_STATUS | WC2_RESET_STATUS | WC2_HILITE_STATUS |
 #endif
     0L,
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},   /* color availability */
     X11_init_nhwindows,
     X11_player_selection, X11_askname, X11_get_nh_event, X11_exit_nhwindows,
     X11_suspend_nhwindows, X11_resume_nhwindows, X11_create_nhwindow,

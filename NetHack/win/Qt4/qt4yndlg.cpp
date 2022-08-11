@@ -43,7 +43,7 @@ NetHackQtYnDialog::NetHackQtYnDialog(QWidget *parent,const QString& q,const char
 
 char NetHackQtYnDialog::Exec()
 {
-    QString ch(QString::fromUtf8(choices));
+    QString ch(QString::fromLatin1(choices));
     int ch_per_line=6;
     QString qlabel;
     QString enable;
@@ -101,7 +101,7 @@ char NetHackQtYnDialog::Exec()
 	    // Hmm... they'll have to use a virtual keyboard
 	}
     } else {
-        ch = QString::fromUtf8(choices);
+        ch = QString::fromLatin1(choices);
 	qlabel = question.replace(QChar(0x200B), QString(""));
     }
     if (!ch.isNull()) {
@@ -227,7 +227,7 @@ void NetHackQtYnDialog::keyPressEvent(QKeyEvent* event)
 	    done(1);
 	}
     } else {
-	int where = QString::fromUtf8(choices).indexOf(text);
+	int where = QString::fromLatin1(choices).indexOf(text);
 	if (where != -1 && text != "#") {
 	    done(where+1000);
 	} else {

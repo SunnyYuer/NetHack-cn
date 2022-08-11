@@ -1,4 +1,4 @@
-/* NetHack 3.6	mswproc.c	$NHDT-Date: 1545705822 2018/12/25 02:43:42 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.130 $ */
+/* NetHack 3.6	mswproc.c	$NHDT-Date: 1575245201 2019/12/02 00:06:41 $  $NHDT-Branch: NetHack-3.6 $:$NHDT-Revision: 1.137 $ */
 /* Copyright (C) 2001 by Alex Kompel 	 */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -90,7 +90,9 @@ struct window_procs mswin_procs = {
 #ifdef STATUS_HILITES
     WC2_HITPOINTBAR | WC2_FLUSH_STATUS | WC2_RESET_STATUS | WC2_HILITE_STATUS |
 #endif
-    0L, mswin_init_nhwindows, mswin_player_selection, mswin_askname,
+    0L,
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},   /* color availability */
+    mswin_init_nhwindows, mswin_player_selection, mswin_askname,
     mswin_get_nh_event, mswin_exit_nhwindows, mswin_suspend_nhwindows,
     mswin_resume_nhwindows, mswin_create_nhwindow, mswin_clear_nhwindow,
     mswin_display_nhwindow, mswin_destroy_nhwindow, mswin_curs, mswin_putstr,
@@ -142,6 +144,7 @@ mswin_init_nhwindows(int *argc, char **argv)
 # ifdef _DEBUG
     if (showdebug(NHTRACE_LOG) && !_s_debugfp) {
         /* truncate trace file */
+        /* BUG: this relies on current working directory */
         _s_debugfp = fopen(NHTRACE_LOG, "w");
     }
 # endif
@@ -682,7 +685,7 @@ mswin_askname(void)
 {
     logDebug("mswin_askname()\n");
 
-    if (mswin_getlin_window("你叫什么?", plname, PL_NSIZ) == IDCANCEL) {
+    if (mswin_getlin_window("Who are you?", plname, PL_NSIZ) == IDCANCEL) {
         bail("bye-bye");
         /* not reached */
     }
@@ -991,19 +994,7 @@ mswin_putstr(winid wid, int attr, const char *text)
 {
     logDebug("mswin_putstr(%d, %d, %s)\n", wid, attr, text);
 
-    int i = 0, j = 0, l;
-    char cntext[3 * BUFSZ] = "";
-    l = strlen(text);
-    while(i < l-1)
-    {
-        if(text[i]==32 && text[i+1]<0) i++;
-        cntext[j] = text[i];
-        j++;
-        i++;
-    }
-    if(l > 0) cntext[j] = text[i];
-    
-    mswin_putstr_ex(wid, attr, cntext, 0);
+    mswin_putstr_ex(wid, attr, text, 0);
 }
 
 void
@@ -2325,7 +2316,7 @@ logDebug(const char *fmt, ...)
 /* Reading and writing settings from the registry. */
 #define CATEGORYKEY "Software"
 #define COMPANYKEY "NetHack"
-#define PRODUCTKEY "NetHack 3.6.2"
+#define PRODUCTKEY "NetHack 3.6.6"
 #define SETTINGSKEY "Settings"
 #define MAINSHOWSTATEKEY "MainShowState"
 #define MAINMINXKEY "MainMinX"
@@ -2809,19 +2800,19 @@ static mswin_status_string _condition_strings[BL_MASK_BITS];
 static mswin_status_field _status_fields[MAXBLSTATS];
 
 static mswin_condition_field _condition_fields[BL_MASK_BITS] = {
-    { BL_MASK_STONE, "石化" },
-    { BL_MASK_SLIME, "污秽" },
-    { BL_MASK_STRNGL, "束缚" },
-    { BL_MASK_FOODPOIS, "食物中毒" },
-    { BL_MASK_TERMILL, "生病" },
-    { BL_MASK_BLIND, "失明" },
-    { BL_MASK_DEAF, "耳聋" },
-    { BL_MASK_STUN, "眩晕" },
-    { BL_MASK_CONF, "混乱" },
-    { BL_MASK_HALLU, "幻觉" },
-    { BL_MASK_LEV, "飘浮" },
-    { BL_MASK_FLY, "飞行" },
-    { BL_MASK_RIDE, "乘骑" }
+    { BL_MASK_STONE, "Stone" },
+    { BL_MASK_SLIME, "Slime" },
+    { BL_MASK_STRNGL, "Strngl" },
+    { BL_MASK_FOODPOIS, "FoodPois" },
+    { BL_MASK_TERMILL, "TermIll" },
+    { BL_MASK_BLIND, "Blind" },
+    { BL_MASK_DEAF, "Deaf" },
+    { BL_MASK_STUN, "Stun" },
+    { BL_MASK_CONF, "Conf" },
+    { BL_MASK_HALLU, "Hallu" },
+    { BL_MASK_LEV, "Lev" },
+    { BL_MASK_FLY, "Fly" },
+    { BL_MASK_RIDE, "Ride" }
 };
 
 
@@ -3102,7 +3093,7 @@ mswin_status_update(int idx, genericptr_t ptr, int chg, int percent, int color, 
                 ochar = GOLD_SYM;
             else
                 mapglyph(objnum_to_glyph(GOLD_PIECE),
-                         &ochar, &ocolor, &ospecial, 0, 0);
+                         &ochar, &ocolor, &ospecial, 0, 0, 0);
             buf[0] = ochar;
             p = strchr(text, ':');
             if (p) {

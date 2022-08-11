@@ -367,7 +367,7 @@ STATIC_OVL const char *
 e_nam(etmp)
 struct entity *etmp;
 {
-    return is_u(etmp) ? "你" : mon_nam(etmp->emon);
+    return is_u(etmp) ? "you" : mon_nam(etmp->emon);
 }
 
 /*
@@ -381,7 +381,7 @@ const char *verb;
 {
     static char wholebuf[80];
 
-    Strcpy(wholebuf, is_u(etmp) ? "你" : Monnam(etmp->emon));
+    Strcpy(wholebuf, is_u(etmp) ? "You" : Monnam(etmp->emon));
     if (!verb || !*verb)
         return wholebuf;
     Strcat(wholebuf, " ");
@@ -437,14 +437,14 @@ int xkill_flags, how;
             /* use more specific killer if specified */
             if (!killer.name[0]) {
                 killer.format = KILLED_BY_AN;
-                Strcpy(killer.name, "掉落的吊桥");
+                Strcpy(killer.name, "falling drawbridge");
             }
             done(how);
             /* So, you didn't die */
             if (!e_survives_at(etmp, etmp->ex, etmp->ey)) {
                 if (enexto(&xy, etmp->ex, etmp->ey, etmp->edata)) {
-                    pline("一种%s力量把你传送走了...",
-                          Hallucination ? "普通的" : "奇怪的");
+                    pline("A %s force teleports you away...",
+                          Hallucination ? "normal" : "strange");
                     teleds(xy.x, xy.y, FALSE);
                 }
                 /* otherwise on top of the drawbridge is the
@@ -574,8 +574,8 @@ struct entity *etmp;
 
     if (automiss(etmp) && e_survives_at(etmp, oldx, oldy)) {
         if (e_inview && (at_portcullis || IS_DRAWBRIDGE(crm->typ)))
-            pline_The("%s 穿过了%s!",
-                      at_portcullis ? "吊闸" : "吊桥",
+            pline_The("%s passes through %s!",
+                      at_portcullis ? "portcullis" : "drawbridge",
                       e_nam(etmp));
         if (is_u(etmp))
             spoteffects(FALSE);
@@ -583,7 +583,7 @@ struct entity *etmp;
     }
     if (e_missed(etmp, FALSE)) {
         if (at_portcullis) {
-            pline_The("吊闸没打到 %s!", e_nam(etmp));
+            pline_The("portcullis misses %s!", e_nam(etmp));
         } else {
             debugpline1("The drawbridge misses %s!", e_nam(etmp));
         }
@@ -601,10 +601,10 @@ struct entity *etmp;
             if (is_u(etmp)) {
                 killer.format = NO_KILLER_PREFIX;
                 Strcpy(killer.name,
-                       "被压碎在吊桥下");
+                       "crushed to death underneath a drawbridge");
             }
-            pline("%s压碎在吊桥下.",
-                  E_phrase(etmp, "被"));             /* no jump */
+            pline("%s crushed underneath the drawbridge.",
+                  E_phrase(etmp, "are"));             /* no jump */
             e_died(etmp,
                    XKILL_NOCORPSE | (e_inview ? XKILL_GIVEMSG : XKILL_NOMSG),
                    CRUSHING); /* no corpse */
@@ -619,10 +619,10 @@ struct entity *etmp;
                 debugpline0("Jump succeeds!");
             } else {
                 if (e_inview)
-                    pline("%s 下落的吊闸压碎!",
-                          E_phrase(etmp, "被"));
+                    pline("%s crushed by the falling portcullis!",
+                          E_phrase(etmp, "are"));
                 else if (!Deaf)
-                    You_hear("压碎的声音.");
+                    You_hear("a crushing sound.");
                 e_died(etmp,
                        XKILL_NOCORPSE | (e_inview ? XKILL_GIVEMSG
                                                   : XKILL_NOMSG),
@@ -707,18 +707,18 @@ struct entity *etmp;
 #endif
         if (e_inview) {
             if (is_u(etmp)) {
-                You("摔向关闭的吊闸!");
+                You("tumble towards the closed portcullis!");
                 if (automiss(etmp))
-                    You("穿过了它!");
+                    You("pass through it!");
                 else
-                    pline_The("吊桥关闭了...");
+                    pline_The("drawbridge closes in...");
             } else
-                pline("%s 在吊桥后面.",
-                      E_phrase(etmp, "消失"));
+                pline("%s behind the drawbridge.",
+                      E_phrase(etmp, "disappear"));
         }
         if (!e_survives_at(etmp, etmp->ex, etmp->ey)) {
             killer.format = KILLED_BY_AN;
-            Strcpy(killer.name, "关闭中的吊桥");
+            Strcpy(killer.name, "closing drawbridge");
             e_died(etmp, XKILL_NOMSG, CRUSHING);
             return;
         }
@@ -727,11 +727,11 @@ struct entity *etmp;
         debugpline1("%s on drawbridge square", E_phrase(etmp, "are"));
         if (is_pool(etmp->ex, etmp->ey) && !e_inview)
             if (!Deaf)
-                You_hear("飞溅的声音.");
+                You_hear("a splash.");
         if (e_survives_at(etmp, etmp->ex, etmp->ey)) {
             if (e_inview && !is_flyer(etmp->edata)
                 && !is_floater(etmp->edata))
-                pline("%s 下了桥.", E_phrase(etmp, "掉"));
+                pline("%s from the bridge.", E_phrase(etmp, "fall"));
             return;
         }
         debugpline1("%s cannot survive on the drawbridge square",
@@ -742,14 +742,14 @@ struct entity *etmp;
                 boolean lava = is_lava(etmp->ex, etmp->ey);
 
                 if (Hallucination)
-                    pline("%s %s 然后消失了.",
-                          E_phrase(etmp, "喝"), lava ? "熔岩" : "护城河");
+                    pline("%s the %s and disappears.",
+                          E_phrase(etmp, "drink"), lava ? "lava" : "moat");
                 else
-                    pline("%s 进了%s.", E_phrase(etmp, "掉"),
-                          lava ? hliquid("熔岩") : "护城河");
+                    pline("%s into the %s.", E_phrase(etmp, "fall"),
+                          lava ? hliquid("lava") : "moat");
             }
         killer.format = NO_KILLER_PREFIX;
-        Strcpy(killer.name, "从吊桥上掉落");
+        Strcpy(killer.name, "fell from a drawbridge");
         e_died(etmp, /* CRUSHING is arbitrary */
                XKILL_NOCORPSE | (e_inview ? XKILL_GIVEMSG : XKILL_NOMSG),
                is_pool(etmp->ex, etmp->ey) ? DROWNING
@@ -780,13 +780,13 @@ int x, y;
     y2 = y;
     get_wall_for_db(&x2, &y2);
     if (cansee(x, y) || cansee(x2, y2))
-        You_see("一个吊桥升上%s!",
+        You_see("a drawbridge %s up!",
                 (((u.ux == x || u.uy == y) && !Underwater)
                  || distu(x2, y2) < distu(x, y))
-                    ? "来"
-                    : "去");
+                    ? "coming"
+                    : "going");
     else /* "5 gears turn" for castle drawbridge tune */
-        You_hear("链条卡嗒卡嗒和齿轮转动的声音.");
+        You_hear("chains rattling and gears turning.");
     lev1->typ = DRAWBRIDGE_UP;
     lev2 = &levl[x2][y2];
     lev2->typ = DBWALL;
@@ -807,7 +807,7 @@ int x, y;
     set_entity(x2, y2, &(occupants[1])); /* do_entity for worm tail */
     do_entity(&(occupants[1]));
     if (OBJ_AT(x, y) && !Deaf)
-        You_hear("撞击声和压碎声.");
+        You_hear("smashing and crushing.");
     (void) revive_nasty(x, y, (char *) 0);
     (void) revive_nasty(x2, y2, (char *) 0);
     delallobj(x, y);
@@ -842,10 +842,10 @@ int x, y;
     y2 = y;
     get_wall_for_db(&x2, &y2);
     if (cansee(x, y) || cansee(x2, y2))
-        You_see("一个吊桥降下%s!",
-                (distu(x2, y2) < distu(x, y)) ? "去" : "来");
+        You_see("a drawbridge %s down!",
+                (distu(x2, y2) < distu(x, y)) ? "going" : "coming");
     else /* "5 gears turn" for castle drawbridge tune */
-        You_hear("齿轮转动和链条卡嗒卡嗒的声音.");
+        You_hear("gears turning and chains rattling.");
     lev1->typ = DRAWBRIDGE_DOWN;
     lev2 = &levl[x2][y2];
     lev2->typ = DOOR;
@@ -899,28 +899,28 @@ int x, y;
 
         if (lev1->typ == DRAWBRIDGE_UP) {
             if (cansee(x2, y2))
-                pline_The("吊桥的吊闸掉进了%s!",
-                          lava ? hliquid("熔岩") : "护城河");
+                pline_The("portcullis of the drawbridge falls into the %s!",
+                          lava ? hliquid("lava") : "moat");
             else if (!Deaf)
-                You_hear("很大的* 飞溅* 声!");
+                You_hear("a loud *SPLASH*!");
         } else {
             if (cansee(x, y))
-                pline_The("吊桥倒塌进了%s!",
-                          lava ? hliquid("熔岩") : "护城河");
+                pline_The("drawbridge collapses into the %s!",
+                          lava ? hliquid("lava") : "moat");
             else if (!Deaf)
-                You_hear("很大的* 飞溅* 声!");
+                You_hear("a loud *SPLASH*!");
         }
         lev1->typ = lava ? LAVAPOOL : MOAT;
         lev1->drawbridgemask = 0;
         if ((otmp2 = sobj_at(BOULDER, x, y)) != 0) {
             obj_extract_self(otmp2);
-            (void) flooreffects(otmp2, x, y, "掉落");
+            (void) flooreffects(otmp2, x, y, "fall");
         }
     } else {
         if (cansee(x, y))
-            pline_The("吊桥碎裂了!");
+            pline_The("drawbridge disintegrates!");
         else
-            You_hear("很大的* 粉碎* 声!");
+            You_hear("a loud *CRASH*!");
         lev1->typ = ((lev1->drawbridgemask & DB_ICE) ? ICE : ROOM);
         lev1->icedpool = ((lev1->drawbridgemask & DB_ICE) ? ICED_MOAT : 0);
     }
@@ -955,10 +955,10 @@ int x, y;
         e_inview = e_canseemon(etmp2);
         if (!automiss(etmp2)) {
             if (e_inview)
-                pline("%s 飞溅的残骸炸成碎片.",
-                      E_phrase(etmp2, "被"));
+                pline("%s blown apart by flying debris.",
+                      E_phrase(etmp2, "are"));
             killer.format = KILLED_BY_AN;
-            Strcpy(killer.name, "爆炸的吊桥");
+            Strcpy(killer.name, "exploding drawbridge");
             e_died(etmp2,
                    XKILL_NOCORPSE | (e_inview ? XKILL_GIVEMSG : XKILL_NOMSG),
                    CRUSHING); /*no corpse*/
@@ -977,20 +977,20 @@ int x, y;
         } else {
             if (e_inview) {
                 if (!is_u(etmp1) && Hallucination)
-                    pline("%s 卷入了一些重金属!",
-                          E_phrase(etmp1, "被"));
+                    pline("%s into some heavy metal!",
+                          E_phrase(etmp1, "get"));
                 else
-                    pline("%s 一大块金属击中!",
-                          E_phrase(etmp1, "被"));
+                    pline("%s hit by a huge chunk of metal!",
+                          E_phrase(etmp1, "are"));
             } else {
                 if (!Deaf && !is_u(etmp1) && !is_pool(x, y)) {
-                    You_hear("压碎的声音.");
+                    You_hear("a crushing sound.");
                 } else {
                     debugpline1("%s from shrapnel", E_phrase(etmp1, "die"));
                 }
             }
             killer.format = KILLED_BY_AN;
-            Strcpy(killer.name, "倒塌的吊桥");
+            Strcpy(killer.name, "collapsing drawbridge");
             e_died(etmp1,
                    XKILL_NOCORPSE | (e_inview ? XKILL_GIVEMSG : XKILL_NOMSG),
                    CRUSHING); /*no corpse*/

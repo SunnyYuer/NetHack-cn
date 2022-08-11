@@ -30,7 +30,7 @@ void centerOnMain(QWidget *);
 
 NetHackQtStringRequestor::NetHackQtStringRequestor(QWidget *parent, const char* p, const char* cancelstr) :
     QDialog(parent),
-    prompt(QString::fromUtf8(p),this),
+    prompt(QString::fromLatin1(p),this),
     input(this,"input")
 {
     cancel=new QPushButton(cancelstr,this);
@@ -92,7 +92,7 @@ bool NetHackQtStringRequestor::Get(char* buffer, int maxchar)
     exec();
 
     if (result()) {
-	str_copy(buffer,input.text().toUtf8().constData(),maxchar);
+	str_copy(buffer,input.text().toLatin1().constData(),maxchar);
 	return true;
     } else {
 	return false;

@@ -1,4 +1,4 @@
-/* NetHack 3.6	botl.c	$NHDT-Date: 1557094795 2019/05/05 22:19:55 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.145 $ */
+/* NetHack 3.6	botl.c	$NHDT-Date: 1573178085 2019/11/08 01:54:45 $  $NHDT-Branch: NetHack-3.6 $:$NHDT-Revision: 1.148 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Michael Allison, 2006. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -10,10 +10,8 @@
 
 extern const char *hu_stat[]; /* defined in eat.c */
 
-const char *const enc_stat[] = { "",         "负担",  "压力",
-                                 "强压", "过重", "超重" };
-/*const char *const enc_stat[] = { "",         "Burdened",  "Stressed",
-                                 "Strained", "Overtaxed", "Overloaded" };*/
+const char *const enc_stat[] = { "",         "Burdened",  "Stressed",
+                                 "Strained", "Overtaxed", "Overloaded" };
 
 STATIC_OVL NEARDATA int mrank_sz = 0; /* loaded by max_rank_sz (from u_init) */
 STATIC_DCL const char *NDECL(rank);
@@ -57,8 +55,8 @@ do_statusline1()
     Strcpy(newbot1, plname);
     if ('a' <= newbot1[0] && newbot1[0] <= 'z')
         newbot1[0] += 'A' - 'a';
-    newbot1[15] = 0;
-    Sprintf(nb = eos(newbot1), "  ");
+    newbot1[10] = 0;
+    Sprintf(nb = eos(newbot1), " the ");
 
     if (Upolyd) {
         char mbot[BUFSZ];
@@ -81,14 +79,14 @@ do_statusline1()
     if ((i - j) > 0)
         Sprintf(nb = eos(nb), "%*s", i - j, " "); /* pad with spaces */
 
-    Sprintf(nb = eos(nb), "力:%s  敏:%-1d  体:%-1d  智:%-1d  感:%-1d  魅:%-1d",
+    Sprintf(nb = eos(nb), "St:%s Dx:%-1d Co:%-1d In:%-1d Wi:%-1d Ch:%-1d",
             get_strength_str(),
             ACURR(A_DEX), ACURR(A_CON), ACURR(A_INT), ACURR(A_WIS),
             ACURR(A_CHA));
     Sprintf(nb = eos(nb),
             (u.ualign.type == A_CHAOTIC)
-                ? "   混沌"
-                : (u.ualign.type == A_NEUTRAL) ? "   中立" : "   秩序");
+                ? "  Chaotic"
+                : (u.ualign.type == A_NEUTRAL) ? "  Neutral" : "  Lawful");
 #ifdef SCORE_ON_BOTL
     if (flags.showscore)
         Sprintf(nb = eos(nb), " S:%ld", botl_score());
@@ -144,14 +142,14 @@ do_statusline2()
     if (Upolyd)
         Sprintf(expr, "HD:%d", mons[u.umonnum].mlevel);
     else if (flags.showexp)
-        Sprintf(expr, "Xp:%u/%-1ld", u.ulevel, u.uexp);
+        Sprintf(expr, "Xp:%d/%-1ld", u.ulevel, u.uexp);
     else
-        Sprintf(expr, "Exp:%u", u.ulevel);
+        Sprintf(expr, "Exp:%d", u.ulevel);
     xln = strlen(expr);
 
     /* time/move counter */
     if (flags.time)
-        Sprintf(tmmv, " 回:%ld", moves);
+        Sprintf(tmmv, "T:%ld", moves);
     else
         tmmv[0] = '\0';
     tln = strlen(tmmv);
@@ -166,38 +164,38 @@ do_statusline2()
      * unusual for more than one of them to apply at a time.]
      */
     if (Stoned)
-        Strcpy(nb = eos(nb), "  石化");
+        Strcpy(nb = eos(nb), " Stone");
     if (Slimed)
-        Strcpy(nb = eos(nb), "  污秽");
+        Strcpy(nb = eos(nb), " Slime");
     if (Strangled)
-        Strcpy(nb = eos(nb), "  束缚");
+        Strcpy(nb = eos(nb), " Strngl");
     if (Sick) {
         if (u.usick_type & SICK_VOMITABLE)
-            Strcpy(nb = eos(nb), "  食物中毒");
+            Strcpy(nb = eos(nb), " FoodPois");
         if (u.usick_type & SICK_NONVOMITABLE)
-            Strcpy(nb = eos(nb), "  生病");
+            Strcpy(nb = eos(nb), " TermIll");
     }
     if (u.uhs != NOT_HUNGRY)
         Sprintf(nb = eos(nb), " %s", hu_stat[u.uhs]);
     if ((cap = near_capacity()) > UNENCUMBERED)
         Sprintf(nb = eos(nb), " %s", enc_stat[cap]);
     if (Blind)
-        Strcpy(nb = eos(nb), "  失明");
+        Strcpy(nb = eos(nb), " Blind");
     if (Deaf)
-        Strcpy(nb = eos(nb), "  耳聋");
+        Strcpy(nb = eos(nb), " Deaf");
     if (Stunned)
-        Strcpy(nb = eos(nb), "  眩晕");
+        Strcpy(nb = eos(nb), " Stun");
     if (Confusion)
-        Strcpy(nb = eos(nb), "  混乱");
+        Strcpy(nb = eos(nb), " Conf");
     if (Hallucination)
-        Strcpy(nb = eos(nb), "  幻觉");
+        Strcpy(nb = eos(nb), " Hallu");
     /* levitation and flying are mutually exclusive; riding is not */
     if (Levitation)
-        Strcpy(nb = eos(nb), "  飘浮");
+        Strcpy(nb = eos(nb), " Lev");
     if (Flying)
-        Strcpy(nb = eos(nb), "  飞行");
+        Strcpy(nb = eos(nb), " Fly");
     if (u.usteed)
-        Strcpy(nb = eos(nb), "  乘骑");
+        Strcpy(nb = eos(nb), " Ride");
     cln = strlen(cond);
 
     /*
@@ -394,15 +392,15 @@ char *buf;
     if (Is_knox(&u.uz)) {
         Sprintf(buf, "%s ", dungeons[u.uz.dnum].dname);
     } else if (In_quest(&u.uz)) {
-        Sprintf(buf, "家乡 %d ", dunlev(&u.uz));
+        Sprintf(buf, "Home %d ", dunlev(&u.uz));
     } else if (In_endgame(&u.uz)) {
         /* [3.6.2: this used to be "Astral Plane" or generic "End Game"] */
         (void) endgamelevelname(buf, depth(&u.uz));
-        (void) strsubst(buf, "位面", ""); /* just keep <element> */
+        (void) strsubst(buf, "Plane of ", ""); /* just keep <element> */
         Strcat(buf, " ");
     } else {
         /* ports with more room may expand this one */
-        Sprintf(buf, "地牢:%-2d ", depth(&u.uz));
+        Sprintf(buf, "Dlvl:%-2d ", depth(&u.uz));
         ret = 0;
     }
     return ret;
@@ -435,6 +433,8 @@ struct istat_s {
     const char *fldfmt;
     long time;  /* moves when this field hilite times out */
     boolean chg; /* need to recalc time? */
+    boolean percent_matters;
+    short percent_value;
     unsigned anytype;
     anything a;
     char *val;
@@ -454,6 +454,7 @@ STATIC_DCL void NDECL(init_blstats);
 STATIC_DCL int FDECL(compare_blstats, (struct istat_s *, struct istat_s *));
 STATIC_DCL char *FDECL(anything_to_s, (char *, anything *, int));
 STATIC_DCL int FDECL(percentage, (struct istat_s *, struct istat_s *));
+STATIC_DCL int NDECL(exp_percentage);
 
 #ifdef STATUS_HILITES
 STATIC_DCL void FDECL(s_to_anything, (anything *, char *, int));
@@ -500,38 +501,42 @@ STATIC_DCL boolean FDECL(status_hilite_menu_add, (int));
 #define INIT_THRESH /*empty*/
 #endif
 
-#define INIT_BLSTAT(name, fmtstr, anytyp, wid, fld)                     \
-    { name, fmtstr, 0L, FALSE, anytyp,  { (genericptr_t) 0 }, (char *) 0, \
+#define INIT_BLSTAT(name, fmtstr, anytyp, wid, fld) \
+    { name, fmtstr, 0L, FALSE, FALSE, 0, anytyp,                        \
+      { (genericptr_t) 0 }, (char *) 0,                                 \
       wid,  -1, fld INIT_THRESH }
-#define INIT_BLSTATP(name, fmtstr, anytyp, wid, maxfld, fld)            \
-    { name, fmtstr, 0L, FALSE, anytyp,  { (genericptr_t) 0 }, (char *) 0, \
+#define INIT_BLSTATP(name, fmtstr, anytyp, wid, maxfld, fld) \
+    { name, fmtstr, 0L, FALSE, TRUE, 0, anytyp,                         \
+      { (genericptr_t) 0 }, (char *) 0,                                 \
       wid,  maxfld, fld INIT_THRESH }
 
-/* If entries are added to this, botl.h will require updating too */
+/* If entries are added to this, botl.h will require updating too.
+   'max' value of BL_EXP gets special handling since the percentage
+   involved isn't a direct 100*current/maximum calculation. */
 STATIC_VAR struct istat_s initblstats[MAXBLSTATS] = {
     INIT_BLSTAT("title", "%s", ANY_STR, MAXVALWIDTH, BL_TITLE),
-    INIT_BLSTAT("strength", " 力:%s", ANY_INT, 10, BL_STR),
-    INIT_BLSTAT("dexterity", " 敏:%s", ANY_INT,  10, BL_DX),
-    INIT_BLSTAT("constitution", " 体:%s", ANY_INT, 10, BL_CO),
-    INIT_BLSTAT("intelligence", " 智:%s", ANY_INT, 10, BL_IN),
-    INIT_BLSTAT("wisdom", " 感:%s", ANY_INT, 10, BL_WI),
-    INIT_BLSTAT("charisma", " 魅:%s", ANY_INT, 10, BL_CH),
+    INIT_BLSTAT("strength", " St:%s", ANY_INT, 10, BL_STR),
+    INIT_BLSTAT("dexterity", " Dx:%s", ANY_INT,  10, BL_DX),
+    INIT_BLSTAT("constitution", " Co:%s", ANY_INT, 10, BL_CO),
+    INIT_BLSTAT("intelligence", " In:%s", ANY_INT, 10, BL_IN),
+    INIT_BLSTAT("wisdom", " Wi:%s", ANY_INT, 10, BL_WI),
+    INIT_BLSTAT("charisma", " Ch:%s", ANY_INT, 10, BL_CH),
     INIT_BLSTAT("alignment", " %s", ANY_STR, 40, BL_ALIGN),
     INIT_BLSTAT("score", " S:%s", ANY_LONG, 20, BL_SCORE),
     INIT_BLSTAT("carrying-capacity", " %s", ANY_INT, 20, BL_CAP),
     INIT_BLSTAT("gold", " %s", ANY_LONG, 30, BL_GOLD),
     INIT_BLSTATP("power", " Pw:%s", ANY_INT, 10, BL_ENEMAX, BL_ENE),
     INIT_BLSTAT("power-max", "(%s)", ANY_INT, 10, BL_ENEMAX),
-    INIT_BLSTAT("experience-level", " Xp:%s", ANY_INT, 10, BL_XP),
+    INIT_BLSTATP("experience-level", " Xp:%s", ANY_INT, 10, BL_EXP, BL_XP),
     INIT_BLSTAT("armor-class", " AC:%s", ANY_INT, 10, BL_AC),
     INIT_BLSTAT("HD", " HD:%s", ANY_INT, 10, BL_HD),
-    INIT_BLSTAT("time", " 回:%s", ANY_LONG, 20, BL_TIME),
+    INIT_BLSTAT("time", " T:%s", ANY_LONG, 20, BL_TIME),
     /* hunger used to be 'ANY_UINT'; see note below in bot_via_windowport() */
     INIT_BLSTAT("hunger", " %s", ANY_INT, 40, BL_HUNGER),
     INIT_BLSTATP("hitpoints", " HP:%s", ANY_INT, 10, BL_HPMAX, BL_HP),
     INIT_BLSTAT("hitpoints-max", "(%s)", ANY_INT, 10, BL_HPMAX),
     INIT_BLSTAT("dungeon-level", "%s", ANY_STR, MAXVALWIDTH, BL_LEVELDESC),
-    INIT_BLSTAT("experience", "/%s", ANY_LONG, 20, BL_EXP),
+    INIT_BLSTATP("experience", "/%s", ANY_LONG, 20, BL_EXP, BL_EXP),
     INIT_BLSTAT("condition", "%s", ANY_MASK32, 0, BL_CONDITION)
 };
 
@@ -556,7 +561,7 @@ static long bl_hilite_moves = 0L;
 static unsigned long cond_hilites[BL_ATTCLR_MAX];
 static int now_or_before_idx = 0; /* 0..1 for array[2][] first index */
 
-void
+STATIC_OVL void
 bot_via_windowport()
 {
     char buf[BUFSZ];
@@ -587,17 +592,15 @@ bot_via_windowport()
     Strcpy(nb = buf, plname);
     nb[0] = highc(nb[0]);
     titl = !Upolyd ? rank() : mons[u.umonnum].mname;
-    i = (int) (strlen(buf) + sizeof "  " + strlen(titl) - sizeof "");
+    i = (int) (strlen(buf) + sizeof " the " + strlen(titl) - sizeof "");
     /* if "Name the Rank/monster" is too long, we truncate the name
        but always keep at least 10 characters of it; when hitpintbar is
        enabled, anything beyond 30 (long monster name) will be truncated */
-    // 最多允许 中文名5个汉字+职业名5个汉字+2个空格 32字节的长度
-    if (i > 32) {
-        i = 32 - (int) (sizeof "  " + strlen(titl) - sizeof "");
-        if(strlen("中") == 2) nb[max(i, 10)] = '\0';
-        else nb[max(i, 15)] = '\0';
+    if (i > 30) {
+        i = 30 - (int) (sizeof " the " + strlen(titl) - sizeof "");
+        nb[max(i, 10)] = '\0';
     }
-    Strcpy(nb = eos(nb), "  ");
+    Strcpy(nb = eos(nb), " the ");
     Strcpy(nb = eos(nb), titl);
     if (Upolyd) { /* when poly'd, capitalize monster name */
         for (i = 0; nb[i]; i++)
@@ -621,10 +624,10 @@ bot_via_windowport()
 
     /* Alignment */
     Strcpy(blstats[idx][BL_ALIGN].val, (u.ualign.type == A_CHAOTIC)
-                                          ? "混沌"
+                                          ? "Chaotic"
                                           : (u.ualign.type == A_NEUTRAL)
-                                               ? "中立"
-                                               : "秩序");
+                                               ? "Neutral"
+                                               : "Lawful");
 
     /* Score */
     blstats[idx][BL_SCORE].a.a_long =
@@ -767,8 +770,8 @@ boolean *valsetlist;
     int pc, chg, color = NO_COLOR;
     unsigned anytype;
     boolean updated = FALSE, reset;
-    struct istat_s *curr = NULL, *prev = NULL;
-    enum statusfields idxmax;
+    struct istat_s *curr, *prev;
+    enum statusfields fldmax;
 
     /*
      *  Now pass the changed values to window port.
@@ -779,6 +782,31 @@ boolean *valsetlist;
     color = NO_COLOR;
 
     chg = update_all ? 0 : compare_blstats(prev, curr);
+    /*
+     * TODO:
+     *  Dynamically update 'percent_matters' as rules are added or
+     *  removed to track whether any of them are precentage rules.
+     *  Then there'll be no need to assume that non-Null 'thresholds'
+     *  means that percentages need to be kept up to date.
+     *  [Affects exp_percent_changing() too.]
+     */
+    if (((chg || update_all || fld == BL_XP)
+         && curr->percent_matters && curr->thresholds)
+        /* when 'hitpointbar' is On, percent matters even if HP
+           hasn't changed and has no percentage rules (in case HPmax
+           has changed when HP hasn't, where we ordinarily wouldn't
+           update HP so would miss an update of the hitpoint bar) */
+        || (fld == BL_HP && iflags.wc2_hitpointbar)) {
+        fldmax = curr->idxmax;
+        pc = (fldmax == BL_EXP) ? exp_percentage()
+             : (fldmax >= 0) ? percentage(curr, &blstats[idx][fldmax])
+               : 0; /* bullet proofing; can't get here */
+        if (pc != prev->percent_value)
+            chg = 1;
+        curr->percent_value = pc;
+    } else {
+        pc = 0;
+    }
 
     /* Temporary? hack: moveloop()'s prolog for a new game sets
      * context.rndencode after the status window has been init'd,
@@ -815,25 +843,19 @@ boolean *valsetlist;
     }
 #endif
 
-        /*
-         * TODO?
-         *  It's possible for HPmax (or ENEmax) to change while current
-         *  HP (or energy) stays the same.  [Perhaps current and maximum
-         *  both go up, then before the next status update takes place
-         *  current goes down again.]  If that happens with HPmax, we
-         *  ought to force the windowport to treat current HP as changed
-         *  if hitpointbar is On, in order for that to be re-rendered.
-         */
     if (update_all || chg || reset) {
-        idxmax = curr->idxmax;
-        pc = (idxmax >= 0) ? percentage(curr, &blstats[idx][idxmax]) : 0;
-
         if (!valsetlist[fld])
             (void) anything_to_s(curr->val, &curr->a, anytype);
 
         if (anytype != ANY_MASK32) {
 #ifdef STATUS_HILITES
             if (chg || *curr->val) {
+                /* if Xp percentage changed, we set 'chg' to 1 above;
+                   reset that if the Xp value hasn't actually changed
+                   or possibly went down rather than up (level loss) */
+                if (chg == 1 && fld == BL_XP)
+                    chg = compare_blstats(prev, curr);
+
                 curr->hilite_rule = get_hilite(idx, fld,
                                                (genericptr_t) &curr->a,
                                                chg, pc, &color);
@@ -947,6 +969,7 @@ boolean reassessment; /* TRUE: just recheck fields w/o other initialization */
         status_enablefield(fld, fieldname, fieldfmt, fldenabl);
     }
     update_all = TRUE;
+    context.botlx = TRUE;
 }
 
 void
@@ -1262,6 +1285,75 @@ struct istat_s *bl, *maxbl;
         result = 1;
 
     return result;
+}
+
+/* percentage for both xp (level) and exp (points) is the percentage for
+   (curr_exp - this_level_start) in (next_level_start - this_level_start) */
+STATIC_OVL int
+exp_percentage()
+{
+    int res = 0;
+
+    if (u.ulevel < 30) {
+        long exp_val, nxt_exp_val, curlvlstart;
+
+        curlvlstart = newuexp(u.ulevel - 1);
+        exp_val = u.uexp - curlvlstart;
+        nxt_exp_val = newuexp(u.ulevel) - curlvlstart;
+        if (exp_val == nxt_exp_val - 1L) {
+            /*
+             * Full 100% is unattainable since hero gains a level
+             * and the threshold for next level increases, but treat
+             * (next_level_start - 1 point) as a special case.  It's a
+             * key value after being level drained so is something that
+             * some players would like to be able to highlight distinctly.
+             */
+            res = 100;
+        } else {
+            struct istat_s curval, maxval;
+
+            curval.anytype = maxval.anytype = ANY_LONG;
+            curval.a = maxval.a = zeroany;
+            curval.a.a_long = exp_val;
+            maxval.a.a_long = nxt_exp_val;
+            /* maximum delta between levels is 10000000; calculation of
+               100 * (10000000 - N) / 10000000 fits within 32-bit long */
+            res = percentage(&curval, &maxval);
+        }
+    }
+    return res;
+}
+
+/* experience points have changed but experience level hasn't; decide whether
+   botl update is needed for a different percentage highlight rule for Xp */
+boolean
+exp_percent_changing()
+{
+    int pc, color_dummy;
+    anything a;
+    struct hilite_s *rule;
+    struct istat_s *curr;
+
+    /* if status update is already requested, skip this processing */
+    if (!context.botl) {
+        /*
+         * Status update is warranted iff percent integer changes and the new
+         * percentage results in a different highlighting rule being selected.
+         */
+        curr = &blstats[now_or_before_idx][BL_XP];
+        /* TODO: [see eval_notify_windowport_field() about percent_matters
+           and the check against 'thresholds'] */
+        if (curr->percent_matters && curr->thresholds
+            && (pc = exp_percentage()) != curr->percent_value) {
+            a = zeroany;
+            a.a_int = (int) u.ulevel;
+            rule = get_hilite(now_or_before_idx, BL_XP,
+                              (genericptr_t) &a, 0, pc, &color_dummy);
+            if (rule != curr->hilite_rule)
+                return TRUE; /* caller should set 'context.botl' to True */
+        }
+    }
+    return FALSE;
 }
 
 /* callback so that interface can get capacity index rather than trying
@@ -2726,7 +2818,7 @@ status_hilite_linestr_gather()
 }
 
 
-char *
+STATIC_OVL char *
 status_hilite2str(hl)
 struct hilite_s *hl;
 {

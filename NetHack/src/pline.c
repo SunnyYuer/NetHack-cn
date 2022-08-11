@@ -6,6 +6,10 @@
 #define NEED_VARARGS /* Uses ... */ /* comment line for pre-compiled headers */
 #include "hack.h"
 
+#define BIGBUFSZ (5 * BUFSZ) /* big enough to format a 4*BUFSZ string (from
+                              * config file parsing) with modest decoration;
+                              * result will then be truncated to BUFSZ-1 */
+
 static unsigned pline_flags = 0;
 static char prevmsg[BUFSZ];
 
@@ -118,9 +122,12 @@ VA_DECL(const char *, line)
 #endif /* USE_STDARG | USE_VARARG */
 {       /* start of vpline() or of nested block in USE_OLDARG's pline() */
     static int in_pline = 0;
-    char pbuf[3 * BUFSZ];
+    char pbuf[BIGBUFSZ]; /* will get chopped down to BUFSZ-1 if longer */
     int ln;
     int msgtyp;
+#if !defined(NO_VSNPRINTF)
+    int vlen = 0;
+#endif
     boolean no_repeat;
     /* Do NOT use VA_START and VA_END in here... see above */
 
@@ -134,7 +141,16 @@ VA_DECL(const char *, line)
         return;
 
     if (index(line, '%')) {
+#if !defined(NO_VSNPRINTF)
+        vlen = vsnprintf(pbuf, sizeof pbuf, line, VA_ARGS);
+#if (NH_DEVEL_STATUS != NH_STATUS_RELEASED) && defined(DEBUG)
+        if (vlen >= (int) sizeof pbuf)
+            panic("%s: truncation of buffer at %zu of %d bytes",
+                  "pline", sizeof pbuf, vlen);
+#endif
+#else
         Vsprintf(pbuf, line, VA_ARGS);
+#endif
         line = pbuf;
     }
     if ((ln = (int) strlen(line)) > BUFSZ - 1) {
@@ -284,7 +300,7 @@ VA_DECL(const char *, line)
 
     VA_START(line);
     VA_INIT(line, const char *);
-    vpline(YouMessage(tmp, "你", line), VA_ARGS);
+    vpline(YouMessage(tmp, "You ", line), VA_ARGS);
     VA_END();
 }
 
@@ -296,7 +312,7 @@ VA_DECL(const char *, line)
 
     VA_START(line);
     VA_INIT(line, const char *);
-    vpline(YouMessage(tmp, "你的", line), VA_ARGS);
+    vpline(YouMessage(tmp, "Your ", line), VA_ARGS);
     VA_END();
 }
 
@@ -309,9 +325,9 @@ VA_DECL(const char *, line)
     VA_START(line);
     VA_INIT(line, const char *);
     if (Unaware)
-        YouPrefix(tmp, "你梦见你感觉", line);
+        YouPrefix(tmp, "You dream that you feel ", line);
     else
-        YouPrefix(tmp, "你感觉", line);
+        YouPrefix(tmp, "You feel ", line);
     vpline(strcat(tmp, line), VA_ARGS);
     VA_END();
 }
@@ -324,7 +340,7 @@ VA_DECL(const char *, line)
 
     VA_START(line);
     VA_INIT(line, const char *);
-    vpline(YouMessage(tmp, "你不能", line), VA_ARGS);
+    vpline(YouMessage(tmp, "You can't ", line), VA_ARGS);
     VA_END();
 }
 
@@ -336,7 +352,7 @@ VA_DECL(const char *, line)
 
     VA_START(line);
     VA_INIT(line, const char *);
-    vpline(YouMessage(tmp, "", line), VA_ARGS);
+    vpline(YouMessage(tmp, "The ", line), VA_ARGS);
     VA_END();
 }
 
@@ -348,7 +364,7 @@ VA_DECL(const char *, line)
 
     VA_START(line);
     VA_INIT(line, const char *);
-    vpline(YouMessage(tmp, "那里", line), VA_ARGS);
+    vpline(YouMessage(tmp, "There ", line), VA_ARGS);
     VA_END();
 }
 
@@ -363,11 +379,11 @@ VA_DECL(const char *, line)
     VA_START(line);
     VA_INIT(line, const char *);
     if (Underwater)
-        YouPrefix(tmp, "你勉强听见", line);
+        YouPrefix(tmp, "You barely hear ", line);
     else if (Unaware)
-        YouPrefix(tmp, "你梦到你听见", line);
+        YouPrefix(tmp, "You dream that you hear ", line);
     else
-        YouPrefix(tmp, "你听见", line);
+        YouPrefix(tmp, "You hear ", line);  /* Deaf-aware */
     vpline(strcat(tmp, line), VA_ARGS);
     VA_END();
 }
@@ -381,11 +397,11 @@ VA_DECL(const char *, line)
     VA_START(line);
     VA_INIT(line, const char *);
     if (Unaware)
-        YouPrefix(tmp, "你梦到你看见", line);
+        YouPrefix(tmp, "You dream that you see ", line);
     else if (Blind) /* caller should have caught this... */
-        YouPrefix(tmp, "你感到", line);
+        YouPrefix(tmp, "You sense ", line);
     else
-        YouPrefix(tmp, "你看见", line);
+        YouPrefix(tmp, "You see ", line);
     vpline(strcat(tmp, line), VA_ARGS);
     VA_END();
 }
@@ -443,15 +459,18 @@ void raw_printf
 VA_DECL(const char *, line)
 #endif
 {
-    char pbuf[3 * BUFSZ];
-    int ln;
+    char pbuf[BIGBUFSZ]; /* will be chopped down to BUFSZ-1 if longer */
     /* Do NOT use VA_START and VA_END in here... see above */
 
     if (index(line, '%')) {
+#if !defined(NO_VSNPRINTF)
+        (void) vsnprintf(pbuf, sizeof pbuf, line, VA_ARGS);
+#else
         Vsprintf(pbuf, line, VA_ARGS);
+#endif
         line = pbuf;
     }
-    if ((ln = (int) strlen(line)) > BUFSZ - 1) {
+    if ((int) strlen(line) > BUFSZ - 1) {
         if (line != pbuf)
             line = strncpy(pbuf, line, BUFSZ - 1);
         /* unlike pline, we don't futz around to keep last few chars */
@@ -470,7 +489,7 @@ VA_DECL(const char *, line)
 void impossible
 VA_DECL(const char *, s)
 {
-    char pbuf[2 * BUFSZ];
+    char pbuf[BIGBUFSZ]; /* will be chopped down to BUFSZ-1 if longer */
 
     VA_START(s);
     VA_INIT(s, const char *);
@@ -478,7 +497,11 @@ VA_DECL(const char *, s)
         panic("impossible called impossible");
 
     program_state.in_impossible = 1;
+#if !defined(NO_VSNPRINTF)
+    (void) vsnprintf(pbuf, sizeof pbuf, s, VA_ARGS);
+#else
     Vsprintf(pbuf, s, VA_ARGS);
+#endif
     pbuf[BUFSZ - 1] = '\0'; /* sanity */
     paniclog("impossible", pbuf);
     if (iflags.debug_fuzzer)
@@ -571,9 +594,21 @@ config_error_add
 VA_DECL(const char *, str)
 #endif /* ?(USE_STDARG || USE_VARARG) */
 {       /* start of vconf...() or of nested block in USE_OLDARG's conf...() */
-    char buf[2 * BUFSZ];
+#if !defined(NO_VSNPRINTF)
+    int vlen = 0;
+#endif
+    char buf[BIGBUFSZ]; /* will be chopped down to BUFSZ-1 if longer */
 
+#if !defined(NO_VSNPRINTF)
+    vlen = vsnprintf(buf, sizeof buf, str, VA_ARGS);
+#if (NH_DEVEL_STATUS != NH_STATUS_RELEASED) && defined(DEBUG)
+    if (vlen >= (int) sizeof buf)
+        panic("%s: truncation of buffer at %zu of %d bytes",
+              "config_error_add", sizeof buf, vlen);
+#endif
+#else
     Vsprintf(buf, str, VA_ARGS);
+#endif
     buf[BUFSZ - 1] = '\0';
     config_erradd(buf);
 

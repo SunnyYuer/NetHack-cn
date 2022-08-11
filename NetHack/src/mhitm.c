@@ -1,4 +1,4 @@
-/* NetHack 3.6	mhitm.c	$NHDT-Date: 1555720096 2019/04/20 00:28:16 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.113 $ */
+/* NetHack 3.6	mhitm.c	$NHDT-Date: 1583606861 2020/03/07 18:47:41 $  $NHDT-Branch: NetHack-3.6-Mar2020 $:$NHDT-Revision: 1.119 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2011. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -13,9 +13,8 @@ static NEARDATA long noisetime;
 static NEARDATA struct obj *otmp;
 
 static const char brief_feeling[] =
-    "片刻有一种%s的感觉, 然后消失了.";
+    "have a %s feeling for a moment, then it passes.";
 
-STATIC_DCL char *FDECL(mon_nam_too, (char *, struct monst *, struct monst *));
 STATIC_DCL int FDECL(hitmm, (struct monst *, struct monst *,
                              struct attack *));
 STATIC_DCL int FDECL(gazemm, (struct monst *, struct monst *,
@@ -40,30 +39,6 @@ STATIC_DCL int FDECL(passivemm, (struct monst *, struct monst *,
  */
 static int dieroll;
 
-/* returns mon_nam(mon) relative to other_mon; normal name unless they're
-   the same, in which case the reference is to {him|her|it} self */
-STATIC_OVL char *
-mon_nam_too(outbuf, mon, other_mon)
-char *outbuf;
-struct monst *mon, *other_mon;
-{
-    if (mon != other_mon)
-        Strcpy(outbuf, mon_nam(mon));
-    else
-        switch (pronoun_gender(mon, FALSE)) {
-        case 0:
-            Strcpy(outbuf, "他自己");
-            break;
-        case 1:
-            Strcpy(outbuf, "她自己");
-            break;
-        default:
-            Strcpy(outbuf, "它自己");
-            break;
-        }
-    return outbuf;
-}
-
 STATIC_OVL void
 noises(magr, mattk)
 register struct monst *magr;
@@ -75,8 +50,8 @@ register struct attack *mattk;
         far_noise = farq;
         noisetime = moves;
         You_hear("%s%s.",
-                 farq ? "远处的" : "",
-                 (mattk->aatyp == AT_EXPL) ? "爆炸声" : "一些声响");
+                 (mattk->aatyp == AT_EXPL) ? "an explosion" : "some noises",
+                 farq ? " in the distance" : "");
     }
 }
 
@@ -87,22 +62,41 @@ register struct monst *magr, *mdef;
 struct attack *mattk;
 {
     const char *fmt;
-    char buf[BUFSZ], mdef_name[BUFSZ];
+    char buf[BUFSZ];
+    boolean showit = FALSE;
+
+    /* unhiding or unmimicking happens even if hero can't see it
+       because the formerly concealed monster is now in action */
+    if (M_AP_TYPE(mdef)) {
+        seemimic(mdef);
+        showit |= vis;
+    } else if (mdef->mundetected) {
+        mdef->mundetected = 0;
+        showit |= vis;
+    }
+    if (M_AP_TYPE(magr)) {
+        seemimic(magr);
+        showit |= vis;
+    } else if (magr->mundetected) {
+        magr->mundetected = 0;
+        showit |= vis;
+    }
 
     if (vis) {
         if (!canspotmon(magr))
             map_invisible(magr->mx, magr->my);
+        else if (showit)
+            newsym(magr->mx, magr->my);
         if (!canspotmon(mdef))
             map_invisible(mdef->mx, mdef->my);
-        if (M_AP_TYPE(mdef))
-            seemimic(mdef);
-        if (M_AP_TYPE(magr))
-            seemimic(magr);
+        else if (showit)
+            newsym(mdef->mx, mdef->my);
+
         fmt = (could_seduce(magr, mdef, mattk) && !magr->mcan)
-                  ? "%s 假装友好地对"
-                  : "%s 没打中";
+                  ? "%s pretends to be friendly to"
+                  : "%s misses";
         Sprintf(buf, fmt, Monnam(magr));
-        pline("%s %s.", buf, mon_nam_too(mdef_name, mdef, magr));
+        pline("%s %s.", buf, mon_nam_too(mdef, magr));
     } else
         noises(magr, mattk);
 }
@@ -152,7 +146,7 @@ register struct monst *mtmp;
             if (monnear(mtmp, mon->mx, mon->my)) {
                 if (!u.uswallow && (mtmp == u.ustuck)) {
                     if (!rn2(4)) {
-                        pline("%s 放出了你!", Monnam(mtmp));
+                        pline("%s releases you!", Monnam(mtmp));
                         u.ustuck = 0;
                     } else
                         break;
@@ -246,12 +240,12 @@ boolean quietly;
                 return MM_HIT; /* no damage during the polymorph */
             }
             if (!quietly && canspotmon(magr))
-                pline("%s 变成了石头!", Monnam(magr));
+                pline("%s turns to stone!", Monnam(magr));
             monstone(magr);
             if (!DEADMONSTER(magr))
                 return MM_HIT; /* lifesaved */
             else if (magr->mtame && !vis)
-                You(brief_feeling, "特别难过");
+                You(brief_feeling, "peculiarly sad");
             return MM_AGR_DIED;
         }
     }
@@ -261,7 +255,8 @@ boolean quietly;
     place_monster(magr, tx, ty); /* put down at target spot */
     place_monster(mdef, fx, fy);
     if (vis && !quietly)
-        pline("%s 让 %s 让出了道路!", Monnam(magr), mon_nam(mdef));
+        pline("%s moves %s out of %s way!", Monnam(magr), mon_nam(mdef),
+              is_rider(pa) ? "the" : mhis(magr));
     newsym(fx, fy);  /* see it */
     newsym(tx, ty);  /*   all happen */
     flush_screen(0); /* make sure it shows up */
@@ -333,9 +328,9 @@ register struct monst *magr, *mdef;
                                                       : ARTICLE_NONE);
                 if (!justone)
                     montype = makeplural(montype);
-                You("梦见%s.", montype);
+                You("dream of %s.", montype);
             } else
-                pline("突然, 你注意到%s.", a_monnam(mdef));
+                pline("Suddenly, you notice %s.", a_monnam(mdef));
         }
     }
 
@@ -416,15 +411,15 @@ register struct monst *magr, *mdef;
                      || mdef->data == &mons[PM_BROWN_PUDDING])
                     && (otmp && (objects[otmp->otyp].oc_material == IRON
                                  || objects[otmp->otyp].oc_material == METAL))
-                    && mdef->mhp > 1
-                    && !mdef->mcan) {
+                    && mdef->mhp > 1 && !mdef->mcan) {
                     struct monst *mclone;
+
                     if ((mclone = clone_mon(mdef, 0, 0)) != 0) {
                         if (vis && canspotmon(mdef)) {
                             char buf[BUFSZ];
 
                             Strcpy(buf, Monnam(mdef));
-                            pline("%s 在%s打它时分开了!", buf,
+                            pline("%s divides as %s hits it!", buf,
                                   mon_nam(magr));
                         }
                         mintrap(mclone);
@@ -460,6 +455,13 @@ register struct monst *magr, *mdef;
             break;
 
         case AT_ENGL:
+            if (mdef->data == &mons[PM_SHADE]) { /* no silver teeth... */
+                if (vis)
+                    pline("%s attempt to engulf %s is futile.",
+                          s_suffix(Monnam(magr)), mon_nam(mdef));
+                strike = 0;
+                break;
+            }
             if (u.usteed && mdef == u.usteed) {
                 strike = 0;
                 break;
@@ -536,53 +538,101 @@ hitmm(magr, mdef, mattk)
 register struct monst *magr, *mdef;
 struct attack *mattk;
 {
+    boolean weaponhit = ((mattk->aatyp == AT_WEAP
+                          || (mattk->aatyp == AT_CLAW && otmp))),
+            silverhit = (weaponhit && otmp
+                         && objects[otmp->otyp].oc_material == SILVER),
+            showit = FALSE;
+
+    /* unhiding or unmimicking happens even if hero can't see it
+       because the formerly concealed monster is now in action */
+    if (M_AP_TYPE(mdef)) {
+        seemimic(mdef);
+        showit |= vis;
+    } else if (mdef->mundetected) {
+        mdef->mundetected = 0;
+        showit |= vis;
+    }
+    if (M_AP_TYPE(magr)) {
+        seemimic(magr);
+        showit |= vis;
+    } else if (magr->mundetected) {
+        magr->mundetected = 0;
+        showit |= vis;
+    }
+
     if (vis) {
         int compat;
-        char buf[BUFSZ], mdef_name[BUFSZ];
+        char buf[BUFSZ];
 
         if (!canspotmon(magr))
             map_invisible(magr->mx, magr->my);
+        else if (showit)
+            newsym(magr->mx, magr->my);
         if (!canspotmon(mdef))
             map_invisible(mdef->mx, mdef->my);
-        if (M_AP_TYPE(mdef))
-            seemimic(mdef);
-        if (M_AP_TYPE(magr))
-            seemimic(magr);
+        else if (showit)
+            newsym(mdef->mx, mdef->my);
+
         if ((compat = could_seduce(magr, mdef, mattk)) && !magr->mcan) {
-            Sprintf(buf, "%s %s对%s", Monnam(magr),
-                    compat == 2 ? "动人地" : "诱惑地",
-                    mon_nam(mdef));
-            pline("%s %s.", buf, mdef->mcansee ? "微笑" : "说话");
+            Sprintf(buf, "%s %s", Monnam(magr),
+                    mdef->mcansee ? "smiles at" : "talks to");
+            pline("%s %s %s.", buf, mon_nam(mdef),
+                  compat == 2 ? "engagingly" : "seductively");
+        } else if (shade_miss(magr, mdef, otmp, FALSE, TRUE)) {
+            return MM_MISS; /* bypass mdamagem() */
         } else {
             char magr_name[BUFSZ];
 
             Strcpy(magr_name, Monnam(magr));
             switch (mattk->aatyp) {
             case AT_BITE:
-                Sprintf(buf, "%s 咬了一口", magr_name);
+                Sprintf(buf, "%s bites", magr_name);
                 break;
             case AT_STNG:
-                Sprintf(buf, "%s 叮了一口", magr_name);
+                Sprintf(buf, "%s stings", magr_name);
                 break;
             case AT_BUTT:
-                Sprintf(buf, "%s 撞了一下", magr_name);
+                Sprintf(buf, "%s butts", magr_name);
                 break;
             case AT_TUCH:
-                Sprintf(buf, "%s 碰了一下", magr_name);
+                Sprintf(buf, "%s touches", magr_name);
                 break;
             case AT_TENT:
-                Sprintf(buf, "%s 触手吸食", s_suffix(magr_name));
+                Sprintf(buf, "%s tentacles suck", s_suffix(magr_name));
                 break;
             case AT_HUGS:
                 if (magr != u.ustuck) {
-                    Sprintf(buf, "%s 挤压", magr_name);
+                    Sprintf(buf, "%s squeezes", magr_name);
                     break;
                 }
                 /*FALLTHRU*/
             default:
-                Sprintf(buf, "%s 打了一下", magr_name);
+                Sprintf(buf, "%s hits", magr_name);
             }
-            pline("%s %s.", buf, mon_nam_too(mdef_name, mdef, magr));
+            pline("%s %s.", buf, mon_nam_too(mdef, magr));
+
+            if (mon_hates_silver(mdef) && silverhit) {
+                char *mdef_name = mon_nam_too(mdef, magr);
+
+                /* note: mon_nam_too returns a modifiable buffer; so
+                   does s_suffix, but it returns a single static buffer
+                   and we might be calling it twice for this message */
+                Strcpy(magr_name, s_suffix(magr_name));
+                if (!noncorporeal(mdef->data) && !amorphous(mdef->data)) {
+                    if (mdef != magr) {
+                        mdef_name = s_suffix(mdef_name);
+                    } else {
+                        (void) strsubst(mdef_name, "himself", "his own");
+                        (void) strsubst(mdef_name, "herself", "her own");
+                        (void) strsubst(mdef_name, "itself", "its own");
+                    }
+                    Strcat(mdef_name, " flesh");
+                }
+
+                pline("%s %s sears %s!", magr_name, /*s_suffix(magr_name), */
+                      simpleonames(otmp), mdef_name);
+            }
         }
     } else
         noises(magr, mattk);
@@ -602,38 +652,38 @@ struct attack *mattk;
         if (mdef->data->mlet == S_MIMIC
             && M_AP_TYPE(mdef) != M_AP_NOTHING)
             seemimic(mdef);
-        Sprintf(buf, "%s 凝视着", Monnam(magr));
+        Sprintf(buf, "%s gazes at", Monnam(magr));
         pline("%s %s...", buf,
-              canspotmon(mdef) ? mon_nam(mdef) : "什么东西");
+              canspotmon(mdef) ? mon_nam(mdef) : "something");
     }
 
     if (magr->mcan || !magr->mcansee || !mdef->mcansee
         || (magr->minvis && !perceives(mdef->data)) || mdef->msleeping) {
         if (vis && canspotmon(mdef))
-            pline("但是无事发生.");
+            pline("but nothing happens.");
         return MM_MISS;
     }
     /* call mon_reflects 2x, first test, then, if visible, print message */
     if (magr->data == &mons[PM_MEDUSA] && mon_reflects(mdef, (char *) 0)) {
         if (canseemon(mdef))
-            (void) mon_reflects(mdef, "凝视被 %s %s反射开.");
+            (void) mon_reflects(mdef, "The gaze is reflected away by %s %s.");
         if (mdef->mcansee) {
             if (mon_reflects(magr, (char *) 0)) {
                 if (canseemon(magr))
                     (void) mon_reflects(magr,
-                                      "凝视被%s %s反射开.");
+                                      "The gaze is reflected away by %s %s.");
                 return MM_MISS;
             }
             if (mdef->minvis && !perceives(magr->data)) {
                 if (canseemon(magr)) {
                     pline(
-                      "%s 似乎没有注意到%s 凝视被反射了.",
+                      "%s doesn't seem to notice that %s gaze was reflected.",
                           Monnam(magr), mhis(magr));
                 }
                 return MM_MISS;
             }
             if (canseemon(magr))
-                pline("%s 变成了石头!", Monnam(magr));
+                pline("%s is turned to stone!", Monnam(magr));
             monstone(magr);
             if (!DEADMONSTER(magr))
                 return MM_MISS;
@@ -694,7 +744,7 @@ register struct attack *mattk;
         /* [this two-part formatting dates back to when only one x_monnam
            result could be included in an expression because the next one
            would overwrite first's result -- that's no longer the case] */
-        Sprintf(buf, "%s 吞下了", Monnam(magr));
+        Sprintf(buf, "%s swallows", Monnam(magr));
         pline("%s %s.", buf, mon_nam(mdef));
     }
     for (obj = mdef->minvent; obj; obj = obj->nobj)
@@ -705,10 +755,10 @@ register struct attack *mattk;
         if (vis) {
             /* 'it' -- previous form is no longer available and
                using that would be excessively verbose */
-            pline("%s 排出了%s.", Monnam(magr),
-                  canspotmon(mdef) ? "它" : something);
+            pline("%s expels %s.", Monnam(magr),
+                  canspotmon(mdef) ? "it" : something);
             if (canspotmon(mdef))
-                pline("它变成了%s.", a_monnam(mdef));
+                pline("It turns into %s.", a_monnam(mdef));
         }
         return MM_HIT; /* bypass mdamagem() */
     }
@@ -753,7 +803,7 @@ register struct attack *mattk;
         newsym(dx, dy);
     } else {                           /* both alive, put them back */
         if (cansee(dx, dy))
-            pline("%s 反胃的!", Monnam(mdef));
+            pline("%s is regurgitated!", Monnam(mdef));
 
         remove_monster(dx,dy);
         place_monster(magr, ax, ay);
@@ -776,7 +826,7 @@ struct attack *mattk;
         return MM_MISS;
 
     if (cansee(magr->mx, magr->my))
-        pline("%s爆炸了!", Monnam(magr));
+        pline("%s explodes!", Monnam(magr));
     else
         noises(magr, mattk);
 
@@ -794,10 +844,10 @@ struct attack *mattk;
         /* mondead() -> m_detach() -> m_unleash() always suppresses
            the m_unleash() slack message, so deliver it here instead */
         if (was_leashed)
-            Your("狗链松了.");
+            Your("leash falls slack.");
     }
     if (magr->mtame) /* give this one even if it was visible */
-        You(brief_feeling, "忧郁");
+        You(brief_feeling, "melancholy");
 
     return result;
 }
@@ -813,8 +863,9 @@ register struct attack *mattk;
     struct obj *obj;
     char buf[BUFSZ];
     struct permonst *pa = magr->data, *pd = mdef->data;
-    int armpro, num, tmp = d((int) mattk->damn, (int) mattk->damd),
-                     res = MM_MISS;
+    int armpro, num,
+        tmp = d((int) mattk->damn, (int) mattk->damd),
+        res = MM_MISS;
     boolean cancelled;
 
     if ((touch_petrifies(pd) /* or flesh_petrifies() */
@@ -834,12 +885,12 @@ register struct attack *mattk;
                 return MM_HIT; /* no damage during the polymorph */
             }
             if (vis && canspotmon(magr))
-                pline("%s 变成了石头!", Monnam(magr));
+                pline("%s turns to stone!", Monnam(magr));
             monstone(magr);
             if (!DEADMONSTER(magr))
                 return MM_HIT; /* lifesaved */
             else if (magr->mtame && !vis)
-                You(brief_feeling, "特别难过");
+                You(brief_feeling, "peculiarly sad");
             return MM_AGR_DIED;
         }
     }
@@ -855,19 +906,19 @@ register struct attack *mattk;
             if (vis && canseemon(magr))
                 pline("%s %s!", Monnam(magr),
                       (pd == &mons[PM_FAMINE])
-                          ? "无力地打嗝, 枯萎然后死了"
+                          ? "belches feebly, shrivels up and dies"
                           : (pd == &mons[PM_PESTILENCE])
-                                ? "断续性地咳嗽然后垮掉了"
-                                : "剧烈地呕吐然后倒毙了");
+                                ? "coughs spasmodically and collapses"
+                                : "vomits violently and drops dead");
             mondied(magr);
             if (!DEADMONSTER(magr))
                 return 0; /* lifesaved */
             else if (magr->mtame && !vis)
-                You(brief_feeling, "恶心");
+                You(brief_feeling, "queasy");
             return MM_AGR_DIED;
         }
         if (flags.verbose && !Deaf)
-            verbalize("嗝!");
+            verbalize("Burrrrp!");
         tmp = mdef->mhp;
         /* Use up amulet of life saving */
         if (!!(obj = mlifesaver(mdef)))
@@ -903,8 +954,8 @@ register struct attack *mattk;
         if (magr->mcan)
             break;
         if (canseemon(mdef))
-            pline("%s %s了片刻.", Monnam(mdef),
-                  makeplural(stagger(pd, "蹒跚")));
+            pline("%s %s for a moment.", Monnam(mdef),
+                  makeplural(stagger(pd, "stagger")));
         mdef->mstun = 1;
         goto physical;
     case AD_LEGS:
@@ -917,15 +968,20 @@ register struct attack *mattk;
     case AD_HEAL:
     case AD_PHYS:
  physical:
-        if (mattk->aatyp == AT_KICK && thick_skinned(pd)) {
+        obj = (mattk->aatyp == AT_WEAP || mattk->aatyp == AT_CLAW) ? otmp : 0;
+        if (shade_miss(magr, mdef, obj, FALSE, TRUE)) {
             tmp = 0;
-        } else if (mattk->aatyp == AT_WEAP) {
+        } else if (mattk->aatyp == AT_KICK && thick_skinned(pd)) {
+            tmp = 0;
+        } else if (mattk->aatyp == AT_WEAP
+                   || (mattk->aatyp == AT_CLAW && otmp)) {
             if (otmp) {
                 struct obj *marmg;
 
                 if (otmp->otyp == CORPSE
                     && touch_petrifies(&mons[otmp->corpsenm]))
                     goto do_stone;
+
                 tmp += dmgval(otmp, mdef);
                 if ((marmg = which_armor(magr, W_ARMG)) != 0
                     && marmg->otyp == GAUNTLETS_OF_POWER)
@@ -956,22 +1012,22 @@ register struct attack *mattk;
             break;
         }
         if (vis && canseemon(mdef))
-            pline("%s %s!", Monnam(mdef), on_fire(pd, mattk));
+            pline("%s is %s!", Monnam(mdef), on_fire(pd, mattk));
         if (completelyburns(pd)) { /* paper golem or straw golem */
             if (vis && canseemon(mdef))
-                pline("%s 被烧为灰烬!", Monnam(mdef));
+                pline("%s burns completely!", Monnam(mdef));
             mondead(mdef); /* was mondied() but that dropped paper scrolls */
             if (!DEADMONSTER(mdef))
                 return 0;
             else if (mdef->mtame && !vis)
-                pline("愿%s 在平静中烘烤.", mon_nam(mdef));
+                pline("May %s roast in peace.", mon_nam(mdef));
             return (MM_DEF_DIED | (grow_up(magr, mdef) ? 0 : MM_AGR_DIED));
         }
         tmp += destroy_mitem(mdef, SCROLL_CLASS, AD_FIRE);
         tmp += destroy_mitem(mdef, SPBOOK_CLASS, AD_FIRE);
         if (resists_fire(mdef)) {
             if (vis && canseemon(mdef))
-                pline_The("火似乎没有烧伤%s!", mon_nam(mdef));
+                pline_The("fire doesn't seem to burn %s!", mon_nam(mdef));
             shieldeff(mdef->mx, mdef->my);
             golemeffects(mdef, AD_FIRE, tmp);
             tmp = 0;
@@ -985,10 +1041,10 @@ register struct attack *mattk;
             break;
         }
         if (vis && canseemon(mdef))
-            pline("%s满身都是冰霜!", Monnam(mdef));
+            pline("%s is covered in frost!", Monnam(mdef));
         if (resists_cold(mdef)) {
             if (vis && canseemon(mdef))
-                pline_The("冰霜似乎没有使%s寒冷!", mon_nam(mdef));
+                pline_The("frost doesn't seem to chill %s!", mon_nam(mdef));
             shieldeff(mdef->mx, mdef->my);
             golemeffects(mdef, AD_COLD, tmp);
             tmp = 0;
@@ -1001,11 +1057,11 @@ register struct attack *mattk;
             break;
         }
         if (vis && canseemon(mdef))
-            pline("%s被电了!", Monnam(mdef));
+            pline("%s gets zapped!", Monnam(mdef));
         tmp += destroy_mitem(mdef, WAND_CLASS, AD_ELEC);
         if (resists_elec(mdef)) {
             if (vis && canseemon(mdef))
-                pline_The("电没有冲击%s!", mon_nam(mdef));
+                pline_The("zap doesn't shock %s!", mon_nam(mdef));
             shieldeff(mdef->mx, mdef->my);
             golemeffects(mdef, AD_ELEC, tmp);
             tmp = 0;
@@ -1020,12 +1076,12 @@ register struct attack *mattk;
         }
         if (resists_acid(mdef)) {
             if (vis && canseemon(mdef))
-                pline("%s 满身都是%s, 但是似乎是无害的.",
-                      Monnam(mdef), hliquid("酸"));
+                pline("%s is covered in %s, but it seems harmless.",
+                      Monnam(mdef), hliquid("acid"));
             tmp = 0;
         } else if (vis && canseemon(mdef)) {
-            pline("%s 满身都是%s!", Monnam(mdef), hliquid("酸"));
-            pline("它烧伤了%s!", mon_nam(mdef));
+            pline("%s is covered in %s!", Monnam(mdef), hliquid("acid"));
+            pline("It burns %s!", mon_nam(mdef));
         }
         if (!rn2(30))
             erode_armor(mdef, ERODE_CORRODE);
@@ -1037,12 +1093,12 @@ register struct attack *mattk;
             break;
         if (pd == &mons[PM_IRON_GOLEM]) {
             if (vis && canseemon(mdef))
-                pline("%s 碎掉了!", Monnam(mdef));
+                pline("%s falls to pieces!", Monnam(mdef));
             mondied(mdef);
             if (!DEADMONSTER(mdef))
                 return 0;
             else if (mdef->mtame && !vis)
-                pline("愿 %s 在平静中生锈.", mon_nam(mdef));
+                pline("May %s rust in peace.", mon_nam(mdef));
             return (MM_DEF_DIED | (grow_up(magr, mdef) ? 0 : MM_AGR_DIED));
         }
         erode_armor(mdef, ERODE_RUST);
@@ -1061,12 +1117,12 @@ register struct attack *mattk;
             break;
         if (pd == &mons[PM_WOOD_GOLEM] || pd == &mons[PM_LEATHER_GOLEM]) {
             if (vis && canseemon(mdef))
-                pline("%s碎掉了!", Monnam(mdef));
+                pline("%s falls to pieces!", Monnam(mdef));
             mondied(mdef);
             if (!DEADMONSTER(mdef))
                 return 0;
             else if (mdef->mtame && !vis)
-                pline("愿%s在平静中腐烂.", mon_nam(mdef));
+                pline("May %s rot in peace.", mon_nam(mdef));
             return (MM_DEF_DIED | (grow_up(magr, mdef) ? 0 : MM_AGR_DIED));
         }
         erode_armor(mdef, ERODE_CORRODE);
@@ -1087,13 +1143,13 @@ register struct attack *mattk;
         }
         if (!resists_ston(mdef)) {
             if (vis && canseemon(mdef))
-                pline("%s变成了石头!", Monnam(mdef));
+                pline("%s turns to stone!", Monnam(mdef));
             monstone(mdef);
  post_stone:
             if (!DEADMONSTER(mdef))
                 return 0;
             else if (mdef->mtame && !vis)
-                You(brief_feeling, "特别难过");
+                You(brief_feeling, "peculiarly sad");
             return (MM_DEF_DIED | (grow_up(magr, mdef) ? 0 : MM_AGR_DIED));
         }
         tmp = (mattk->adtyp == AD_STON ? 0 : 1);
@@ -1110,7 +1166,7 @@ register struct attack *mattk;
             mdef->mstrategy &= ~STRAT_WAITFORU;
             (void) rloc(mdef, TRUE);
             if (vis && wasseen && !canspotmon(mdef) && mdef != u.usteed)
-                pline("%s突然消失了!", mdef_Monnam);
+                pline("%s suddenly disappears!", mdef_Monnam);
             if (tmp >= mdef->mhp) { /* see hitmu(mhitu.c) */
                 if (mdef->mhp == 1)
                     ++mdef->mhp;
@@ -1123,7 +1179,7 @@ register struct attack *mattk;
             && sleep_monst(mdef, rnd(10), -1)) {
             if (vis && canspotmon(mdef)) {
                 Strcpy(buf, Monnam(mdef));
-                pline("%s被%s陷入了沉睡.", buf, mon_nam(magr));
+                pline("%s is put to sleep by %s.", buf, mon_nam(magr));
             }
             mdef->mstrategy &= ~STRAT_WAITFORU;
             slept_monst(mdef);
@@ -1133,7 +1189,7 @@ register struct attack *mattk;
         if (!cancelled && mdef->mcanmove) {
             if (vis && canspotmon(mdef)) {
                 Strcpy(buf, Monnam(mdef));
-                pline("%s被%s僵住.", buf, mon_nam(magr));
+                pline("%s is frozen by %s.", buf, mon_nam(magr));
             }
             paralyze_monst(mdef, rnd(10));
         }
@@ -1145,7 +1201,7 @@ register struct attack *mattk;
             mon_adjust_speed(mdef, -1, (struct obj *) 0);
             mdef->mstrategy &= ~STRAT_WAITFORU;
             if (mdef->mspeed != oldspeed && vis && canspotmon(mdef))
-                pline("%s慢下来了.", Monnam(mdef));
+                pline("%s slows down.", Monnam(mdef));
         }
         break;
     case AD_CONF:
@@ -1155,7 +1211,7 @@ register struct attack *mattk;
          */
         if (!magr->mcan && !mdef->mconf && !magr->mspec_used) {
             if (vis && canseemon(mdef))
-                pline("%s看起来混乱的.", Monnam(mdef));
+                pline("%s looks confused.", Monnam(mdef));
             mdef->mconf = 1;
             mdef->mstrategy &= ~STRAT_WAITFORU;
         }
@@ -1165,7 +1221,7 @@ register struct attack *mattk;
             register unsigned rnd_tmp;
 
             if (vis && mdef->mcansee && canspotmon(mdef))
-                pline("%s是失明的.", Monnam(mdef));
+                pline("%s is blinded.", Monnam(mdef));
             rnd_tmp = d((int) mattk->damn, (int) mattk->damd);
             if ((rnd_tmp += mdef->mblinded) > 127)
                 rnd_tmp = 127;
@@ -1178,8 +1234,8 @@ register struct attack *mattk;
     case AD_HALU:
         if (!magr->mcan && haseyes(pd) && mdef->mcansee) {
             if (vis && canseemon(mdef))
-                pline("%s看起来%s混乱的.", Monnam(mdef),
-                      mdef->mconf ? "更" : "");
+                pline("%s looks %sconfused.", Monnam(mdef),
+                      mdef->mconf ? "more " : "");
             mdef->mconf = 1;
             mdef->mstrategy &= ~STRAT_WAITFORU;
         }
@@ -1195,23 +1251,23 @@ register struct attack *mattk;
                 were_change(mdef);
             if (pd == &mons[PM_CLAY_GOLEM]) {
                 if (vis && canseemon(mdef)) {
-                    pline("一些文字从%s头上消失了!",
+                    pline("Some writing vanishes from %s head!",
                           s_suffix(mon_nam(mdef)));
-                    pline("%s被消灭了!", Monnam(mdef));
+                    pline("%s is destroyed!", Monnam(mdef));
                 }
                 mondied(mdef);
                 if (!DEADMONSTER(mdef))
                     return 0;
                 else if (mdef->mtame && !vis)
-                    You(brief_feeling, "异常的悲伤");
+                    You(brief_feeling, "strangely sad");
                 return (MM_DEF_DIED
                         | (grow_up(magr, mdef) ? 0 : MM_AGR_DIED));
             }
             if (!Deaf) {
                 if (!vis)
-                    You_hear("笑声.");
+                    You_hear("laughter.");
                 else if (canseemon(magr))
-                    pline("%s咯咯地笑.", Monnam(magr));
+                    pline("%s chuckles.", Monnam(magr));
             }
         }
         break;
@@ -1233,20 +1289,20 @@ register struct attack *mattk;
         mdef->mstrategy &= ~STRAT_WAITFORU;
         if (vis && canseemon(mdef)) {
             Strcpy(buf, Monnam(magr));
-            pline("%s 从 %s偷走一些金币.", buf, mon_nam(mdef));
+            pline("%s steals some gold from %s.", buf, mon_nam(mdef));
         }
         if (!tele_restrict(magr)) {
             boolean couldspot = canspotmon(magr);
             (void) rloc(magr, TRUE);
             if (vis && couldspot && !canspotmon(magr))
-                pline("%s 突然消失了!", buf);
+                pline("%s suddenly disappears!", buf);
         }
         break;
     case AD_DRLI:
         if (!cancelled && !rn2(3) && !resists_drli(mdef)) {
             tmp = d(2, 6);
             if (vis && canspotmon(mdef))
-                pline("%s 突然似乎虚弱了一些!", Monnam(mdef));
+                pline("%s suddenly seems weaker!", Monnam(mdef));
             mdef->mhpmax -= tmp;
             if (mdef->m_lev == 0)
                 tmp = mdef->mhp;
@@ -1294,7 +1350,7 @@ register struct attack *mattk;
             (void) add_to_minv(magr, otmp);
             if (vis && canseemon(mdef)) {
                 Strcpy(buf, Monnam(magr));
-                pline("%s 从%s 偷走了%s!", buf, mdefnambuf, onambuf);
+                pline("%s steals %s from %s!", buf, onambuf, mdefnambuf);
             }
             possibly_unwield(mdef, FALSE);
             mdef->mstrategy &= ~STRAT_WAITFORU;
@@ -1307,7 +1363,7 @@ register struct attack *mattk;
 
                 (void) rloc(magr, TRUE);
                 if (vis && couldspot && !canspotmon(magr))
-                    pline("%s 突然消失了!", buf);
+                    pline("%s suddenly disappears!", buf);
             }
         }
         tmp = 0;
@@ -1323,18 +1379,18 @@ register struct attack *mattk;
     case AD_DRCO:
         if (!cancelled && !rn2(8)) {
             if (vis && canspotmon(magr))
-                pline("%s %s 是有毒的!", s_suffix(Monnam(magr)),
+                pline("%s %s was poisoned!", s_suffix(Monnam(magr)),
                       mpoisons_subj(magr, mattk));
             if (resists_poison(mdef)) {
                 if (vis && canspotmon(mdef) && canspotmon(magr))
-                    pline_The("毒似乎没有影响%s.",
+                    pline_The("poison doesn't seem to affect %s.",
                               mon_nam(mdef));
             } else {
                 if (rn2(10))
                     tmp += rn1(10, 6);
                 else {
                     if (vis && canspotmon(mdef))
-                        pline_The("毒是致命的...");
+                        pline_The("poison was deadly...");
                     tmp = mdef->mhp;
                 }
             }
@@ -1343,7 +1399,7 @@ register struct attack *mattk;
     case AD_DRIN:
         if (notonhead || !has_head(pd)) {
             if (vis && canspotmon(mdef))
-                pline("%s 似乎没有受到伤害.", Monnam(mdef));
+                pline("%s doesn't seem harmed.", Monnam(mdef));
             /* Not clear what to do for green slimes */
             tmp = 0;
             break;
@@ -1351,8 +1407,8 @@ register struct attack *mattk;
         if ((mdef->misc_worn_check & W_ARMH) && rn2(8)) {
             if (vis && canspotmon(magr) && canseemon(mdef)) {
                 Strcpy(buf, s_suffix(Monnam(mdef)));
-                pline("%s 头盔阻碍了%s 对%s 头的攻击.", buf,
-                      mon_nam(magr), mhis(mdef));
+                pline("%s helmet blocks %s attack to %s head.", buf,
+                      s_suffix(mon_nam(magr)), mhis(mdef));
             }
             break;
         }
@@ -1476,7 +1532,7 @@ struct monst *mon;
 {
     if ((mon->msleeping || !mon->mcanmove) && mon == u.ustuck
         && !sticks(youmonst.data) && !u.uswallow) {
-        pline("%s 控制放松了.", s_suffix(Monnam(mon)));
+        pline("%s grip relaxes.", s_suffix(Monnam(mon)));
         unstuck(mon);
     }
 }
@@ -1512,10 +1568,10 @@ struct monst *magr, *mdef;
 struct obj *otemp;
 {
     if (flags.verbose && !Blind && mon_visible(magr)) {
-        pline("%s 对%s %s%s %s %s.", Monnam(magr),
-              mon_nam(mdef),
-              (objects[otemp->otyp].oc_dir & PIERCE) ? "戳刺着" : "挥舞着",
-              (otemp->quan > 1L) ? "一个" : "", mhis(magr), xname(otemp));
+        pline("%s %s %s%s %s at %s.", Monnam(magr),
+              (objects[otemp->otyp].oc_dir & PIERCE) ? "thrusts" : "swings",
+              (otemp->quan > 1L) ? "one of " : "", mhis(magr), xname(otemp),
+              mon_nam(mdef));
     }
 }
 
@@ -1553,11 +1609,11 @@ int mdead;
         if (mhit && !rn2(2)) {
             Strcpy(buf, Monnam(magr));
             if (canseemon(magr))
-                pline("%s 被%s%s溅到了!", buf,
-                      s_suffix(mon_nam(mdef)), hliquid("酸"));
+                pline("%s is splashed by %s %s!", buf,
+                      s_suffix(mon_nam(mdef)), hliquid("acid"));
             if (resists_acid(magr)) {
                 if (canseemon(magr))
-                    pline("%s 没有受影响.", Monnam(magr));
+                    pline("%s is not affected.", Monnam(magr));
                 tmp = 0;
             }
         } else
@@ -1593,13 +1649,13 @@ int mdead;
                     /* construct format string; guard against '%' in Monnam */
                     Strcpy(buf, s_suffix(Monnam(mdef)));
                     (void) strNsubst(buf, "%", "%%", 0);
-                    Strcat(buf, "凝视被%s%s反射.");
+                    Strcat(buf, " gaze is reflected by %s %s.");
                     if (mon_reflects(magr,
                                      canseemon(magr) ? buf : (char *) 0))
                         return (mdead | mhit);
                     Strcpy(buf, Monnam(magr));
                     if (canseemon(magr))
-                        pline("%s被%s凝视僵住!", buf,
+                        pline("%s is frozen by %s gaze!", buf,
                               s_suffix(mon_nam(mdef)));
                     paralyze_monst(magr, tmp);
                     return (mdead | mhit);
@@ -1607,7 +1663,7 @@ int mdead;
             } else { /* gelatinous cube */
                 Strcpy(buf, Monnam(magr));
                 if (canseemon(magr))
-                    pline("%s被%s僵住.", buf, mon_nam(mdef));
+                    pline("%s is frozen by %s.", buf, mon_nam(mdef));
                 paralyze_monst(magr, tmp);
                 return (mdead | mhit);
             }
@@ -1615,14 +1671,14 @@ int mdead;
         case AD_COLD:
             if (resists_cold(magr)) {
                 if (canseemon(magr)) {
-                    pline("%s轻微的寒冷.", Monnam(magr));
+                    pline("%s is mildly chilly.", Monnam(magr));
                     golemeffects(magr, AD_COLD, tmp);
                 }
                 tmp = 0;
                 break;
             }
             if (canseemon(magr))
-                pline("%s突然非常冷!", Monnam(magr));
+                pline("%s is suddenly very cold!", Monnam(magr));
             mdef->mhp += tmp / 2;
             if (mdef->mhpmax < mdef->mhp)
                 mdef->mhpmax = mdef->mhp;
@@ -1634,33 +1690,33 @@ int mdead;
                 magr->mstun = 1;
                 if (canseemon(magr))
                     pline("%s %s...", Monnam(magr),
-                          makeplural(stagger(magr->data, "蹒跚")));
+                          makeplural(stagger(magr->data, "stagger")));
             }
             tmp = 0;
             break;
         case AD_FIRE:
             if (resists_fire(magr)) {
                 if (canseemon(magr)) {
-                    pline("%s轻微的温暖.", Monnam(magr));
+                    pline("%s is mildly warmed.", Monnam(magr));
                     golemeffects(magr, AD_FIRE, tmp);
                 }
                 tmp = 0;
                 break;
             }
             if (canseemon(magr))
-                pline("%s突然非常热!", Monnam(magr));
+                pline("%s is suddenly very hot!", Monnam(magr));
             break;
         case AD_ELEC:
             if (resists_elec(magr)) {
                 if (canseemon(magr)) {
-                    pline("%s轻微的刺痛.", Monnam(magr));
+                    pline("%s is mildly tingled.", Monnam(magr));
                     golemeffects(magr, AD_ELEC, tmp);
                 }
                 tmp = 0;
                 break;
             }
             if (canseemon(magr))
-                pline("%s被电所冲击了!", Monnam(magr));
+                pline("%s is jolted with electricity!", Monnam(magr));
             break;
         default:
             tmp = 0;
@@ -1688,7 +1744,7 @@ boolean givemsg;
             || attacktype(mon->data, AT_BREA))) {
         mon->mspec_used += d(2, 2);
         if (givemsg)
-            pline("%s 似乎无精打采.", Monnam(mon));
+            pline("%s seems lethargic.", Monnam(mon));
     }
 }
 

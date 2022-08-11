@@ -1,4 +1,4 @@
-/* NetHack 3.6	rumors.c	$NHDT-Date: 1545132266 2018/12/18 11:24:26 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.34 $ */
+/* NetHack 3.6	rumors.c	$NHDT-Date: 1583445339 2020/03/05 21:55:39 $  $NHDT-Branch: NetHack-3.6-Mar2020 $:$NHDT-Revision: 1.38 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2012. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -149,9 +149,7 @@ boolean exclude_cookie;
             Strcat(rumor_buf, xcrypt(line, xbuf));
         } while (
             count++ < 50 && exclude_cookie
-            && (strstri(rumor_buf, "fortune") || strstri(rumor_buf, "pity")
-            || strstri(rumor_buf, "幸运") || strstri(rumor_buf, "命运")
-            || strstri(rumor_buf, "可惜")));
+            && (strstri(rumor_buf, "fortune") || strstri(rumor_buf, "pity")));
         (void) dlb_fclose(rumors);
         if (count >= 50)
             impossible("Can't find non-cookie rumor?");
@@ -161,9 +159,10 @@ boolean exclude_cookie;
         couldnt_open_file(RUMORFILE);
         true_rumor_size = -1; /* don't try to open it again */
     }
-/* this is safe either way, so do it always since we can't get the definition
- * out of makedefs.c
- */
+
+    /* this is safe either way, so do it always since we can't get the
+     * definition out of makedefs.c
+     */
 #define PAD_RUMORS_TO
 #ifdef PAD_RUMORS_TO
     /* remove padding */
@@ -190,10 +189,8 @@ rumor_check()
     char *endp, line[BUFSZ], xbuf[BUFSZ], rumor_buf[BUFSZ];
 
     if (true_rumor_size < 0L) { /* we couldn't open RUMORFILE */
-    no_rumors:
+ no_rumors:
         pline("rumors not accessible.");
-        if (rumors)
-            (void) dlb_fclose(rumors);
         return;
     }
 
@@ -205,29 +202,27 @@ rumor_check()
         rumor_buf[0] = '\0';
         if (true_rumor_size == 0L) { /* if this is 1st outrumor() */
             init_rumors(rumors);
-            if (true_rumor_size < 0L)
+            if (true_rumor_size < 0L) {
+                rumors = (dlb *) 0; /* init_rumors() closes it upon failure */
                 goto no_rumors; /* init failed */
+            }
         }
         tmpwin = create_nhwindow(NHW_TEXT);
 
         /*
          * reveal the values.
          */
-
-        Sprintf(
-            rumor_buf,
-            "T start=%06ld (%06lx), end=%06ld (%06lx), size=%06ld (%06lx)",
-            (long) true_rumor_start, true_rumor_start, true_rumor_end,
-            (unsigned long) true_rumor_end, true_rumor_size,
-            (unsigned long) true_rumor_size);
+        Sprintf(rumor_buf,
+               "T start=%06ld (%06lx), end=%06ld (%06lx), size=%06ld (%06lx)",
+                (long) true_rumor_start, true_rumor_start,
+                true_rumor_end, (unsigned long) true_rumor_end,
+                true_rumor_size, (unsigned long) true_rumor_size);
         putstr(tmpwin, 0, rumor_buf);
-
-        Sprintf(
-            rumor_buf,
-            "F start=%06ld (%06lx), end=%06ld (%06lx), size=%06ld (%06lx)",
-            (long) false_rumor_start, false_rumor_start, false_rumor_end,
-            (unsigned long) false_rumor_end, false_rumor_size,
-            (unsigned long) false_rumor_size);
+        Sprintf(rumor_buf,
+               "F start=%06ld (%06lx), end=%06ld (%06lx), size=%06ld (%06lx)",
+                (long) false_rumor_start, false_rumor_start,
+                false_rumor_end, (unsigned long) false_rumor_end,
+                false_rumor_size, (unsigned long) false_rumor_size);
         putstr(tmpwin, 0, rumor_buf);
 
         /*
@@ -293,23 +288,26 @@ int FDECL((*rng), (int));
     dlb *fh;
 
     buf[0] = '\0';
-
     fh = dlb_fopen(fname, "r");
-
     if (fh) {
-        /* TODO: cache sizetxt, starttxt, endtxt. maybe cache file contents?
-         */
-        long sizetxt = 0, starttxt = 0, endtxt = 0, tidbit = 0;
+        /* TODO: cache sizetxt, starttxt, endtxt. maybe cache file contents? */
+        long sizetxt = 0L, starttxt = 0L, endtxt = 0L, tidbit = 0L;
         char *endp, line[BUFSZ], xbuf[BUFSZ];
-        (void) dlb_fgets(line, sizeof line,
-                         fh); /* skip "don't edit" comment */
+
+        /* skip "don't edit" comment */
+        (void) dlb_fgets(line, sizeof line, fh);
 
         (void) dlb_fseek(fh, 0L, SEEK_CUR);
         starttxt = dlb_ftell(fh);
         (void) dlb_fseek(fh, 0L, SEEK_END);
         endtxt = dlb_ftell(fh);
         sizetxt = endtxt - starttxt;
-        tidbit = rng(sizetxt);
+        /* might be zero (only if file is empty); should complain in that
+           case but if could happen over and over, also the suggestion
+           that save and restore might fix the problem wouldn't be useful */
+        if (sizetxt < 1L)
+            return buf;
+        tidbit = (*rng)(sizetxt);
 
         (void) dlb_fseek(fh, starttxt + tidbit, SEEK_SET);
         (void) dlb_fgets(line, sizeof line, fh);
@@ -334,7 +332,7 @@ int truth; /* 1=true, -1=false, 0=either */
 int mechanism;
 {
     static const char fortune_msg[] =
-        "这个饼干里面有一张废纸.";
+        "This cookie has a scrap of paper inside.";
     const char *line;
     char buf[BUFSZ];
     boolean reading = (mechanism == BY_COOKIE || mechanism == BY_PAPER);
@@ -346,7 +344,7 @@ int mechanism;
         else if (Blind) {
             if (mechanism == BY_COOKIE)
                 pline(fortune_msg);
-            pline("真遗憾你无法阅读它!");
+            pline("What a pity that you cannot read it!");
             return;
         }
     }
@@ -356,10 +354,10 @@ int mechanism;
     switch (mechanism) {
     case BY_ORACLE:
         /* Oracle delivers the rumor */
-        pline("不背其言, 神谕 %s说: ",
-              (!rn2(4) ? "随口 "
-                       : (!rn2(3) ? "胡乱 "
-                                  : (rn2(2) ? "平静的 " : ""))));
+        pline("True to her word, the Oracle %ssays: ",
+              (!rn2(4) ? "offhandedly "
+                       : (!rn2(3) ? "casually "
+                                  : (rn2(2) ? "nonchalantly " : ""))));
         verbalize1(line);
         /* [WIS exercized by getrumor()] */
         return;
@@ -367,7 +365,7 @@ int mechanism;
         pline(fortune_msg);
     /* FALLTHRU */
     case BY_PAPER:
-        pline("上面写着:");
+        pline("It reads:");
         break;
     }
     pline1(line);
@@ -402,7 +400,8 @@ int fd, mode;
     if (perform_bwrite(mode)) {
         bwrite(fd, (genericptr_t) &oracle_cnt, sizeof oracle_cnt);
         if (oracle_cnt)
-            bwrite(fd, (genericptr_t) oracle_loc, oracle_cnt * sizeof(long));
+            bwrite(fd, (genericptr_t) oracle_loc, 
+                    oracle_cnt * sizeof(long));
     }
     if (release_data(mode)) {
         if (oracle_cnt) {
@@ -461,10 +460,10 @@ boolean delphi;
         if (delphi)
             putstr(tmpwin, 0,
                    special
-                     ? "神谕轻蔑地拿走了你所有的钱然后说:"
-                     : "神谕沉思片刻然后吟诵:");
+                     ? "The Oracle scornfully takes all your money and says:"
+                     : "The Oracle meditates for a moment and then intones:");
         else
-            putstr(tmpwin, 0, "消息显示:");
+            putstr(tmpwin, 0, "The message reads:");
         putstr(tmpwin, 0, "");
 
         while (dlb_fgets(line, COLNO, oracles) && strcmp(line, "---\n")) {
@@ -495,17 +494,17 @@ struct monst *oracl;
     umoney = money_cnt(invent);
 
     if (!oracl) {
-        There("没有人来咨询.");
+        There("is no one here to consult.");
         return 0;
     } else if (!oracl->mpeaceful) {
-        pline("%s 没有心情让你咨询.", Monnam(oracl));
+        pline("%s is in no mood for consultations.", Monnam(oracl));
         return 0;
     } else if (!umoney) {
-        You("没有钱.");
+        You("have no money.");
         return 0;
     }
 
-    Sprintf(qbuf, "\" 汝欲小咨询否?\" (%d %s)",
+    Sprintf(qbuf, "\"Wilt thou settle for a minor consultation?\" (%d %s)",
             minor_cost, currency((long) minor_cost));
     switch (ynq(qbuf)) {
     default:
@@ -513,7 +512,7 @@ struct monst *oracl;
         return 0;
     case 'y':
         if (umoney < (long) minor_cost) {
-            You("没有足够的钱咨询!");
+            You("don't even have enough money for that!");
             return 0;
         }
         u_pay = minor_cost;
@@ -522,7 +521,7 @@ struct monst *oracl;
         if (umoney <= (long) minor_cost /* don't even ask */
             || (oracle_cnt == 1 || oracle_flg < 0))
             return 0;
-        Sprintf(qbuf, "\" 则汝欲大咨询耶?\" (%d %s)",
+        Sprintf(qbuf, "\"Then dost thou desire a major one?\" (%d %s)",
                 major_cost, currency((long) major_cost));
         if (yn(qbuf) != 'y')
             return 0;

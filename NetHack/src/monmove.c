@@ -1,4 +1,4 @@
-/* NetHack 3.6	monmove.c	$NHDT-Date: 1557094802 2019/05/05 22:20:02 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.113 $ */
+/* NetHack 3.6	monmove.c	$NHDT-Date: 1575245074 2019/12/02 00:04:34 $  $NHDT-Branch: NetHack-3.6 $:$NHDT-Revision: 1.116 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Michael Allison, 2006. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -25,9 +25,9 @@ struct monst *mtmp;
 {
     if (flags.verbose) {
         if (cansee(mtmp->mx, mtmp->my) && !Unaware)
-            pline("嘣!!  你看见一扇门爆炸了.");
+            pline("KABOOM!!  You see a door explode.");
         else if (!Deaf)
-            You_hear("远处的爆炸声.");
+            You_hear("a distant explosion.");
     }
     wake_nearto(mtmp->mx, mtmp->my, 7 * 7);
     mtmp->mstun = 1;
@@ -63,17 +63,17 @@ const char *shout;
             /* Sidenote on "A watchman angrily waves her arms!"
              * Female being called watchman is correct (career name).
              */
-            pline("%s 愤怒地%s%s%s!",
+            pline("%s angrily %s %s %s!",
                 Amonnam(mon),
-                nolimbs(mon->data) ? "摇" : "挥",
+                nolimbs(mon->data) ? "shakes" : "waves",
                 mhis(mon),
                 nolimbs(mon->data) ? mbodypart(mon, HEAD)
                                    : makeplural(mbodypart(mon, ARM)));
     } else {
         if (canspotmon(mon))
-            pline("%s 叫:", Amonnam(mon));
+            pline("%s yells:", Amonnam(mon));
         else
-            You_hear("有人叫喊:");
+            You_hear("someone yell:");
         verbalize1(shout);
     }
 }
@@ -90,10 +90,10 @@ register struct monst *mtmp;
             && (levl[x][y].doormask & D_LOCKED)) {
             if (couldsee(mtmp->mx, mtmp->my)) {
                 if (levl[x][y].looted & D_WARNED) {
-                    mon_yells(mtmp, "停止, 小偷!  你被捕了!");
+                    mon_yells(mtmp, "Halt, thief!  You're under arrest!");
                     (void) angry_guards(!!Deaf);
                 } else {
-                    mon_yells(mtmp, "喂, 停止撬锁!");
+                    mon_yells(mtmp, "Hey, stop picking that lock!");
                     levl[x][y].looted |= D_WARNED;
                 }
                 stop_occupation();
@@ -249,7 +249,7 @@ struct monst *mon;
             expels(mon, mon->data, TRUE);
         } else if (!sticks(youmonst.data)) {
             unstuck(mon); /* let go */
-            You("解脱出来!");
+            You("get released!");
         }
     }
 }
@@ -295,15 +295,15 @@ boolean fleemsg;
                sleep and temporary paralysis, so both conditions
                receive the same alternate message */
             if (!mtmp->mcanmove || !mtmp->data->mmove) {
-                pline("%s似乎要退缩.", Adjmonnam(mtmp, "不能移动的"));
+                pline("%s seems to flinch.", Adjmonnam(mtmp, "immobile"));
             } else if (flees_light(mtmp)) {
                 if (rn2(10) || Deaf)
-                    pline("%s逃离%s的痛苦之光.",
+                    pline("%s flees from the painful light of %s.",
                           Monnam(mtmp), bare_artifactname(uwep));
                 else
-                    verbalize("万丈光芒!");
+                    verbalize("Bright light!");
             } else
-                pline("%s转身逃跑.", Monnam(mtmp));
+                pline("%s turns to flee.", Monnam(mtmp));
         }
         mtmp->mflee = 1;
     }
@@ -469,8 +469,8 @@ register struct monst *mtmp;
     if (nearby && mdat->msound == MS_BRIBE && mtmp->mpeaceful && !mtmp->mtame
         && !u.uswallow) {
         if (mtmp->mux != u.ux || mtmp->muy != u.uy) {
-            pline("%s 在稀薄的空气中低语.",
-                  cansee(mtmp->mux, mtmp->muy) ? Monnam(mtmp) : "它");
+            pline("%s whispers at thin air.",
+                  cansee(mtmp->mux, mtmp->muy) ? Monnam(mtmp) : "It");
 
             if (is_demon(youmonst.data)) {
                 /* "Good hunting, brother" */
@@ -479,7 +479,7 @@ register struct monst *mtmp;
             } else {
                 mtmp->minvis = mtmp->perminvis = 0;
                 /* Why?  For the same reason in real demon talk */
-                pline("%s 生气了!", Amonnam(mtmp));
+                pline("%s gets angry!", Amonnam(mtmp));
                 mtmp->mpeaceful = 0;
                 set_malign(mtmp);
                 /* since no way is an image going to pay it off */
@@ -496,27 +496,27 @@ register struct monst *mtmp;
         struct monst *m2, *nmon = (struct monst *) 0;
 
         if (canseemon(mtmp))
-            pline("%s 集中精神.", Monnam(mtmp));
+            pline("%s concentrates.", Monnam(mtmp));
         if (distu(mtmp->mx, mtmp->my) > BOLT_LIM * BOLT_LIM) {
-            You("感觉到一股微弱的精神能量波.");
+            You("sense a faint wave of psychic energy.");
             goto toofar;
         }
-        pline("一股精神能量波倾迎来!");
+        pline("A wave of psychic energy pours over you!");
         if (mtmp->mpeaceful
             && (!Conflict || resist(mtmp, RING_CLASS, 0, 0))) {
-            pline("它感觉相当镇静.");
+            pline("It feels quite soothing.");
         } else if (!u.uinvulnerable) {
             register boolean m_sen = sensemon(mtmp);
 
             if (m_sen || (Blind_telepat && rn2(2)) || !rn2(10)) {
                 int dmg;
-                pline("它锁定到你的 %s!",
-                      m_sen ? "感知" : Blind_telepat ? "潜在的感知"
-                                                          : "精神");
+                pline("It locks on to your %s!",
+                      m_sen ? "telepathy" : Blind_telepat ? "latent telepathy"
+                                                          : "mind");
                 dmg = rnd(15);
                 if (Half_spell_damage)
                     dmg = (dmg + 1) / 2;
-                losehp(dmg, "精神爆炸", KILLED_BY_AN);
+                losehp(dmg, "psychic blast", KILLED_BY_AN);
             }
         }
         for (m2 = fmon; m2; m2 = nmon) {
@@ -532,7 +532,7 @@ register struct monst *mtmp;
             if ((telepathic(m2->data) && (rn2(2) || m2->mblinded))
                 || !rn2(10)) {
                 if (cansee(m2->mx, m2->my))
-                    pline("它锁定到 %s.", mon_nam(m2));
+                    pline("It locks on to %s.", mon_nam(m2));
                 m2->mhp -= rnd(15);
                 if (DEADMONSTER(m2))
                     monkilled(m2, "", AD_DRIN);
@@ -676,7 +676,7 @@ itsstuck(mtmp)
 register struct monst *mtmp;
 {
     if (sticks(youmonst.data) && mtmp == u.ustuck && !u.uswallow) {
-        pline("%s 不能逃离你!", Monnam(mtmp));
+        pline("%s cannot escape from you!", Monnam(mtmp));
         return TRUE;
     }
     return FALSE;
@@ -1322,9 +1322,9 @@ register int after;
                 if ((here->doormask & (D_LOCKED | D_CLOSED)) != 0
                     && amorphous(ptr)) {
                     if (flags.verbose && canseemon(mtmp))
-                        pline("%s从门下%s.", Monnam(mtmp),
+                        pline("%s %s under the door.", Monnam(mtmp),
                               (ptr == &mons[PM_FOG_CLOUD]
-                               || ptr->mlet == S_LIGHT) ? "流过" : "渗出");
+                               || ptr->mlet == S_LIGHT) ? "flows" : "oozes");
                 } else if (here->doormask & D_LOCKED && can_unlock) {
                     if (btrapped) {
                         here->doormask = D_NODOOR;
@@ -1335,12 +1335,12 @@ register int after;
                     } else {
                         if (flags.verbose) {
                             if (observeit)
-                                pline("%s 解锁并打开了门.",
+                                pline("%s unlocks and opens a door.",
                                       Monnam(mtmp));
                             else if (canseeit)
-                                You_see("一扇门解开了锁然后打开了.");
+                                You_see("a door unlock and open.");
                             else if (!Deaf)
-                                You_hear("一扇门解开了锁然后打开了.");
+                                You_hear("a door unlock and open.");
                         }
                         here->doormask = D_ISOPEN;
                         /* newsym(mtmp->mx, mtmp->my); */
@@ -1356,11 +1356,11 @@ register int after;
                     } else {
                         if (flags.verbose) {
                             if (observeit)
-                                pline("%s 打开了一扇门.", Monnam(mtmp));
+                                pline("%s opens a door.", Monnam(mtmp));
                             else if (canseeit)
-                                You_see("一扇门开了.");
+                                You_see("a door open.");
                             else if (!Deaf)
-                                You_hear("一扇门开了.");
+                                You_hear("a door open.");
                         }
                         here->doormask = D_ISOPEN;
                         /* newsym(mtmp->mx, mtmp->my); */  /* done below */
@@ -1377,12 +1377,12 @@ register int after;
                     } else {
                         if (flags.verbose) {
                             if (observeit)
-                                pline("%s 摧毁了一扇门.",
+                                pline("%s smashes down a door.",
                                       Monnam(mtmp));
                             else if (canseeit)
-                                You_see("一扇门破碎并打开了.");
+                                You_see("a door crash open.");
                             else if (!Deaf)
-                                You_hear("一扇门破碎并打开了.");
+                                You_hear("a door crash open.");
                         }
                         if ((here->doormask & D_LOCKED) != 0 && !rn2(2))
                             here->doormask = D_NODOOR;
@@ -1396,18 +1396,18 @@ register int after;
                         add_damage(mtmp->mx, mtmp->my, 0L);
                 }
             } else if (levl[mtmp->mx][mtmp->my].typ == IRONBARS) {
-                /* 3.6.2: was using may_dig() but it doesn't handle bars */
+                /* As of 3.6.2: was using may_dig() but it doesn't handle bars */
                 if (!(levl[mtmp->mx][mtmp->my].wall_info & W_NONDIGGABLE)
                     && (dmgtype(ptr, AD_RUST) || dmgtype(ptr, AD_CORR))) {
                     if (canseemon(mtmp))
-                        pline("%s 吃穿了铁栅栏.", Monnam(mtmp));
+                        pline("%s eats through the iron bars.", Monnam(mtmp));
                     dissolve_bars(mtmp->mx, mtmp->my);
                     return 3;
                 } else if (flags.verbose && canseemon(mtmp))
-                    Norep("%s %s %s 铁栅栏.", Monnam(mtmp),
+                    Norep("%s %s %s the iron bars.", Monnam(mtmp),
                           /* pluralization fakes verb conjugation */
-                          makeplural(locomotion(ptr, "穿")),
-                          passes_walls(ptr) ? "过" : "插在");
+                          makeplural(locomotion(ptr, "pass")),
+                          passes_walls(ptr) ? "through" : "between");
             }
 
             /* possibly dig */
@@ -1605,8 +1605,8 @@ register struct monst *mtmp;
  */
 boolean
 undesirable_disp(mtmp, x, y)
-struct monst *mtmp;
-xchar x, y;
+struct monst *mtmp; /* barging creature */
+xchar x, y; /* spot 'mtmp' is considering moving to */
 {
     boolean is_pet = (mtmp && mtmp->mtame && !mtmp->isminion);
     struct trap *trap = t_at(x, y);
@@ -1624,6 +1624,18 @@ xchar x, y;
                && (mtmp->mtrapseen & (1 << (trap->ttyp - 1))) != 0) {
         return TRUE;
     }
+
+    /* oversimplification:  creatures that bargethrough can't swap places
+       when target monster is in rock or closed door or water (in particular,
+       avoid moving to spots where mondied() won't leave a corpse; doesn't
+       matter whether barger is capable of moving to such a target spot if
+       it were unoccupied) */
+    if (!accessible(x, y)
+        /* mondied() allows is_pool() as an exception to !accessible(),
+           but we'll only do that if 'mtmp' is already at a water location
+           so that we don't swap a water critter onto land */
+        && !(is_pool(x, y) && is_pool(mtmp->mx, mtmp->my)))
+        return TRUE;
 
     return FALSE;
 }
@@ -1711,8 +1723,8 @@ boolean domsg;
     }
 
     if (reslt && domsg) {
-        pline("你%s%s 在%s那里.",
-              !canseemon(mon) ? "现在侦察到" : "看到",
+        pline("You %s %s where %s was.",
+              !canseemon(mon) ? "now detect" : "observe",
               noname_monnam(mon, ARTICLE_A), oldmtype);
         /* this message is given when it turns into a fog cloud
            in order to move under a closed door */

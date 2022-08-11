@@ -1,4 +1,4 @@
-/* NetHack 3.6	steed.c	$NHDT-Date: 1545441042 2018/12/22 01:10:42 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.62 $ */
+/* NetHack 3.6	steed.c	$NHDT-Date: 1575245090 2019/12/02 00:04:50 $  $NHDT-Branch: NetHack-3.6 $:$NHDT-Revision: 1.68 $ */
 /* Copyright (c) Kevin Hugo, 1998-1999. */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -16,7 +16,7 @@ STATIC_DCL void FDECL(maybewakesteed, (struct monst *));
 void
 rider_cant_reach()
 {
-    You("还不够熟练从%s上够到.", y_monnam(u.usteed));
+    You("aren't skilled enough to reach from %s.", y_monnam(u.usteed));
 }
 
 /*** Putting the saddle on ***/
@@ -51,42 +51,42 @@ struct obj *otmp;
         return 0;
     }
     if (!u.dx && !u.dy) {
-        pline("给你自己装鞍?  非常滑稽...");
+        pline("Saddle yourself?  Very funny...");
         return 0;
     }
     if (!isok(u.ux + u.dx, u.uy + u.dy)
         || !(mtmp = m_at(u.ux + u.dx, u.uy + u.dy)) || !canspotmon(mtmp)) {
-        pline("我看见那里没人.");
+        pline("I see nobody there.");
         return 1;
     }
 
     /* Is this a valid monster? */
     if (mtmp->misc_worn_check & W_SADDLE || which_armor(mtmp, W_SADDLE)) {
-        pline("%s 不需要又一个.", Monnam(mtmp));
+        pline("%s doesn't need another one.", Monnam(mtmp));
         return 1;
     }
     ptr = mtmp->data;
     if (touch_petrifies(ptr) && !uarmg && !Stone_resistance) {
         char kbuf[BUFSZ];
 
-        You("触摸 %s.", mon_nam(mtmp));
+        You("touch %s.", mon_nam(mtmp));
         if (!(poly_when_stoned(youmonst.data) && polymon(PM_STONE_GOLEM))) {
-            Sprintf(kbuf, "试图给 %s 装上鞍", an(mtmp->data->mname));
+            Sprintf(kbuf, "attempting to saddle %s", an(mtmp->data->mname));
             instapetrify(kbuf);
         }
     }
     if (ptr == &mons[PM_INCUBUS] || ptr == &mons[PM_SUCCUBUS]) {
-        pline("你真不要脸!");
+        pline("Shame on you!");
         exercise(A_WIS, FALSE);
         return 1;
     }
     if (mtmp->isminion || mtmp->isshk || mtmp->ispriest || mtmp->isgd
         || mtmp->iswiz) {
-        pline("我觉得%s 会介意的.", mon_nam(mtmp));
+        pline("I think %s would mind.", mon_nam(mtmp));
         return 1;
     }
     if (!can_saddle(mtmp)) {
-        You_cant("给这种生物装鞍.");
+        You_cant("saddle such a creature.");
         return 1;
     }
 
@@ -115,11 +115,11 @@ struct obj *otmp;
     if (Confusion || Fumbling || Glib)
         chance -= 20;
     else if (uarmg && (s = OBJ_DESCR(objects[uarmg->otyp])) != (char *) 0
-             && !cnstrcmp(s, "骑手"))
+             && !strncmp(s, "riding ", 7))
         /* Bonus for wearing "riding" (but not fumbling) gloves */
         chance += 10;
     else if (uarmf && (s = OBJ_DESCR(objects[uarmf->otyp])) != (char *) 0
-             && !cnstrcmp(s, "马靴"))
+             && !strncmp(s, "riding ", 7))
         /* ... or for "riding boots" */
         chance += 10;
     if (otmp->cursed)
@@ -130,13 +130,13 @@ struct obj *otmp;
 
     /* Make the attempt */
     if (rn2(100) < chance) {
-        You("把鞍放到%s 上.", mon_nam(mtmp));
+        You("put the saddle on %s.", mon_nam(mtmp));
         if (otmp->owornmask)
             remove_worn_item(otmp, FALSE);
         freeinv(otmp);
         put_saddle_on_mon(otmp, mtmp);
     } else
-        pline("%s 抵抗!", Monnam(mtmp));
+        pline("%s resists!", Monnam(mtmp));
     return 1;
 }
 
@@ -175,7 +175,7 @@ doride()
     if (u.usteed) {
         dismount_steed(DISMOUNT_BYCHOICE);
     } else if (getdir((char *) 0) && isok(u.ux + u.dx, u.uy + u.dy)) {
-        if (wizard && yn("直接成功骑上?") == 'y')
+        if (wizard && yn("Force the mount to succeed?") == 'y')
             forcemount = TRUE;
         return (mount_steed(m_at(u.ux + u.dx, u.uy + u.dy), forcemount));
     } else {
@@ -196,13 +196,13 @@ boolean force;      /* Quietly force this animal */
 
     /* Sanity checks */
     if (u.usteed) {
-        You("已经骑着%s.", mon_nam(u.usteed));
+        You("are already riding %s.", mon_nam(u.usteed));
         return (FALSE);
     }
 
     /* Is the player in the right form? */
     if (Hallucination && !force) {
-        pline("也许你应该找一个代驾司机.");
+        pline("Maybe you should find a designated driver.");
         return (FALSE);
     }
     /* While riding Wounded_legs refers to the steed's,
@@ -219,8 +219,8 @@ boolean force;      /* Quietly force this animal */
      * temporary 1 point Dex loss become permanent.]
      */
     if (Wounded_legs) {
-        Your("%s受伤了还不能乘骑.", makeplural(body_part(LEG)));
-        if (force && wizard && yn("治愈你的腿?") == 'y')
+        Your("%s are in no shape for riding.", makeplural(body_part(LEG)));
+        if (force && wizard && yn("Heal your legs?") == 'y')
             HWounded_legs = EWounded_legs = 0L;
         else
             return (FALSE);
@@ -228,11 +228,11 @@ boolean force;      /* Quietly force this animal */
 
     if (Upolyd && (!humanoid(youmonst.data) || verysmall(youmonst.data)
                    || bigmonst(youmonst.data) || slithy(youmonst.data))) {
-        You("不适合马鞍.");
+        You("won't fit on a saddle.");
         return (FALSE);
     }
     if (!force && (near_capacity() > SLT_ENCUMBER)) {
-        You_cant("在携带如此多的东西时做那个.");
+        You_cant("do that while carrying so much stuff.");
         return (FALSE);
     }
 
@@ -240,51 +240,51 @@ boolean force;      /* Quietly force this animal */
     if (!mtmp || (!force && ((Blind && !Blind_telepat) || mtmp->mundetected
                              || M_AP_TYPE(mtmp) == M_AP_FURNITURE
                              || M_AP_TYPE(mtmp) == M_AP_OBJECT))) {
-        pline("我看那儿谁也没有.");
+        pline("I see nobody there.");
         return (FALSE);
     }
     if (mtmp->data == &mons[PM_LONG_WORM]
         && (u.ux + u.dx != mtmp->mx || u.uy + u.dy != mtmp->my)) {
-        /* 3.6.2:  test_move(below) is used to check for trying to mount
+        /* As of 3.6.2:  test_move(below) is used to check for trying to mount
            diagonally into or out of a doorway or through a tight squeeze;
            attempting to mount a tail segment when hero was not adjacent
            to worm's head could trigger an impossible() in worm_cross()
            called from test_move(), so handle not-on-head before that */
-        You("无法乘骑%s, 更不用说它的尾巴了.", a_monnam(mtmp));
+        You("couldn't ride %s, let alone its tail.", a_monnam(mtmp));
         return FALSE;
     }
     if (u.uswallow || u.ustuck || u.utrap || Punished
         || !test_move(u.ux, u.uy, mtmp->mx - u.ux, mtmp->my - u.uy,
                       TEST_MOVE)) {
         if (Punished || !(u.uswallow || u.ustuck || u.utrap))
-            You("不能够摆动你的%s.", body_part(LEG));
+            You("are unable to swing your %s over.", body_part(LEG));
         else
-            You("暂时被困在这儿.");
+            You("are stuck here for now.");
         return (FALSE);
     }
 
     /* Is this a valid monster? */
     otmp = which_armor(mtmp, W_SADDLE);
     if (!otmp) {
-        pline("%s 没有装鞍.", Monnam(mtmp));
+        pline("%s is not saddled.", Monnam(mtmp));
         return (FALSE);
     }
     ptr = mtmp->data;
     if (touch_petrifies(ptr) && !Stone_resistance) {
         char kbuf[BUFSZ];
 
-        You("触摸%s.", mon_nam(mtmp));
-        Sprintf(kbuf, "试图骑上%s", an(mtmp->data->mname));
+        You("touch %s.", mon_nam(mtmp));
+        Sprintf(kbuf, "attempting to ride %s", an(mtmp->data->mname));
         instapetrify(kbuf);
     }
     if (!mtmp->mtame || mtmp->isminion) {
-        pline("我认为%s 会介意.", mon_nam(mtmp));
+        pline("I think %s would mind.", mon_nam(mtmp));
         return (FALSE);
     }
     if (mtmp->mtrapped) {
         struct trap *t = t_at(mtmp->mx, mtmp->my);
 
-        You_cant("骑上%s 在%s陷在%s 的时候.", mon_nam(mtmp),
+        You_cant("mount %s while %s's trapped in %s.", mon_nam(mtmp),
                  mhe(mtmp), an(defsyms[trap_to_defsym(t->ttyp)].explanation));
         return (FALSE);
     }
@@ -292,43 +292,43 @@ boolean force;      /* Quietly force this animal */
     if (!force && !Role_if(PM_KNIGHT) && !(--mtmp->mtame)) {
         /* no longer tame */
         newsym(mtmp->mx, mtmp->my);
-        pline("%s抵抗%s!", Monnam(mtmp),
-              mtmp->mleashed ? " 并且它的链子脱落了" : "");
+        pline("%s resists%s!", Monnam(mtmp),
+              mtmp->mleashed ? " and its leash comes off" : "");
         if (mtmp->mleashed)
             m_unleash(mtmp, FALSE);
         return (FALSE);
     }
     if (!force && Underwater && !is_swimmer(ptr)) {
-        You_cant("在%s下骑那样的生物.",
-                 hliquid("水"));
+        You_cant("ride that creature while under %s.",
+                 hliquid("water"));
         return (FALSE);
     }
     if (!can_saddle(mtmp) || !can_ride(mtmp)) {
-        You_cant("骑这样的生物.");
+        You_cant("ride such a creature.");
         return FALSE;
     }
 
     /* Is the player impaired? */
     if (!force && !is_floater(ptr) && !is_flyer(ptr) && Levitation
         && !Lev_at_will) {
-        You("不能够到%s.", mon_nam(mtmp));
+        You("cannot reach %s.", mon_nam(mtmp));
         return (FALSE);
     }
     if (!force && uarm && is_metallic(uarm) && greatest_erosion(uarm)) {
-        Your("%s盔甲太硬了来骑上%s.",
-             uarm->oeroded ? "生锈的" : "腐蚀的", mon_nam(mtmp));
+        Your("%s armor is too stiff to be able to mount %s.",
+             uarm->oeroded ? "rusty" : "corroded", mon_nam(mtmp));
         return (FALSE);
     }
     if (!force
         && (Confusion || Fumbling || Glib || Wounded_legs || otmp->cursed
             || (u.ulevel + mtmp->mtame < rnd(MAXULEV / 2 + 5)))) {
         if (Levitation) {
-            pline("%s跑开了.", Monnam(mtmp));
+            pline("%s slips away from you.", Monnam(mtmp));
             return FALSE;
         }
-        You("在试图骑上%s时滑了下来.", mon_nam(mtmp));
+        You("slip while trying to get on %s.", mon_nam(mtmp));
 
-        Sprintf(buf, "在骑上%s时滑倒",
+        Sprintf(buf, "slipped while mounting %s",
                 /* "a saddled mumak" or "a saddled pony called Dobbin" */
                 x_monnam(mtmp, ARTICLE_A, (char *) 0,
                          SUPPRESS_IT | SUPPRESS_INVISIBLE
@@ -343,10 +343,10 @@ boolean force;      /* Quietly force this animal */
     if (!force) {
         if (Levitation && !is_floater(ptr) && !is_flyer(ptr))
             /* Must have Lev_at_will at this point */
-            pline("%s如魔法般地飘浮起来!", Monnam(mtmp));
-        You("骑上%s.", mon_nam(mtmp));
+            pline("%s magically floats up!", Monnam(mtmp));
+        You("mount %s.", mon_nam(mtmp));
         if (Flying)
-            You("和%s一起腾空而起.", mon_nam(mtmp));
+            You("and %s take flight together.", mon_nam(mtmp));
     }
     /* setuwep handles polearms differently when you're mounted */
     if (uwep && is_pole(uwep))
@@ -398,11 +398,11 @@ kick_steed()
                 u.usteed->mcanmove = 1;
             }
             if (u.usteed->msleeping || !u.usteed->mcanmove)
-                pline("%s 开始活跃了.", He);
+                pline("%s stirs.", He);
             else
-                pline("%s 唤醒了%s自己!", He, mhim(u.usteed));
+                pline("%s rouses %sself!", He, mhim(u.usteed));
         } else
-            pline("%s 没有反应.", He);
+            pline("%s does not respond.", He);
         return;
     }
 
@@ -418,7 +418,7 @@ kick_steed()
         return;
     }
 
-    pline("%s 急驰!", Monnam(u.usteed));
+    pline("%s gallops!", Monnam(u.usteed));
     u.ugallop += rn1(20, 30);
     return;
 }
@@ -482,7 +482,7 @@ int reason; /* Player was thrown off etc. */
     struct monst *mtmp;
     struct obj *otmp;
     coord cc, steedcc;
-    const char *verb = "落";
+    const char *verb = "fall";
     boolean repair_leg_damage = (Wounded_legs != 0L);
     unsigned save_utrap = u.utrap;
     boolean have_spot = landing_spot(&cc, reason, 0);
@@ -496,18 +496,18 @@ int reason; /* Player was thrown off etc. */
     otmp = which_armor(mtmp, W_SADDLE);
     switch (reason) {
     case DISMOUNT_THROWN:
-        verb = "被扔";
+        verb = "are thrown";
         /*FALLTHRU*/
     case DISMOUNT_FELL:
-        You("从%s上%s下!", mon_nam(mtmp), verb);
+        You("%s off of %s!", verb, mon_nam(mtmp));
         if (!have_spot)
             have_spot = landing_spot(&cc, reason, 1);
-        losehp(Maybe_Half_Phys(rn1(10, 10)), "乘骑事故", DIE_OF);
+        losehp(Maybe_Half_Phys(rn1(10, 10)), "riding accident", KILLED_BY_AN);
         set_wounded_legs(BOTH_SIDES, (int) HWounded_legs + rn1(5, 5));
         repair_leg_damage = FALSE;
         break;
     case DISMOUNT_POLY:
-        You("不能再骑着%s.", mon_nam(u.usteed));
+        You("can no longer ride %s.", mon_nam(u.usteed));
         if (!have_spot)
             have_spot = landing_spot(&cc, reason, 1);
         break;
@@ -523,22 +523,22 @@ int reason; /* Player was thrown off etc. */
     case DISMOUNT_BYCHOICE:
     default:
         if (otmp && otmp->cursed) {
-            You("没办法.  这个鞍%s被诅咒的.",
-                otmp->bknown ? "是" : "似乎是");
-            otmp->bknown = TRUE;
+            You("can't.  The saddle %s cursed.",
+                otmp->bknown ? "is" : "seems to be");
+            otmp->bknown = 1; /* ok to skip set_bknown() here */
             return;
         }
         if (!have_spot) {
-            You("没办法. 没有任何地方能让你站起来.");
+            You("can't.  There isn't anywhere for you to stand.");
             return;
         }
         if (!has_mname(mtmp)) {
-            pline("你和没有名字的%s 曾一起在地牢里闯荡.",
-                  mtmp->data->mname);
+            pline("You've been through the dungeon on %s with no name.",
+                  an(mtmp->data->mname));
             if (Hallucination)
-                pline("从雨中走出来感觉很好.");
+                pline("It felt good to get out of the rain.");
         } else
-            You("从%s 下来.", mon_nam(mtmp));
+            You("dismount %s.", mon_nam(mtmp));
     }
     /* While riding, Wounded_legs refers to the steed's legs;
        after dismounting, it reverts to the hero's legs. */
@@ -604,15 +604,15 @@ int reason; /* Player was thrown off etc. */
             if (!is_flyer(mdat) && !is_floater(mdat) && !is_clinger(mdat)) {
                 if (is_pool(u.ux, u.uy)) {
                     if (!Underwater)
-                        pline("%s 落进%s!", Monnam(mtmp),
+                        pline("%s falls into the %s!", Monnam(mtmp),
                               surface(u.ux, u.uy));
                     if (!is_swimmer(mdat) && !amphibious(mdat)) {
                         killed(mtmp);
                         adjalign(-1);
                     }
                 } else if (is_lava(u.ux, u.uy)) {
-                    pline("%s 被拉进%s!", Monnam(mtmp),
-                          hliquid("熔岩"));
+                    pline("%s is pulled into the %s!", Monnam(mtmp),
+                          hliquid("lava"));
                     if (!likes_lava(mdat)) {
                         killed(mtmp);
                         adjalign(-1);
@@ -709,7 +709,7 @@ struct monst *steed;
         }
     }
     if (wasimmobile && !steed->msleeping && steed->mcanmove)
-        pline("%s 醒了.", Monnam(steed));
+        pline("%s wakes up.", Monnam(steed));
     /* regardless of waking, terminate any meal in progress */
     finish_meating(steed);
 }
@@ -725,12 +725,12 @@ boolean checkfeeding;
     if (steed) {
         /* check whether steed can move */
         if (steed->msleeping || !steed->mcanmove) {
-            pline("%s 不动了!", upstart(y_monnam(steed)));
+            pline("%s won't move!", upstart(y_monnam(steed)));
             return TRUE;
         }
         /* optionally check whether steed is in the midst of a meal */
         if (checkfeeding && steed->meating) {
-            pline("%s 还在吃.", upstart(y_monnam(steed)));
+            pline("%s is still eating.", upstart(y_monnam(steed)));
             return TRUE;
         }
     }
@@ -742,23 +742,39 @@ place_monster(mon, x, y)
 struct monst *mon;
 int x, y;
 {
+    struct monst *othermon;
+    const char *monnm, *othnm;
+    char buf[QBUFSZ];
+
+    buf[0] = '\0';
     /* normal map bounds are <1..COLNO-1,0..ROWNO-1> but sometimes
        vault guards (either living or dead) are parked at <0,0> */
     if (!isok(x, y) && (x != 0 || y != 0 || !mon->isgd)) {
-        impossible("trying to place monster at <%d,%d>", x, y);
+        describe_level(buf);
+        impossible("trying to place %s at <%d,%d> mstate:%lx on %s",
+                   minimal_monnam(mon, TRUE), x, y, mon->mstate, buf);
         x = y = 0;
     }
     if (mon == u.usteed
         /* special case is for convoluted vault guard handling */
         || (DEADMONSTER(mon) && !(mon->isgd && x == 0 && y == 0))) {
-        impossible("placing %s onto map?",
-                   (mon == u.usteed) ? "steed" : "defunct monster");
+        describe_level(buf);
+        impossible("placing %s onto map, mstate:%lx, on %s?",
+                   (mon == u.usteed) ? "steed" : "defunct monster",
+                   mon->mstate, buf);
         return;
     }
-    if (level.monsters[x][y])
-        impossible("placing monster over another at <%d,%d>?", x, y);
+    if ((othermon = level.monsters[x][y]) != 0) {
+        describe_level(buf);
+        monnm = minimal_monnam(mon, FALSE);
+        othnm = (mon != othermon) ? minimal_monnam(othermon, TRUE) : "itself";
+        impossible("placing %s over %s at <%d,%d>, mstates:%lx %lx on %s?",
+                   monnm, othnm, x, y, othermon->mstate, mon->mstate, buf);
+    }
     mon->mx = x, mon->my = y;
     level.monsters[x][y] = mon;
+    mon->mstate &= ~(MON_OFFMAP | MON_MIGRATING | MON_LIMBO | MON_BUBBLEMOVE
+                     | MON_ENDGAME_FREE | MON_ENDGAME_MIGR);
 }
 
 /*steed.c*/

@@ -1185,15 +1185,15 @@ char c;
 
     for (i = LOW_PM; i < NUMMONS; i++)
         if (!class || class == mons[i].mlet)
-            if (!strcmp(s, mons[i].ename))
+            if (!strcmp(s, mons[i].mname))
                 return i;
     /* didn't find it; lets try case insensitive search */
     for (i = LOW_PM; i < NUMMONS; i++)
         if (!class || class == mons[i].mlet)
-            if (!case_insensitive_comp(s, mons[i].ename)) {
+            if (!case_insensitive_comp(s, mons[i].mname)) {
                 if (be_verbose)
                     lc_warning("Monster type \"%s\" matches \"%s\".",
-                               VA_PASS2(s, mons[i].ename));
+                               VA_PASS2(s, mons[i].mname));
                 return i;
             }
     return ERR;
@@ -1218,14 +1218,14 @@ char c; /* class */
     for (i = class ? bases[class] : 0; i < NUM_OBJECTS; i++) {
         if (class && objects[i].oc_class != class)
             break;
-        objname = obj_descr[i].oc_ename;
+        objname = obj_descr[i].oc_name;
         if (objname && !strcmp(s, objname))
             return i;
     }
     for (i = class ? bases[class] : 0; i < NUM_OBJECTS; i++) {
         if (class && objects[i].oc_class != class)
             break;
-        objname = obj_descr[i].oc_ename;
+        objname = obj_descr[i].oc_name;
         if (objname && !case_insensitive_comp(s, objname)) {
             if (be_verbose)
                 lc_warning("Object type \"%s\" matches \"%s\".",

@@ -370,7 +370,7 @@ void NetHackQtPlayerSelector::Randomize()
 
 void NetHackQtPlayerSelector::selectName(const QString& n)
 {
-    str_copy(plname,n.toUtf8().constData(),SIZE(plname));
+    str_copy(plname,n.toLatin1().constData(),SIZE(plname));
 }
 
 void NetHackQtPlayerSelector::selectRole(int crow, int ccol, int prow, int pcol)

@@ -22,17 +22,17 @@ register struct monst *mon;
 
                 switch (monsndx(mon->data)) {
                 case PM_WEREWOLF:
-                    howler = "狼";
+                    howler = "wolf";
                     break;
                 case PM_WEREJACKAL:
-                    howler = "豺狼";
+                    howler = "jackal";
                     break;
                 default:
                     howler = (char *) 0;
                     break;
                 }
                 if (howler)
-                    You_hear("一只%s对着月夜嚎叫.", howler);
+                    You_hear("a %s howling at the moon.", howler);
             }
         }
     } else if (!rn2(30) || Protection_from_shape_changers) {
@@ -96,7 +96,6 @@ new_were(mon)
 register struct monst *mon;
 {
     register int pm;
-    char mchname[30];
 
     pm = counter_were(monsndx(mon->data));
     if (pm < LOW_PM) {
@@ -104,12 +103,9 @@ register struct monst *mon;
         return;
     }
 
-    strcpy(mchname,mons[pm].mname);
-    mchname[strlen(mons[pm].mname)-strlen("人")] = '\0';
-
     if (canseemon(mon) && !Hallucination)
-        pline("%s 变成了%s.", Monnam(mon),
-              is_human(&mons[pm]) ? "人" : mchname);
+        pline("%s changes into a %s.", Monnam(mon),
+              is_human(&mons[pm]) ? "human" : mons[pm].mname + 4);
 
     set_mon_data(mon, &mons[pm]);
     if (mon->msleeping || !mon->mcanmove) {
@@ -147,19 +143,19 @@ char *genbuf;
             typ = rn2(3) ? PM_SEWER_RAT
                          : rn2(3) ? PM_GIANT_RAT : PM_RABID_RAT;
             if (genbuf)
-                Strcpy(genbuf, "鼠");
+                Strcpy(genbuf, "rat");
             break;
         case PM_WEREJACKAL:
         case PM_HUMAN_WEREJACKAL:
             typ = rn2(7) ? PM_JACKAL : rn2(3) ? PM_COYOTE : PM_FOX;
             if (genbuf)
-                Strcpy(genbuf, "豺狼");
+                Strcpy(genbuf, "jackal");
             break;
         case PM_WEREWOLF:
         case PM_HUMAN_WEREWOLF:
             typ = rn2(5) ? PM_WOLF : rn2(2) ? PM_WARG : PM_WINTER_WOLF;
             if (genbuf)
-                Strcpy(genbuf, "狼");
+                Strcpy(genbuf, "wolf");
             break;
         default:
             continue;
@@ -185,13 +181,9 @@ you_were()
     if (Unchanging || u.umonnum == u.ulycn)
         return;
     if (controllable_poly) {
-        char mchname[30];
-        strcpy(mchname,mons[u.ulycn].mname);
-        mchname[strlen(mons[u.ulycn].mname)-strlen("人")] = '\0';
-
         /* `+4' => skip "were" prefix to get name of beast */
-        Sprintf(qbuf, "你想变成%s吗?",
-                mchname);
+        Sprintf(qbuf, "Do you want to change into %s?",
+                an(mons[u.ulycn].mname + 4));
         if (!paranoid_query(ParanoidWerechange, qbuf))
             return;
     }
@@ -205,12 +197,12 @@ boolean purify;
     boolean controllable_poly = Polymorph_control && !(Stunned || Unaware);
 
     if (purify) {
-        You_feel("被净化.");
+        You_feel("purified.");
         set_ulycn(NON_PM); /* cure lycanthropy */
     }
     if (!Unchanging && is_were(youmonst.data)
         && (!controllable_poly
-            || !paranoid_query(ParanoidWerechange, "保持野兽形态?")))
+            || !paranoid_query(ParanoidWerechange, "Remain in beast form?")))
         rehumanize();
     else if (is_were(youmonst.data) && !u.mtimedone)
         u.mtimedone = rn1(200, 200); /* 40% of initial were change */

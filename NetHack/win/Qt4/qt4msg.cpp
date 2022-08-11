@@ -95,8 +95,8 @@ const char * NetHackQtMessageWindow::GetStr(bool init)
     QListWidgetItem *item = list->item(currgetmsg++);
     if (item) {
         QString str = item->text();
-        //raw_printf("getstr[%i]='%s'", currgetmsg, str.toUtf8().constData());
-        return str.toUtf8().constData();
+        //raw_printf("getstr[%i]='%s'", currgetmsg, str.toLatin1().constData());
+        return str.toLatin1().constData();
     }
     return NULL;
 }
@@ -104,7 +104,7 @@ const char * NetHackQtMessageWindow::GetStr(bool init)
 void NetHackQtMessageWindow::PutStr(int attr, const QString& text)
 {
 #ifdef USER_SOUNDS
-    play_sound_for_message(text.toUtf8().constData());
+    play_sound_for_message(text.toLatin1().constData());
 #endif
 
     changed=true;

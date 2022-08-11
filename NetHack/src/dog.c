@@ -89,7 +89,7 @@ boolean quietly;
                 if (!quietly)
                     /* have just been given "You <do something with>
                        the figurine and it transforms." message */
-                    pline("... 成为一堆尘土.");
+                    pline("... into a pile of dust.");
                 break; /* mtmp is null */
             }
         } else if (!rn2(3)) {
@@ -98,7 +98,7 @@ boolean quietly;
             pm = rndmonst();
             if (!pm) {
                 if (!quietly)
-                    There("似乎没有什么可用做熟悉的.");
+                    There("seems to be nothing available for a familiar.");
                 break;
             }
         }
@@ -106,7 +106,7 @@ boolean quietly;
         mtmp = makemon(pm, x, y, MM_EDOG | MM_IGNOREWATER | NO_MINVENT);
         if (otmp && !mtmp) { /* monster was genocided or square occupied */
             if (!quietly)
-                pline_The("小雕像扭曲然后粉碎了!");
+                pline_The("figurine writhes and then shatters into pieces!");
             break;
         }
     } while (!mtmp && --trycnt > 0);
@@ -128,7 +128,7 @@ boolean quietly;
             mtmp->mtame = 0;   /* not tame after all */
             if (chance == 2) { /* hostile (cursed figurine) */
                 if (!quietly)
-                    You("对此有一种不好的感觉.");
+                    You("get a bad feeling about this.");
                 mtmp->mpeaceful = 0;
                 set_malign(mtmp);
             }
@@ -468,7 +468,8 @@ long nmv; /* number of moves */
 {
     int imv = 0; /* avoid zillions of casts and lint warnings */
 
-#if defined(DEBUG) || defined(BETA)
+#if defined(DEBUG) || (NH_DEVEL_STATUS != NH_STATUS_RELEASED)
+
     if (nmv < 0L) { /* crash likely... */
         panic("catchup from future time?");
         /*NOTREACHED*/
@@ -607,21 +608,21 @@ boolean pets_only; /* true for ascension or final escape */
                 mdrop_special_objs(mtmp); /* drop Amulet */
             } else if (mtmp->meating || mtmp->mtrapped) {
                 if (canseemon(mtmp))
-                    pline("%s 仍然在%s.", Monnam(mtmp),
-                          mtmp->meating ? "吃" : "受困");
+                    pline("%s is still %s.", Monnam(mtmp),
+                          mtmp->meating ? "eating" : "trapped");
                 stay_behind = TRUE;
             } else if (mon_has_amulet(mtmp)) {
                 if (canseemon(mtmp))
-                    pline("%s 似乎非常迷失方向了片刻.",
+                    pline("%s seems very disoriented for a moment.",
                           Monnam(mtmp));
                 stay_behind = TRUE;
             }
             if (stay_behind) {
                 if (mtmp->mleashed) {
-                    pline("%s 狗链突然变松了.",
+                    pline("%s leash suddenly comes loose.",
                           humanoid(mtmp->data)
-                              ? (mtmp->female ? "她的" : "他的")
-                              : "它的");
+                              ? (mtmp->female ? "Her" : "His")
+                              : "Its");
                     m_unleash(mtmp, FALSE);
                 }
                 if (mtmp == u.usteed) {
@@ -665,7 +666,7 @@ boolean pets_only; /* true for ascension or final escape */
         } else if (mtmp->mleashed) {
             /* this can happen if your quest leader ejects you from the
                "home" level while a leashed pet isn't next to you */
-            pline("%s 狗链变松弛了.", s_suffix(Monnam(mtmp)));
+            pline("%s leash goes slack.", s_suffix(Monnam(mtmp)));
             m_unleash(mtmp, FALSE);
         }
     }
@@ -903,10 +904,10 @@ register struct obj *obj;
                 boolean big_corpse =
                     (obj->otyp == CORPSE && obj->corpsenm >= LOW_PM
                      && mons[obj->corpsenm].msize > mtmp->data->msize);
-                pline("%s 抓住了%s%s", Monnam(mtmp), the(xname(obj)),
-                      !big_corpse ? "." : ", 反之亦然!");
+                pline("%s catches %s%s", Monnam(mtmp), the(xname(obj)),
+                      !big_corpse ? "." : ", or vice versa!");
             } else if (cansee(mtmp->mx, mtmp->my))
-                pline("%s.", Tobjnam(obj, "停了下来"));
+                pline("%s.", Tobjnam(obj, "stop"));
             /* dog_eat expects a floor object */
             place_object(obj, mtmp->mx, mtmp->my);
             (void) dog_eat(mtmp, obj, mtmp->mx, mtmp->my, FALSE);
@@ -986,11 +987,11 @@ boolean was_dead;
         if (!quietly && cansee(mtmp->mx, mtmp->my)) {
             if (haseyes(youmonst.data)) {
                 if (haseyes(mtmp->data))
-                    pline("%s %s 看着你的%s.", Monnam(mtmp),
-                          mtmp->mpeaceful ? "似乎无法" : "拒绝",
+                    pline("%s %s to look you in the %s.", Monnam(mtmp),
+                          mtmp->mpeaceful ? "seems unable" : "refuses",
                           body_part(EYE));
                 else
-                    pline("%s 逃避了你的凝视.", Monnam(mtmp));
+                    pline("%s avoids your gaze.", Monnam(mtmp));
             }
         }
     } else {
@@ -1003,7 +1004,7 @@ boolean was_dead;
     if (!mtmp->mtame) {
         if (!quietly && canspotmon(mtmp))
             pline("%s %s.", Monnam(mtmp),
-                  mtmp->mpeaceful ? "不再是驯服的" : "已经变成了野生的");
+                  mtmp->mpeaceful ? "is no longer tame" : "has become feral");
         newsym(mtmp->mx, mtmp->my);
         /* a life-saved monster might be leashed;
            don't leave it that way if it's no longer tame */

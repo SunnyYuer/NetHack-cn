@@ -203,7 +203,7 @@ static const char *const shkhealthfoods[] = {
  * (by testing the sign) whether to use mkobj() or mksobj().
  */
 const struct shclass shtypes[] = {
-    { "杂货店",
+    { "general store",
       RANDOM_CLASS,
       42,
       D_SHOP,
@@ -214,7 +214,7 @@ const struct shclass shtypes[] = {
         { 0, 0 },
         { 0, 0 } },
       shkgeneral },
-    { "二手防具经销商店",
+    { "used armor dealership",
       ARMOR_CLASS,
       14,
       D_SHOP,
@@ -225,7 +225,7 @@ const struct shclass shtypes[] = {
         { 0, 0 },
         { 0, 0 } },
       shkarmors },
-    { "二手书店",
+    { "second-hand bookstore",
       SCROLL_CLASS,
       10,
       D_SHOP,
@@ -236,7 +236,7 @@ const struct shclass shtypes[] = {
         { 0, 0 },
         { 0, 0 } },
       shkbooks },
-    { "烈酒商场",
+    { "liquor emporium",
       POTION_CLASS,
       10,
       D_SHOP,
@@ -247,7 +247,7 @@ const struct shclass shtypes[] = {
         { 0, 0 },
         { 0, 0 } },
       shkliquors },
-    { "古兵器批发商店",
+    { "antique weapons outlet",
       WEAPON_CLASS,
       5,
       D_SHOP,
@@ -258,7 +258,7 @@ const struct shclass shtypes[] = {
         { 0, 0 },
         { 0, 0 } },
       shkweapons },
-    { "熟食店",
+    { "delicatessen",
       FOOD_CLASS,
       5,
       D_SHOP,
@@ -269,7 +269,7 @@ const struct shclass shtypes[] = {
         { 3, -ICE_BOX },
         { 0, 0 } },
       shkfoods },
-    { "珠宝店",
+    { "jewelers",
       RING_CLASS,
       3,
       D_SHOP,
@@ -280,7 +280,7 @@ const struct shclass shtypes[] = {
         { 0, 0 },
         { 0, 0 } },
       shkrings },
-    { "优质服装及配饰",
+    { "quality apparel and accessories",
       WAND_CLASS,
       3,
       D_SHOP,
@@ -289,7 +289,7 @@ const struct shclass shtypes[] = {
         { 5, -ELVEN_CLOAK },
         { 0, 0 } },
       shkwands },
-    { "五金店",
+    { "hardware store",
       TOOL_CLASS,
       3,
       D_SHOP,
@@ -300,7 +300,7 @@ const struct shclass shtypes[] = {
         { 0, 0 },
         { 0, 0 } },
       shktools },
-    { "珍本书",
+    { "rare books",
       SPBOOK_CLASS,
       3,
       D_SHOP,
@@ -311,7 +311,7 @@ const struct shclass shtypes[] = {
         { 0, 0 },
         { 0, 0 } },
       shkbooks },
-    { "健康食品店",
+    { "health food store",
       FOOD_CLASS,
       2,
       D_SHOP,
@@ -326,7 +326,7 @@ const struct shclass shtypes[] = {
      * probability of zero.  They are only created via the special level
      * loader.
      */
-    { "灯具店",
+    { "lighting store",
       TOOL_CLASS,
       0,
       D_SHOP,
@@ -458,8 +458,8 @@ boolean mkspecl;
     int atype;
 
     /* 3.6 tribute */
-    if (mkspecl && (!strcmp(shp->name, "珍本书")
-                    || !strcmp(shp->name, "二手书店"))) {
+    if (mkspecl && (!strcmp(shp->name, "rare books")
+                    || !strcmp(shp->name, "second-hand bookstore"))) {
         struct obj *novel = mksobj_at(SPE_NOVEL, sx, sy, FALSE, FALSE);
 
         if (novel)

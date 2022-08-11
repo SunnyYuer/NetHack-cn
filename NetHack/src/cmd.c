@@ -129,6 +129,10 @@ extern int NDECL(dozap);              /**/
 extern int NDECL(doorganize);         /**/
 #endif /* DUMB */
 
+#ifdef ANDROID
+extern void NDECL(quit_possible);
+#endif
+
 static int NDECL((*timed_occ_fn));
 
 STATIC_PTR int NDECL(dosuspend_core);
@@ -1543,6 +1547,7 @@ doterrain(VOID_ARGS)
     start_menu(men);
     any = zeroany;
     any.a_int = 1;
+    start_menu(men);
     add_menu(men, NO_GLYPH, &any, 0, 0, ATR_NONE,
              "known map without monsters, objects, and traps",
              MENU_SELECTED);
@@ -3676,7 +3681,7 @@ commands_init()
     (void) bind_key(M('2'), "twoweapon");
 
     /* wait_on_space */
-    (void) bind_key(' ',    "wait");
+    (void) bind_key('.',    "wait");
 }
 
 int
@@ -4724,7 +4729,10 @@ register char *cmd;
         cmd = parse();
     }
     if (*cmd == Cmd.spkeys[NHKF_ESC]) {
-        context.move = FALSE;
+#ifdef ANDROID
+		quit_possible();
+#endif
+		context.move = FALSE;
         return;
     }
     if (*cmd == DOAGAIN && !in_doagain && saveq[0]) {

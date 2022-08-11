@@ -808,6 +808,7 @@ boolean *valsetlist;
         pc = 0;
     }
 
+#ifndef ANDROID
     /* Temporary? hack: moveloop()'s prolog for a new game sets
      * context.rndencode after the status window has been init'd,
      * so $:0 has already been encoded and cached by the window
@@ -833,6 +834,7 @@ boolean *valsetlist;
         oldrndencode = context.rndencode;
         oldgoldsym = showsyms[COIN_CLASS + SYM_OFF_O];
     }
+#endif
 
     reset = FALSE;
 #ifdef STATUS_HILITES

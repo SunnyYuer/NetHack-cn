@@ -1,32 +1,32 @@
-Debug-Mode Quick Reference:
+向导模式命令快速参考:
 
-^E  ==  detect secret doors and traps
-^F  ==  map level; reveals traps and secret corridors but not secret doors
-^G  ==  create monster by name or class
-^I  ==  identify items in pack
-^T  ==  do intra-level teleport
-^V  ==  do trans-level teleport; '?' yields menu of special destinations
-^W  ==  make a wish for an item or a trap or a limited subset of terrain
-^X  ==  show status, attributes, and characteristics (extended enlightenment)
+^E  ==   探测暗门和陷阱.
+^F  ==   地图层; 显示陷阱和秘密走廊但不显示暗门.
+^G  ==   制造怪物.
+^I  ==   鉴定背包里的物品.
+^T  ==   在这层传送.
+^V  ==   传送到别的层数; '?' 显示特殊层菜单
+^W  ==   许愿.
+^X  ==   显示状态, 属性, 和人物特性( 扩展的启蒙).
 
-#levelchange    == set hero's experience level
+#levelchange    == 改变角色的等级
 #lightsources   == show mobile light sources
 #panic          == panic test (warning: current game will be terminated)
-#polyself       == polymorph self
+#polyself       == 自我变形
 #seenv          == show seen vectors
 #stats          == show memory statistics
-#terrain        == show current level (more options than in normal play)
+#terrain        == 显示当前层 ( 比正常模式更多选项)
 #timeout        == look at timeout queue and hero's timed intrinsics
-#vanquished     == disclose counts of dead monsters sorted in various ways
+#vanquished     == 显示以各种方式杀死的怪物数量
 #vision         == show vision array
 #wizintrinsic   == set selected intrinsic timeouts
-#wizmakemap     == recreate the current dungeon level
+#wizmakemap     == 重新生成当前层
 #wizrumorcheck  == validate first and last rumor for true and false set
 #wizsmell       == smell a monster
-#wizwhere       == show dungeon placement of all special levels
+#wizwhere       == 显示所有特殊层的位置
 #wmode          == show wall modes
 
 Options:
-monpolycontrol  == prompt for new form whenever any monster changes shape
+monpolycontrol  == 每当怪物改变外形时提示输入新的外形
 sanity_check    == evaluate monsters, objects, and map prior to each turn
 wizweight       == augment object descriptions with their objects' weight

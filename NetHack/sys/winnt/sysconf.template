@@ -85,22 +85,22 @@ WIZARDS=*
 #
 # The location that a record of game aborts and self-diagnosed game problems
 # is kept (default=HACKDIR, writeable)
-#TROUBLEDIR=%USERPROFILE%\NetHack\3.6
+#TROUBLEDIR=%USERPROFILE%\NetHack-cn\3.6
 #
 # The location that documentation and helps files are placed
-#HACKDIR=%USERPROFILE%\NetHack\3.6
+#HACKDIR=%USERPROFILE%\NetHack-cn\3.6
 #
 # The location that level files in progress are stored (writeable)
-#LEVELDIR=%USERPROFILE%\AppData\Local\NetHack\3.6
+#LEVELDIR=%USERPROFILE%\AppData\Local\NetHack-cn\3.6
 #
 # The location where saved games are kept (writeable)
-#SAVEDIR=%USERPROFILE%\AppData\Local\NetHack\3.6
+#SAVEDIR=%USERPROFILE%\AppData\Local\NetHack-cn\3.6
 #
 # The location that bones files are kept (writeable)
-#BONESDIR=c:\ProgramData\NetHack\3.6
+#BONESDIR=c:\ProgramData\NetHack-cn\3.6
 #
 # The location that score files are kept (writeable)
-#SCOREDIR=c:\ProgramData\NetHack\3.6
+#SCOREDIR=c:\ProgramData\NetHack-cn\3.6
 #
 # The location that file synchronization locks are stored (writeable)
-#LOCKDIR=c:\ProgramData\NetHack\3.6
+#LOCKDIR=c:\ProgramData\NetHack-cn\3.6

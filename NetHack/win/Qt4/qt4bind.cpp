@@ -319,13 +319,13 @@ void NetHackQtBind::qt_curs(winid wid, int x, int y)
 void NetHackQtBind::qt_putstr(winid wid, int attr, const char *text)
 {
     NetHackQtWindow* window=id_to_window[(int)wid];
-    window->PutStr(attr,QString::fromLatin1(text));
+    window->PutStr(attr,QString::fromUtf8(text));
 }
 
 void NetHackQtBind::qt_putstr(winid wid, int attr, const std::string& text)
 {
     NetHackQtWindow* window=id_to_window[(int)wid];
-    window->PutStr(attr,QString::fromLatin1(text.c_str(), text.size()));
+    window->PutStr(attr,QString::fromUtf8(text.c_str(), text.size()));
 }
 
 void NetHackQtBind::qt_putstr(winid wid, int attr, const QString& text)
@@ -380,7 +380,7 @@ void NetHackQtBind::qt_add_menu(winid wid, int glyph,
 {
     NetHackQtWindow* window=id_to_window[(int)wid];
     window->AddMenu(glyph, identifier, ch, gch, attr,
-            QString::fromLatin1(str),
+            QString::fromUtf8(str),
             presel);
 }
 
@@ -496,7 +496,7 @@ int NetHackQtBind::qt_doprev_message()
 
 char NetHackQtBind::qt_yn_function(const char *question_, const char *choices, CHAR_P def)
 {
-    QString question(QString::fromLatin1(question_));
+    QString question(QString::fromUtf8(question_));
     QString message;
     char yn_esc_map='\033';
 
@@ -644,7 +644,7 @@ void NetHackQtBind::qt_putmsghistory(const char *msg, BOOLEAN_P is_restoring)
 
     if (msg) {
         //raw_printf("msg='%s'", msg);
-        window->PutStr(ATR_NONE, QString::fromLatin1(msg));
+        window->PutStr(ATR_NONE, QString::fromUtf8(msg));
 #ifdef DUMPLOG
         dumplogmsg(msg);
 #endif
@@ -654,7 +654,7 @@ void NetHackQtBind::qt_putmsghistory(const char *msg, BOOLEAN_P is_restoring)
         for (i = 0; i < msgs_strings->size(); i++) {
             window->PutStr(ATR_NONE, msgs_strings->at((i)));
 #ifdef DUMPLOG
-            dumplogmsg(msgs_strings->at(i).toLatin1().constData());
+            dumplogmsg(msgs_strings->at(i).toUtf8().constData());
 #endif
         }
         delete msgs_strings;

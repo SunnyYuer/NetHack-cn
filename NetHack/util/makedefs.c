@@ -2001,7 +2001,7 @@ do_data()
             free(line);
             continue;
         }
-        if (*line > ' ') { /* got an entry name */
+        if (*line > ' ' || *line < 0) { /* got an entry name */
             /* first finish previous entry */
             if (line_cnt)
                 Fprintf(ofp, "%d\n", line_cnt), line_cnt = 0;
@@ -2396,9 +2396,9 @@ do_permonst()
             Fprintf(ofp, "\n        PM_");
         else
             Fprintf(ofp, "\n#define\tPM_");
-        if (mons[i].mlet == S_HUMAN && !strncmp(mons[i].mname, "were", 4))
+        if (mons[i].mlet == S_HUMAN && !strncmp(mons[i].ename, "were", 4))
             Fprintf(ofp, "HUMAN_");
-        for (nam = c = tmpdup(mons[i].mname); *c; c++)
+        for (nam = c = tmpdup(mons[i].ename); *c; c++)
             if (*c >= 'a' && *c <= 'z')
                 *c -= (char) ('a' - 'A');
             else if (*c < 'A' || *c > 'Z')
@@ -2801,7 +2801,7 @@ do_objs()
         SpinCursor(3);
 
         objects[i].oc_name_idx = objects[i].oc_descr_idx = i; /* init */
-        if (!(objnam = tmpdup(OBJ_NAME(objects[i]))))
+        if (!(objnam = tmpdup(OBJ_ENAME(objects[i]))))
             continue;
 
         /* make sure probabilities add up to 1000 */

@@ -858,7 +858,7 @@ void NetHackQtMainWindow::doGuidebook(bool)
 
 void NetHackQtMainWindow::doKeys(const QString& k)
 {
-    keysink.Put(k.toLatin1().constData());
+    keysink.Put(k.toUtf8().constData());
     qApp->exit();
 }
 

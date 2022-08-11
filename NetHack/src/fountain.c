@@ -18,12 +18,12 @@ void
 floating_above(what)
 const char *what;
 {
-    const char *umsg = "are floating high above the %s.";
+    const char *umsg = "很高地飘浮在%s上.";
 
     if (u.utrap && (u.utraptype == TT_INFLOOR || u.utraptype == TT_LAVA)) {
         /* when stuck in floor (not possible at fountain or sink location,
            so must be attempting to move down), override the usual message */
-        umsg = "are trapped in the %s.";
+        umsg = "被困在%s里.";
         what = surface(u.ux, u.uy); /* probably redundant */
     }
     You(umsg, what);
@@ -38,17 +38,17 @@ dowatersnakes()
 
     if (!(mvitals[PM_WATER_MOCCASIN].mvflags & G_GONE)) {
         if (!Blind)
-            pline("An endless stream of %s pours forth!",
-                  Hallucination ? makeplural(rndmonnam(NULL)) : "snakes");
+            pline("络绎不绝的%s涌流出来!",
+                  Hallucination ? makeplural(rndmonnam(NULL)) : "蛇");
         else
-            You_hear("%s hissing!", something);
+            You_hear("%s 发出嘶嘶声!", something);
         while (num-- > 0)
             if ((mtmp = makemon(&mons[PM_WATER_MOCCASIN], u.ux, u.uy,
                                 NO_MM_FLAGS)) != 0
                 && t_at(mtmp->mx, mtmp->my))
                 (void) mintrap(mtmp);
     } else
-        pline_The("fountain bubbles furiously for a moment, then calms.");
+        pline_The("喷泉片刻剧烈地冒泡, 然后平静了.");
 }
 
 /* Water demon */
@@ -61,14 +61,14 @@ dowaterdemon()
         if ((mtmp = makemon(&mons[PM_WATER_DEMON], u.ux, u.uy,
                             NO_MM_FLAGS)) != 0) {
             if (!Blind)
-                You("unleash %s!", a_monnam(mtmp));
+                You("解放了%s!", a_monnam(mtmp));
             else
-                You_feel("the presence of evil.");
+                You_feel("到邪恶的存在.");
 
             /* Give those on low levels a (slightly) better chance of survival
              */
             if (rnd(100) > (80 + level_difficulty())) {
-                pline("Grateful for %s release, %s grants you a wish!",
+                pline("感激%s解放, %s满足你一个愿望!",
                       mhis(mtmp), mhe(mtmp));
                 /* give a wish and discard the monster (mtmp set to null) */
                 mongrantswish(&mtmp);
@@ -76,7 +76,7 @@ dowaterdemon()
                 (void) mintrap(mtmp);
         }
     } else
-        pline_The("fountain bubbles furiously for a moment, then calms.");
+        pline_The("喷泉片刻剧烈地冒泡, 然后平静了.");
 }
 
 /* Water Nymph */
@@ -89,16 +89,16 @@ dowaternymph()
         && (mtmp = makemon(&mons[PM_WATER_NYMPH], u.ux, u.uy,
                            NO_MM_FLAGS)) != 0) {
         if (!Blind)
-            You("attract %s!", a_monnam(mtmp));
+            You("吸引了%s!", a_monnam(mtmp));
         else
-            You_hear("a seductive voice.");
+            You_hear("一个诱人的声音.");
         mtmp->msleeping = 0;
         if (t_at(mtmp->mx, mtmp->my))
             (void) mintrap(mtmp);
     } else if (!Blind)
-        pline("A large bubble rises to the surface and pops.");
+        pline("一个大气泡上升到了表面然后破了.");
     else
-        You_hear("a loud pop.");
+        You_hear("啪的一声.");
 }
 
 /* Gushing forth along LOS from (u.ux, u.uy) */
@@ -111,9 +111,9 @@ int drinking;
     do_clear_area(u.ux, u.uy, 7, gush, (genericptr_t) &madepool);
     if (!madepool) {
         if (drinking)
-            Your("thirst is quenched.");
+            Your("口渴缓和了.");
         else
-            pline("Water sprays all over you.");
+            pline("水洒到你全身.");
     }
 }
 
@@ -134,7 +134,7 @@ genericptr_t poolcnt;
         return;
 
     if (!((*(int *) poolcnt)++))
-        pline("Water gushes forth from the overflowing fountain!");
+        pline("水从满溢的喷泉里喷出!");
 
     /* Put a pool at x, y */
     levl[x][y].typ = POOL, levl[x][y].flags = 0;
@@ -153,9 +153,9 @@ STATIC_OVL void
 dofindgem()
 {
     if (!Blind)
-        You("spot a gem in the sparkling waters!");
+        You("在气泡的水中发现了一颗宝石!");
     else
-        You_feel("a gem here!");
+        You_feel("这里有一颗宝石!");
     (void) mksobj_at(rnd_class(DILITHIUM_CRYSTAL, LUCKSTONE - 1), u.ux, u.uy,
                      FALSE, FALSE);
     SET_FOUNTAIN_LOOTED(u.ux, u.uy);
@@ -181,12 +181,12 @@ boolean isyou;
                 if (is_watch(mtmp->data) && couldsee(mtmp->mx, mtmp->my)
                     && mtmp->mpeaceful) {
                     if (!Deaf) {
-                        pline("%s yells:", Amonnam(mtmp));
-                        verbalize("Hey, stop using that fountain!");
+                        pline("%s 叫:", Amonnam(mtmp));
+                        verbalize("喂, 停止使用那个喷泉!");
                     } else {
-                        pline("%s earnestly %s %s %s!",
+                        pline("%s 诚挚地%s%s%s!",
                               Amonnam(mtmp),
-                              nolimbs(mtmp->data) ? "shakes" : "waves",
+                              nolimbs(mtmp->data) ? "摇" : "挥",
                               mhis(mtmp),
                               nolimbs(mtmp->data)
                                       ? mbodypart(mtmp, HEAD)
@@ -197,18 +197,18 @@ boolean isyou;
             }
             /* You can see or hear this effect */
             if (!mtmp)
-                pline_The("flow reduces to a trickle.");
+                pline_The("涌流减少为细流.");
             return;
         }
         if (isyou && wizard) {
-            if (yn("Dry up fountain?") == 'n')
+            if (yn("让喷泉干涸?") == 'n')
                 return;
         }
         /* replace the fountain with ordinary floor */
         levl[x][y].typ = ROOM, levl[x][y].flags = 0;
         levl[x][y].blessedftn = 0;
         if (cansee(x, y))
-            pline_The("fountain dries up!");
+            pline_The("喷泉干涸了!");
         /* The location is seen if the hero/monster is invisible
            or felt if the hero is blind. */
         newsym(x, y);
@@ -226,14 +226,14 @@ drinkfountain()
     register int fate = rnd(30);
 
     if (Levitation) {
-        floating_above("fountain");
+        floating_above("喷泉");
         return;
     }
 
     if (mgkftn && u.uluck >= 0 && fate >= 10) {
         int i, ii, littleluck = (u.uluck < 4);
 
-        pline("Wow!  This makes you feel great!");
+        pline("哇!  这让你感觉很棒!");
         /* blessed restore ability */
         for (ii = 0; ii < A_MAX; ii++)
             if (ABASE(ii) < AMAX(ii)) {
@@ -249,14 +249,14 @@ drinkfountain()
                 i = 0;
         }
         display_nhwindow(WIN_MESSAGE, FALSE);
-        pline("A wisp of vapor escapes the fountain...");
+        pline("一缕蒸汽从喷泉中逸出...");
         exercise(A_WIS, TRUE);
         levl[u.ux][u.uy].blessedftn = 0;
         return;
     }
 
     if (fate < 10) {
-        pline_The("cool draught refreshes you.");
+        pline_The("凉爽的风让你神清气爽.");
         u.uhunger += rnd(10); /* don't choke on water */
         newuhs(FALSE);
         if (mgkftn)
@@ -264,27 +264,27 @@ drinkfountain()
     } else {
         switch (fate) {
         case 19: /* Self-knowledge */
-            You_feel("self-knowledgeable...");
+            You_feel("自知的...");
             display_nhwindow(WIN_MESSAGE, FALSE);
             enlightenment(MAGICENLIGHTENMENT, ENL_GAMEINPROGRESS);
             exercise(A_WIS, TRUE);
-            pline_The("feeling subsides.");
+            pline_The("感觉消退了.");
             break;
         case 20: /* Foul water */
-            pline_The("water is foul!  You gag and vomit.");
+            pline_The("水很脏!  你作呕并呕吐.");
             morehungry(rn1(20, 11));
             vomit();
             break;
         case 21: /* Poisonous */
-            pline_The("water is contaminated!");
+            pline_The("水被污染了!");
             if (Poison_resistance) {
-                pline("Perhaps it is runoff from the nearby %s farm.",
+                pline("也许它是从附近的%s农场流过来的.",
                       fruitname(FALSE));
-                losehp(rnd(4), "unrefrigerated sip of juice", KILLED_BY_AN);
+                losehp(rnd(4), "未冷藏的一小口果汁", KILLED_BY_AN);
                 break;
             }
             losestr(rn1(4, 3));
-            losehp(rnd(10), "contaminated water", KILLED_BY);
+            losehp(rnd(10), "受污染的水", KILLED_BY);
             exercise(A_CON, FALSE);
             break;
         case 22: /* Fountain of snakes! */
@@ -296,7 +296,7 @@ drinkfountain()
         case 24: /* Curse an item */ {
             register struct obj *obj;
 
-            pline("This water's no good!");
+            pline("这个水不好!");
             morehungry(rn1(20, 11));
             exercise(A_CON, FALSE);
             for (obj = invent; obj; obj = obj->nobj)
@@ -307,14 +307,14 @@ drinkfountain()
         case 25: /* See invisible */
             if (Blind) {
                 if (Invisible) {
-                    You("feel transparent.");
+                    You("感觉透明的.");
                 } else {
-                    You("feel very self-conscious.");
-                    pline("Then it passes.");
+                    You("感觉非常自我意识的.");
+                    pline("然后消失了.");
                 }
             } else {
-                You_see("an image of someone stalking you.");
-                pline("But it disappears.");
+                You_see("某人的影像在偷偷接近你.");
+                pline("但它消失了.");
             }
             HSee_invisible |= FROMOUTSIDE;
             newsym(u.ux, u.uy);
@@ -337,8 +337,8 @@ drinkfountain()
         {
             register struct monst *mtmp;
 
-            pline("This %s gives you bad breath!",
-                  hliquid("water"));
+            pline("这个%s让你口臭!",
+                  hliquid("水"));
             for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
                 if (DEADMONSTER(mtmp))
                     continue;
@@ -350,8 +350,8 @@ drinkfountain()
             dogushforth(TRUE);
             break;
         default:
-            pline("This tepid %s is tasteless.",
-                  hliquid("water"));
+            pline("这个温热的%s是无味的.",
+                  hliquid("水"));
             break;
         }
     }
@@ -363,7 +363,7 @@ dipfountain(obj)
 register struct obj *obj;
 {
     if (Levitation) {
-        floating_above("fountain");
+        floating_above("喷泉");
         return;
     }
 
@@ -374,9 +374,9 @@ register struct obj *obj;
         && !exist_artifact(LONG_SWORD, artiname(ART_EXCALIBUR))) {
         if (u.ualign.type != A_LAWFUL) {
             /* Ha!  Trying to cheat her. */
-            pline("A freezing mist rises from the %s and envelopes the sword.",
-                  hliquid("water"));
-            pline_The("fountain disappears!");
+            pline("冰冷的薄雾从%s中升起并包裹住了剑.",
+                  hliquid("水"));
+            pline_The("喷泉消失了!");
             curse(obj);
             if (obj->spe > -6 && !rn2(3))
                 obj->spe--;
@@ -386,8 +386,8 @@ register struct obj *obj;
             /* The lady of the lake acts! - Eric Backus */
             /* Be *REAL* nice */
             pline(
-              "From the murky depths, a hand reaches up to bless the sword.");
-            pline("As the hand retreats, the fountain disappears!");
+              "从黑暗深处, 一只手伸上来祝福那把剑.");
+            pline("当手撤离的时候, 喷泉消失了!");
             obj = oname(obj, artiname(ART_EXCALIBUR));
             discover_artifact(ART_EXCALIBUR);
             bless(obj);
@@ -424,10 +424,10 @@ register struct obj *obj;
     case 20: /* Uncurse the item */
         if (obj->cursed) {
             if (!Blind)
-                pline_The("%s glows for a moment.", hliquid("water"));
+                pline_The("%s发光了片刻.", hliquid("水"));
             uncurse(obj);
         } else {
-            pline("A feeling of loss comes over you.");
+            pline("一种失落感来袭.");
         }
         break;
     case 21: /* Water Demon */
@@ -449,13 +449,13 @@ register struct obj *obj;
         dogushforth(FALSE);
         break;
     case 26: /* Strange feeling */
-        pline("A strange tingling runs up your %s.", body_part(ARM));
+        pline("一种奇怪的刺痛感出现在你的%s上.", body_part(ARM));
         break;
     case 27: /* Strange feeling */
-        You_feel("a sudden chill.");
+        You_feel("突然的寒意.");
         break;
     case 28: /* Strange feeling */
-        pline("An urge to take a bath overwhelms you.");
+        pline("想要洗澡的冲动淹没了你.");
         {
             long money = money_cnt(invent);
             struct obj *otmp;
@@ -474,7 +474,7 @@ register struct obj *obj;
                         if (!otmp->quan)
                             delobj(otmp);
                     }
-                You("lost some of your money in the fountain!");
+                You("在喷泉中丢失了一些钱!");
                 CLEAR_FOUNTAIN_LOOTED(u.ux, u.uy);
                 exercise(A_WIS, FALSE);
             }
@@ -492,8 +492,8 @@ register struct obj *obj;
                                    + 1) * 2) + 5),
                       u.ux, u.uy);
         if (!Blind)
-            pline("Far below you, you see coins glistening in the %s.",
-                  hliquid("water"));
+            pline("下面远处, 你看见金币在%s里闪闪发光.",
+                  hliquid("水"));
         exercise(A_WIS, TRUE);
         newsym(u.ux, u.uy);
         break;
@@ -507,7 +507,7 @@ breaksink(x, y)
 int x, y;
 {
     if (cansee(x, y) || (x == u.ux && y == u.uy))
-        pline_The("pipes break!  Water spurts out!");
+        pline_The("水管破裂!  水喷出来了!");
     level.flags.nsinks--;
     levl[x][y].typ = FOUNTAIN, levl[x][y].looted = 0;
     levl[x][y].blessedftn = 0;
@@ -523,32 +523,32 @@ drinksink()
     struct monst *mtmp;
 
     if (Levitation) {
-        floating_above("sink");
+        floating_above("水槽");
         return;
     }
     switch (rn2(20)) {
     case 0:
-        You("take a sip of very cold %s.", hliquid("water"));
+        You("喝了一小口非常冷的%s.", hliquid("水"));
         break;
     case 1:
-        You("take a sip of very warm %s.", hliquid("water"));
+        You("喝了一小口非常温暖的%s.", hliquid("水"));
         break;
     case 2:
-        You("take a sip of scalding hot %s.", hliquid("water"));
+        You("喝了一小口滚烫的%s.", hliquid("水"));
         if (Fire_resistance)
-            pline("It seems quite tasty.");
+            pline("似乎相当可口.");
         else
-            losehp(rnd(6), "sipping boiling water", KILLED_BY);
+            losehp(rnd(6), "一小口沸腾的水", KILLED_BY);
         /* boiling water burns considered fire damage */
         break;
     case 3:
         if (mvitals[PM_SEWER_RAT].mvflags & G_GONE)
-            pline_The("sink seems quite dirty.");
+            pline_The("水槽似乎相当肮脏.");
         else {
             mtmp = makemon(&mons[PM_SEWER_RAT], u.ux, u.uy, NO_MM_FLAGS);
             if (mtmp)
-                pline("Eek!  There's %s in the sink!",
-                      (Blind || !canspotmon(mtmp)) ? "something squirmy"
+                pline("呀!  那里有%s在水槽里!",
+                      (Blind || !canspotmon(mtmp)) ? "蠕动的什么东西"
                                                    : a_monnam(mtmp));
         }
         break;
@@ -561,8 +561,8 @@ drinksink()
             }
         } while (!otmp);
         otmp->cursed = otmp->blessed = 0;
-        pline("Some %s liquid flows from the faucet.",
-              Blind ? "odd" : hcolor(OBJ_DESCR(objects[otmp->otyp])));
+        pline("一些%s 液体从水龙头流出.",
+              Blind ? "古怪的" : hcolor(OBJ_DESCR(objects[otmp->otyp])));
         otmp->dknown = !(Blind || Hallucination);
         otmp->quan++;       /* Avoid panic upon useup() */
         otmp->fromsink = 1; /* kludge for docall() */
@@ -571,57 +571,57 @@ drinksink()
         break;
     case 5:
         if (!(levl[u.ux][u.uy].looted & S_LRING)) {
-            You("find a ring in the sink!");
+            You("在水槽里找到一枚戒指!");
             (void) mkobj_at(RING_CLASS, u.ux, u.uy, TRUE);
             levl[u.ux][u.uy].looted |= S_LRING;
             exercise(A_WIS, TRUE);
             newsym(u.ux, u.uy);
         } else
-            pline("Some dirty %s backs up in the drain.", hliquid("water"));
+            pline("一些肮脏的%s淤积到下水道中.", hliquid("水"));
         break;
     case 6:
         breaksink(u.ux, u.uy);
         break;
     case 7:
-        pline_The("%s moves as though of its own will!", hliquid("water"));
+        pline_The("%s移动得就像它自己的意愿!", hliquid("水"));
         if ((mvitals[PM_WATER_ELEMENTAL].mvflags & G_GONE)
             || !makemon(&mons[PM_WATER_ELEMENTAL], u.ux, u.uy, NO_MM_FLAGS))
-            pline("But it quiets down.");
+            pline("但它安静下来.");
         break;
     case 8:
-        pline("Yuk, this %s tastes awful.", hliquid("water"));
+        pline("恶心, 这%s味道很糟.", hliquid("水"));
         more_experienced(1, 0);
         newexplevel();
         break;
     case 9:
-        pline("Gaggg... this tastes like sewage!  You vomit.");
+        pline("呕...  这尝起来像污水!  你呕吐了.");
         morehungry(rn1(30 - ACURR(A_CON), 11));
         vomit();
         break;
     case 10:
-        pline("This %s contains toxic wastes!", hliquid("water"));
+        pline("这%s含有有毒废物!", hliquid("水"));
         if (!Unchanging) {
-            You("undergo a freakish metamorphosis!");
+            You("经受奇特的变形!");
             polyself(0);
         }
         break;
     /* more odd messages --JJB */
     case 11:
-        You_hear("clanking from the pipes...");
+        You_hear("来自管道的叮当声...");
         break;
     case 12:
-        You_hear("snatches of song from among the sewers...");
+        You_hear("下水道里的片段歌声...");
         break;
     case 19:
         if (Hallucination) {
-            pline("From the murky drain, a hand reaches up... --oops--");
+            pline("从阴暗的下水道, 一只手伸出来... -- 哎哟--");
             break;
         }
         /*FALLTHRU*/
     default:
-        You("take a sip of %s %s.",
-            rn2(3) ? (rn2(2) ? "cold" : "warm") : "hot",
-            hliquid("water"));
+        You("喝了一小口%s%s.",
+            rn2(3) ? (rn2(2) ? "冷" : "温") : "热",
+            hliquid("水"));
     }
 }
 

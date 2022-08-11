@@ -1,151 +1,151 @@
 &# cmdhelp
-&	Tell what command a keystroke invokes
-^	Show the type of an adjacent trap
-^[	Cancel command (same as ESCape key)
+&	叙述命令的说明
+^	显示附近的陷阱类型
+^[	取消命令 ( 同ESC 键)
 &? debug
-^E	Search for nearby traps, secret doors, and unseen monsters
-^F	Map level; reveals traps and secret corridors but not secret doors
-^G	Create a monster by name or class
-^I	View inventory with all items identified
-^O	List special level locations
-^V	Teleport between levels
-^W	Wish for something
+^E	搜索附近的陷阱, 暗门, 和看不见的怪物
+^F	地图层; 显示陷阱和秘密走廊但不显示暗门
+^G	通过名字或类别生成怪物
+^I	鉴定背包所有物品
+^O	列出特殊层位置
+^V	传送到别的层
+^W	许愿
 &: #!debug
-^E	unavailable debugging command
-^F	unavailable debugging command
-^G	unavailable debugging command
-^I	unavailable debugging command
-^O	Shortcut for '#overview': list interesting levels you have visited
-^V	unavailable debugging command
-^W	unavailable debugging command
+^E	不可用的调试命令
+^F	不可用的调试命令
+^G	不可用的调试命令
+^I	不可用的调试命令
+^O	'#overview' 的捷径: 列出你走过的有趣的层
+^V	不可用的调试命令
+^W	不可用的调试命令
 &. #?debug
 &? number_pad=0,-1
-b	Go southwest 1 space
-B	Go southwest until you are on top of something
-h	Go west 1 space
-H	Go west until you are on top of something
-j	Go south 1 space
-J	Go south until you are on top of something
-k	Go north 1 space
-K	Go north until you are on top of something
-l	Go east 1 space
-L	Go east until you are on top of something
-n	Go southeast 1 space
-N	Go southeast until you are on something
-u	Go northeast 1 space
-U	Go northeast until you are on top of something
+b	向西南走一步
+B	一直向西南走直到遇到什么东西
+h	向西走一步
+H	一直向西走直到遇到什么东西
+j	向南走一步
+J	一直向南走直到遇到什么东西
+k	向北走一步
+K	一直向北走直到遇到什么东西
+l	向东走一步
+L	一直向东走直到遇到什么东西
+n	向东南走一步
+N	一直向东南走直到遇到什么东西
+u	向东北走一步
+U	一直向东北走直到遇到什么东西
 &# y,Y handled below
 &: #number_pad=1,2,3,4
-h	Help: synonym for '?'
-j	Jump: shortcut for '#jump'
-k	Kick: synonym for '^D'
-l	Loot: shortcut for '#loot'
-n	Start a count; continue with digit(s)
-N	Name: shortcut for '#name'
-u	Untrap: shortcut for '#untrap'
+h	帮助: 同'?'
+j	跳跃: 同'#jump'
+k	踢: 同'^D'
+l	搜刮: 同'#loot'
+n	开始计数; 后接数字
+N	命名: 同'#name'
+u	解除陷阱: 同'#untrap'
 &. #0,-1 vs 1,2,3,4
-a	Apply (use) a tool or break a wand
-A	Remove all armor and/or all accessories and/or unwield weapons
-^A	Redo the previous command
-^B	Go southwest until you are near something
-c	Close a door
-C	Call (name) a monster, an individual object, or a type of object
-^C	Interrupt: quit the game
-d	Drop an item
-D	Drop specific item types
-^D	Kick something (usually a door, chest, or box)
-e	Eat something
-E	Engrave writing on the floor
-f	Fire ammunition from quiver
-F	Followed by direction, fight a monster (even if you don't sense it)
-g	Followed by direction, move until you are near something
-G	Followed by direction, same as control-direction
-^H	Go west until you are near something
-i	Show your inventory
-I	Inventory specific item types
-^J	Go south until you are near something
-^K	Go north until you are near something
-^L	Go east until you are near something
-m	Followed by direction, move without picking anything up or fighting
-M	Followed by direction, move a distance without picking anything up
-^N	Go southeast until you are near something
-o	Open a door
-O	Show option settings, possibly change them
-p	Pay your shopping bill
-P	Put on an accessory (ring, amulet, etc; will work for armor too)
-^P	Toggle through previously displayed game messages
-q	Quaff (drink) something (potion, water, etc)
-Q	Select ammunition for quiver (use '#quit' to quit)
-r	Read a scroll or spellbook
-R	Remove an accessory (ring, amulet, etc; will work for armor too)
-^R	Redraw screen
-s	Search all immediately adjacent locations for traps and secret doors
-S	Save the game (and exit; there is no "save and keep going")
-t	Throw something (choose an item, then a direction--not a target)
-T	Take off one piece of armor (will work for accessories too)
-^T	Teleport around level
-^U	Go northeast until you are near something
-v	Show version ('#version' shows more information)
-V	Show history of game's development
-w	Wield a weapon (for dual weapons: 'w' secondary, 'x', 'w' primary, 'X')
-W	Wear a piece of armor (will work for accessories too)
-x	Swap wielded and secondary weapons
-X	Toggle two-weapon combat
-^X	Show your attributes (shows more in debug or explore mode)
+a	使用工具或者折断魔杖
+A	脱掉所有的盔甲或者首饰或者未拿着的武器
+^A	重复之前的命令
+^B	一直向西南走直到遇到什么东西
+c	关门
+C	命名一只怪, 独特的物品, 或一类物品
+^C	中断: 结束游戏
+d	扔掉一件东西
+D	扔掉具体的一类物品
+^D	踢什么东西 ( 通常是门, 箱子, 或者盒子)
+e	吃什么东西
+E	在地板上刻字
+f	从囊袋里发射东西
+F	后接方向, 和怪物战斗 ( 即使你感觉不到)
+g	后接方向, 一直移动直到你遇到什么东西
+G	后接方向, 同control-direction
+^H	一直向西走直到遇到什么东西
+i	打开你的背包
+I	背包里的某类物品
+^J	一直向南走直到遇到什么东西
+^K	一直向北走直到遇到什么东西
+^L	一直向东走直到遇到什么东西
+m	后接方向, 不捡取任何东西也不战斗来移动
+M	后接方向, 不捡取任何东西移动一段距离
+^N	一直向东南走直到遇到什么东西
+o	开门
+O	显示选项设置, 并可能地改变它们
+p	为你的购物单付钱
+P	佩戴首饰 ( 戒指, 护身符, 等等; 对盔甲也适用)
+^P	切换到先前显示的游戏消息
+q	喝东西 ( 药水, 水, 等等)
+Q	给囊袋选择发射物 ( 使用'#quit' 来退出)
+r	阅读卷轴或者魔法书
+R	摘下首饰 ( 戒指, 护身符, 等等; 对盔甲也适用)
+^R	刷新屏幕
+s	搜索紧邻位置的陷阱和暗门
+S	保存游戏 ( 并结束; 没有" 保存并继续")
+t	投掷东西东西 ( 选一项, 然后选方向-- 不是选目标)
+T	脱下一件盔甲 ( 对首饰也适用)
+^T	在这层传送
+^U	一直向东北走直到遇到什么东西
+v	显示版本 ('#version' 显示更多信息)
+V	显示游戏的发展历史
+w	装备武器 ( 对于双持武器: 'w' 副手, 'x', 'w' 主手, 'X')
+W	穿戴一件盔甲 ( 对首饰也适用)
+x	交换拿着的主武器和副武器
+X	切换到双持
+^X	显示你的属性 ( 在向导模式和探索模式里会显示得更多)
 &? number_pad=0,1,2,3,4
 &? number_pad=0
-y	Go northwest 1 space
-Y	Go northwest until you are on top of something
+y	向西北走一步
+Y	一直向西北走直到遇到什么东西
 &.
-^Y	Go northwest until you are near something
-z	Zap a wand
-Z	Zap (cast) a spell
+^Y	一直向西北走直到遇到什么东西
+z	挥动魔杖
+Z	施展魔法
 &? suspend
-^Z	Suspend game; 'fg' (foreground) to resume
+^Z	暂停游戏; 'fg' (foreground) 来继续
 &:
-^Z	unavailable command: suspend
+^Z	不可用的命令: 暂停
 &.
 &: number_pad=-1
-y	Zap a wand
-Y	Zap (cast) a spell
+y	挥动魔杖
+Y	施展魔法
 &? suspend
-^Y	Suspend game; 'fg' (foreground) to resume
+^Y	暂停游戏; 'fg' (foreground) 来继续
 &:
-^Y	unavailable command: suspend
+^Y	不可用的命令: 暂停
 &.
-z	Go northwest 1 space
-Z	Go northwest until you are on top of something
-^Z	Go northwest until you are near something
+z	向西北走一步
+Z	一直向西北走直到遇到什么东西
+^Z	一直向西北走直到遇到什么东西
 &. #0,1..4 vs -1
-<	Go up a staircase
->	Go down a staircase
-/	Show what type of thing a symbol corresponds to
-?	Give a help message
+<	上楼梯
+>	下楼梯
+/	显示符号对应的物品类型
+?	给出帮助消息
 &? shell
 !	Do a shell escape; 'exit' shell to come back
 &:
-!	unavailable command: shell
+!	不可用的命令: shell
 &.
-\	Show what object types have been discovered
-`	Show discovered types for one class of objects
-_	Travel via a shortest-path algorithm to a point on the map
-.	Rest one move while doing nothing
+\	显示已发现的物品类型
+`	显示一类物品的发现类型
+_	通过最短路径算法移动到地图上的一个点
+.	不做任何事休息一回合
 &? rest_on_space
- 	Rest one move while doing nothing
+ 	不做任何事休息一回合
 &.
-:	Look at what is on the floor
-;	Show what type of thing a map symbol on the level corresponds to
-,	Pick up things at the current location
-@	Toggle the pickup option on/off
-)	Show the weapon(s) currently wielded or readied
-[	Show the armor currently worn
-=	Show the ring(s) currently worn
-"	Show the amulet currently worn
-(	Show the tools currently in use
-*	Show all equipment in use (combination of the ),[,=,",( commands)
-$	Count your gold
-+	List known spells
-#	Perform an extended command (use '#?' to list choices)
+:	查看地板上的东西
+;	显示这层地图的符号对应的物体类型
+,	拾取当前位置的东西
+@	自动拾取开关  开/ 关
+)	显示当前拿着或准备好的武器
+[	显示当前穿戴的盔甲
+=	显示当前戴着的戒指
+"	显示当前戴着的护身符
+(	显示当前使用中的工具
+*	显示你所有穿戴的装备 ( 结合),[,=,",( 命令)
+$	你的金币数量
++	列出学会的魔法
+#	扩展命令 ( 适用'#?' 列出选择)
 &# number_pad:
 &#  -1 = numpad off, swap y with z (including Y with Z, ^Y with ^Z, M-y &c)
 &#   0 = numpad off (default)
@@ -154,71 +154,71 @@ $	Count your gold
 &#   3 = numpad on, phone keypad layout, '5'->'g'
 &#   4 = numpad on, phone keypad layout, '5'->'G'
 &? number_pad = 1,2,3,4
-0	Show inventory
-4	Move west
-6	Move east
--	'F' prefix; force fight
+0	打开背包
+4	向西移动
+6	向东移动
+-	'F' 前缀; 强制战斗
 &: #-1,0
-0	Continue a count
-4	Start or continue a count
-6	Start or continue a count
+0	继续计数
+4	开始或继续计数
+6	开始或继续计数
 &. #1,2,3,4 vs -1,0
 &? number_pad=1,2
-7	Move northwest
-8	Move north
-9	Move northeast
-1	Move southwest
-2	Move south
-3	Move southeast
+7	向西北移动
+8	向北移动
+9	向东北移动
+1	向西南移动
+2	向南移动
+3	向东南移动
 &: number_pad=3,4
-1	Move northwest
-2	Move north
-3	Move northeast
-7	Move southwest
-8	Move south
-9	Move southeast
+1	向西北移动
+2	向北移动
+3	向东北移动
+7	向西南移动
+8	向南移动
+9	向东南移动
 &: #-1,0
-1	Start or continue a count
-2	Start or continue a count
-3	Start or continue a count
-7	Start or continue a count
-8	Start or continue a count
-9	Start or continue a count
+1	开始或继续计数
+2	开始或继续计数
+3	开始或继续计数
+7	开始或继续计数
+8	开始或继续计数
+9	开始或继续计数
 &. #1,2 vs 3,4 vs -1,0
 &? number_pad=1,3
-5	'g' movement prefix
-M-5	'G' movement prefix
+5	'g' 移动前缀
+M-5	'G' 移动前缀
 &: number_pad=2,4
-5	'G' movement prefix
-M-5	'g' movement prefix
-M-0	Inventory specific item types
+5	'G' 移动前缀
+M-5	'g' 移动前缀
+M-0	背包里特定的物品类型
 &: #-1,0
-5	Start or continue a count
-M-2	Toggle two-weapon combat
+5	开始或继续计数
+M-2	切换到双持
 &. #1,3 vs 2,4 vs -1,0
-M-?	Display extended command help (if the platform allows this)
-M-a	Adjust inventory letters
-M-A	Annotate: supply a name for the current dungeon level
-M-c	Chat: talk to an adjacent creature
-M-C	Conduct: list voluntary challenges you have maintained
-M-d	Dip an object into something
-M-e	Enhance: check weapons skills, advance them if eligible
-M-f	Force a lock
-M-i	Invoke an object's special powers
-M-j	Jump to a nearby location
-M-l	Loot a box on the floor
-M-m	When polymorphed, use a monster's special ability
-M-n	Name a monster, an individual object, or a type of object
-M-N	Name a monster, an individual object, or a type of object
-M-o	Offer a sacrifice to the gods
-M-O	Overview: show a summary of the explored dungeon
-M-p	Pray to the gods for help
-M-q	Quit (exit without saving)
-M-r	Rub a lamp or a touchstone
-M-R	Ride: mount or dismount a saddled steed
-M-s	Sit down
-M-t	Turn undead
-M-T	Tip: empty a container
-M-u	Untrap something (trap, door, or chest)
-M-v	Print compile time options for this version of NetHack
-M-w	Wipe off your face
+M-?	显示扩展命令帮助( 如果平台支持)
+M-a	调整背包物品的排序字母
+M-A	备注: 为当前所在层添加备注
+M-c	聊天: 与邻近的生物谈话
+M-C	行为: 列出你坚持的自愿挑战
+M-d	把某物浸入某物
+M-e	提升能力: 检查武器技能, 如果符合条件则可以提升
+M-f	强制开锁
+M-i	激活物品的特殊能力
+M-j	跳到附近的位置
+M-l	搜刮地上的箱子
+M-m	变形之时, 使用怪物的特殊能力
+M-n	命名一只怪, 独特物品, 或一类物品
+M-N	命名一只怪, 独特物品, 或一类物品
+M-o	向神献上祭品
+M-O	概述: 显示已探索的地牢摘要
+M-p	祈祷求神的帮助
+M-q	结束游戏 ( 不保存退出)
+M-r	擦拭一盏灯或试金石
+M-R	乘骑: 骑上坐骑或下来
+M-s	坐下
+M-t	超度
+M-T	倒出: 清空容器
+M-u	解除某物 ( 陷阱, 门, 或箱子)
+M-v	显示此版本的NetHack 的编译时间
+M-w	擦你的脸

@@ -334,7 +334,7 @@ unsigned corpseflags;
     case PM_BLACK_UNICORN:
         if (mtmp->mrevived && rn2(2)) {
             if (canseemon(mtmp))
-                pline("%s recently regrown horn crumbles to dust.",
+                pline("%s 最近重新长出的角化作了尘埃.",
                       s_suffix(Monnam(mtmp)));
         } else {
             obj = mksobj_at(UNICORN_HORN, x, y, TRUE, FALSE);
@@ -524,7 +524,7 @@ register struct monst *mtmp;
         int dam = d(2, 6);
 
         if (cansee(mtmp->mx, mtmp->my))
-            pline("%s rusts.", Monnam(mtmp));
+            pline("%s 生锈了.", Monnam(mtmp));
         mtmp->mhp -= dam;
         if (mtmp->mhpmax > dam)
             mtmp->mhpmax -= dam;
@@ -556,9 +556,9 @@ register struct monst *mtmp;
                     const char *how = on_fire(mtmp->data, dummy);
 
                     pline("%s %s.", Monnam(mtmp),
-                          !strcmp(how, "boiling") ? "boils away"
-                             : !strcmp(how, "melting") ? "melts away"
-                                : "burns to a crisp");
+                          !strcmp(how, "在沸腾") ? "boils away"
+                             : !strcmp(how, "在融化") ? "融化了"
+                                : "烧焦了");
                 }
                 /* unlike fire -> melt ice -> pool, there's no way for the
                    hero to create lava beneath a monster, so the !mon_moving
@@ -572,10 +572,10 @@ register struct monst *mtmp;
                 mtmp->mhp -= 1;
                 if (DEADMONSTER(mtmp)) {
                     if (cansee(mtmp->mx, mtmp->my))
-                        pline("%s surrenders to the fire.", Monnam(mtmp));
+                        pline("%s 屈服于了火.", Monnam(mtmp));
                     mondead(mtmp);
                 } else if (cansee(mtmp->mx, mtmp->my))
-                    pline("%s burns slightly.", Monnam(mtmp));
+                    pline("%s 轻微地烧伤.", Monnam(mtmp));
             }
             if (!DEADMONSTER(mtmp)) {
                 (void) fire_damage_chain(mtmp->minvent, FALSE, FALSE,
@@ -600,16 +600,16 @@ register struct monst *mtmp;
             }
             if (cansee(mtmp->mx, mtmp->my)) {
                 if (context.mon_moving)
-                    pline("%s drowns.", Monnam(mtmp));
+                    pline("%s淹死了.", Monnam(mtmp));
                 else
                     /* hero used fire to melt ice that monster was on */
-                    You("drown %s.", mon_nam(mtmp));
+                    You("淹死了%s.", mon_nam(mtmp));
             }
             if (u.ustuck && u.uswallow && u.ustuck == mtmp) {
                 /* This can happen after a purple worm plucks you off a
                    flying steed while you are over water. */
-                pline("%s sinks as %s rushes in and flushes you out.",
-                      Monnam(mtmp), hliquid("water"));
+                pline("%s下沉时%s冲了进去然后把你冲了出来.",
+                      Monnam(mtmp), hliquid("水"));
             }
             if (context.mon_moving)
                 mondead(mtmp);
@@ -892,22 +892,22 @@ register struct monst *mtmp;
             && touch_artifact(otmp, mtmp)) {
             if (mtmp->data == &mons[PM_RUST_MONSTER] && otmp->oerodeproof) {
                 if (canseemon(mtmp) && flags.verbose) {
-                    pline("%s eats %s!", Monnam(mtmp),
+                    pline("%s 吃食%s!", Monnam(mtmp),
                           distant_name(otmp, doname));
                 }
                 /* The object's rustproofing is gone now */
                 otmp->oerodeproof = 0;
                 mtmp->mstun = 1;
                 if (canseemon(mtmp) && flags.verbose) {
-                    pline("%s spits %s out in disgust!", Monnam(mtmp),
+                    pline("%s 厌恶地吐出%s!", Monnam(mtmp),
                           distant_name(otmp, doname));
                 }
             } else {
                 if (cansee(mtmp->mx, mtmp->my) && flags.verbose)
-                    pline("%s eats %s!", Monnam(mtmp),
+                    pline("%s 吃食%s!", Monnam(mtmp),
                           distant_name(otmp, doname));
                 else if (flags.verbose)
-                    You_hear("a crunching sound.");
+                    You_hear("嘎吱嘎吱的声音.");
                 mtmp->meating = otmp->owt / 2 + 1;
                 /* Heal up to the object's weight in hp */
                 if (mtmp->mhp < mtmp->mhpmax) {
@@ -938,7 +938,7 @@ register struct monst *mtmp;
                             ptr = mtmp->data;
                         } else if (!resists_ston(mtmp)) {
                             if (canseemon(mtmp))
-                                pline("%s turns to stone!", Monnam(mtmp));
+                                pline("%s 变成了石头!", Monnam(mtmp));
                             monstone(mtmp);
                             ptr = (struct permonst *) 0;
                         }
@@ -1018,10 +1018,10 @@ struct monst *mtmp;
             /* engulf */
             ++ecount;
             if (ecount == 1)
-                Sprintf(buf, "%s engulfs %s.", Monnam(mtmp),
+                Sprintf(buf, "%s 吞食 %s.", Monnam(mtmp),
                         distant_name(otmp, doname));
             else if (ecount == 2)
-                Sprintf(buf, "%s engulfs several objects.", Monnam(mtmp));
+                Sprintf(buf, "%s 吞食了几个物品.", Monnam(mtmp));
             obj_extract_self(otmp);
             (void) mpickobj(mtmp, otmp); /* slurp */
 
@@ -1031,15 +1031,15 @@ struct monst *mtmp;
             ++count;
             if (cansee(mtmp->mx, mtmp->my)) {
                 if (flags.verbose)
-                    pline("%s eats %s!", Monnam(mtmp),
+                    pline("%s 吃食%s!", Monnam(mtmp),
                           distant_name(otmp, doname));
                 /* give this one even if !verbose */
                 if (otmp->oclass == SCROLL_CLASS
                     && !strcmpi(OBJ_DESCR(objects[otmp->otyp]), "YUM YUM"))
-                    pline("Yum%c", otmp->blessed ? '!' : '.');
+                    pline("呀呣%c", otmp->blessed ? '!' : '.');
             } else {
                 if (flags.verbose)
-                    You_hear("a slurping sound.");
+                    You_hear("啜食的声音.");
             }
             /* Heal up to the object's weight in hp */
             if (mtmp->mhp < mtmp->mhpmax) {
@@ -1091,8 +1091,8 @@ struct monst *mtmp;
         if (cansee(mtmp->mx, mtmp->my) && flags.verbose && buf[0])
             pline1(buf);
         else if (flags.verbose)
-            You_hear("%s slurping sound%s.",
-                     (ecount == 1) ? "a" : "several", plur(ecount));
+            You_hear("%s啜食的声音.",
+                     (ecount == 1) ? "" : "几种");
     }
     return (count > 0 || ecount > 0) ? 1 : 0;
 }
@@ -1110,8 +1110,8 @@ register struct monst *mtmp;
         add_to_minv(mtmp, gold);
         if (cansee(mtmp->mx, mtmp->my)) {
             if (flags.verbose && !mtmp->isgd)
-                pline("%s picks up some %s.", Monnam(mtmp),
-                      mat_idx == GOLD ? "gold" : "money");
+                pline("%s 捡起了一些%s.", Monnam(mtmp),
+                      mat_idx == GOLD ? "金子" : "钱");
             newsym(mtmp->mx, mtmp->my);
         }
     }
@@ -1153,7 +1153,7 @@ register const char *str;
                 otmp3 = splitobj(otmp, carryamt);
             }
             if (cansee(mtmp->mx, mtmp->my) && flags.verbose)
-                pline("%s picks up %s.", Monnam(mtmp),
+                pline("%s 捡起了%s.", Monnam(mtmp),
                       (distu(mtmp->mx, mtmp->my) <= 5)
                           ? doname(otmp3)
                           : distant_name(otmp3, doname));
@@ -1887,18 +1887,18 @@ struct monst *mtmp;
          * Nor do you check invisibility, because glowing and
          * disintegrating amulets are always visible. */
         if (cansee(mtmp->mx, mtmp->my)) {
-            pline("But wait...");
-            pline("%s medallion begins to glow!", s_suffix(Monnam(mtmp)));
+            pline("但是等等...");
+            pline("%s 挂饰开始发光!", s_suffix(Monnam(mtmp)));
             makeknown(AMULET_OF_LIFE_SAVING);
             /* amulet is visible, but monster might not be */
             if (canseemon(mtmp)) {
                 if (attacktype(mtmp->data, AT_EXPL)
                     || attacktype(mtmp->data, AT_BOOM))
-                    pline("%s reconstitutes!", Monnam(mtmp));
+                    pline("%s 重新组成!", Monnam(mtmp));
                 else
-                    pline("%s looks much better!", Monnam(mtmp));
+                    pline("%s 看起来好多了!", Monnam(mtmp));
             }
-            pline_The("medallion crumbles to dust!");
+            pline_The("挂饰化为了尘埃!");
         }
         m_useup(mtmp, lifesave);
         /* equip replacement amulet, if any, on next move */
@@ -1917,7 +1917,7 @@ struct monst *mtmp;
         if (!surviver) {
             /* genocided monster can't be life-saved */
             if (cansee(mtmp->mx, mtmp->my))
-                pline("Unfortunately, %s is still genocided...",
+                pline("不幸的是, %s仍然被灭绝了...",
                       mon_nam(mtmp));
             mtmp->mhp = 0;
         }
@@ -1956,11 +1956,11 @@ register struct monst *mtmp;
 
             /* construct a format string before transformation;
                will be capitalized when used, expects one %s arg */
-            Sprintf(buf, "%s suddenly %s and rises as %%s!",
+            Sprintf(buf, "%s突然%s为了%%s!",
                     x_monnam(mtmp, ARTICLE_THE,
-                             spec_mon ? (char *) 0 : "seemingly dead",
+                             spec_mon ? (char *) 0 : "看似死了的",
                              (SUPPRESS_INVISIBLE | SUPPRESS_IT), FALSE),
-                    spec_death ? "reconstitutes" : "transforms");
+                    spec_death ? "重新组成" : "变形成");
             mtmp->mcanmove = 1;
             mtmp->mfrozen = 0;
             if (mtmp->mhpmax <= 0)
@@ -2082,7 +2082,7 @@ boolean was_swallowed; /* digestion */
 
     if (mdat == &mons[PM_VLAD_THE_IMPALER] || mdat->mlet == S_LICH) {
         if (cansee(mon->mx, mon->my) && !was_swallowed)
-            pline("%s body crumbles into dust.", s_suffix(Monnam(mon)));
+            pline("%s 身体化为了尘埃.", s_suffix(Monnam(mon)));
         return FALSE;
     }
 
@@ -2097,26 +2097,26 @@ boolean was_swallowed; /* digestion */
                 tmp = 0;
             if (was_swallowed && magr) {
                 if (magr == &youmonst) {
-                    There("is an explosion in your %s!", body_part(STOMACH));
-                    Sprintf(killer.name, "%s explosion",
+                    There("有一个爆炸在你的%s里!", body_part(STOMACH));
+                    Sprintf(killer.name, "%s爆炸",
                             s_suffix(mdat->mname));
                     losehp(Maybe_Half_Phys(tmp), killer.name, KILLED_BY_AN);
                 } else {
-                    You_hear("an explosion.");
+                    You_hear("一个爆炸声.");
                     magr->mhp -= tmp;
                     if (DEADMONSTER(magr))
                         mondied(magr);
                     if (DEADMONSTER(magr)) { /* maybe lifesaved */
                         if (canspotmon(magr))
-                            pline("%s rips open!", Monnam(magr));
+                            pline("%s 撕开了!", Monnam(magr));
                     } else if (canseemon(magr))
-                        pline("%s seems to have indigestion.", Monnam(magr));
+                        pline("%s 似乎消化不良.", Monnam(magr));
                 }
 
                 return FALSE;
             }
 
-            Sprintf(killer.name, "%s explosion", s_suffix(mdat->mname));
+            Sprintf(killer.name, "%s爆炸", s_suffix(mdat->mname));
             killer.format = KILLED_BY_AN;
             explode(mon->mx, mon->my, -1, tmp, MON_EXPLODE, EXPL_NOXIOUS);
             killer.name[0] = '\0';
@@ -2220,7 +2220,7 @@ struct monst *mdef;
 #endif
                 /* invocation tools resist even with 0% resistance */
                 || obj_resists(obj, 0, 0)) {
-                if (flooreffects(obj, x, y, "fall"))
+                if (flooreffects(obj, x, y, "掉落"))
                     continue;
                 place_object(obj, x, y);
             } else {
@@ -2261,8 +2261,8 @@ struct monst *mdef;
     mondead(mdef);
     if (wasinside) {
         if (is_animal(mdef->data))
-            You("%s through an opening in the new %s.",
-                locomotion(youmonst.data, "jump"), xname(otmp));
+            You("%s 穿过一个在新的%s里的出口.",
+                locomotion(youmonst.data, "跳跃"), xname(otmp));
     }
 }
 
@@ -2277,9 +2277,9 @@ int how;
 
     if ((mdef->wormno ? worm_known(mdef) : cansee(mdef->mx, mdef->my))
         && fltxt)
-        pline("%s is %s%s%s!", Monnam(mdef),
-              nonliving(mdef->data) ? "destroyed" : "killed",
-              *fltxt ? " by the " : "", fltxt);
+        pline("%s 被 %s%s%s!", Monnam(mdef),
+              *fltxt ? "" : "", fltxt,
+              nonliving(mdef->data) ? "消灭了" : "杀死了");
     else
         be_sad = (mdef->mtame != 0);
 
@@ -2291,7 +2291,7 @@ int how;
         mondied(mdef);
 
     if (be_sad && DEADMONSTER(mdef))
-        You("have a sad feeling for a moment, then it passes.");
+        You("片刻有一种悲伤的感觉.");
 }
 
 void
@@ -2348,11 +2348,11 @@ int xkill_flags; /* 1: suppress message, 2: suppress corpse, 4: pacifist */
         boolean namedpet = has_mname(mtmp) && !Hallucination;
 
         You("%s %s!",
-            nonliving(mtmp->data) ? "destroy" : "kill",
-            !(wasinside || canspotmon(mtmp)) ? "it"
+            nonliving(mtmp->data) ? "消灭了" : "杀死了",
+            !(wasinside || canspotmon(mtmp)) ? "它"
               : !mtmp->mtame ? mon_nam(mtmp)
                 : x_monnam(mtmp, namedpet ? ARTICLE_NONE : ARTICLE_THE,
-                           "poor", namedpet ? SUPPRESS_SADDLE : 0, FALSE));
+                           "可怜的", namedpet ? SUPPRESS_SADDLE : 0, FALSE));
     }
 
     if (mtmp->mtrapped && (t = t_at(x, y)) != 0
@@ -2399,7 +2399,7 @@ int xkill_flags; /* 1: suppress message, 2: suppress corpse, 4: pacifist */
          */
         stoned = FALSE;
         if (!cansee(x, y) && !vamp_rise_msg)
-            pline("Maybe not...");
+            pline("也许没有...");
         return;
     }
 
@@ -2438,7 +2438,7 @@ int xkill_flags; /* 1: suppress message, 2: suppress corpse, 4: pacifist */
                 /* oc_big is also oc_bimanual and oc_bulky */
                 && (otmp->owt > 30 || objects[otyp].oc_big)) {
                 delobj(otmp);
-            } else if (!flooreffects(otmp, x, y, nomsg ? "" : "fall")) {
+            } else if (!flooreffects(otmp, x, y, nomsg ? "" : "掉落")) {
                 place_object(otmp, x, y);
                 stackobj(otmp);
             }
@@ -2449,7 +2449,7 @@ int xkill_flags; /* 1: suppress message, 2: suppress corpse, 4: pacifist */
                                                    : CORPSTAT_NONE);
             if (burycorpse && cadaver && cansee(x, y) && !mtmp->minvis
                 && cadaver->where == OBJ_BURIED && !nomsg) {
-                pline("%s corpse ends up buried.", s_suffix(Monnam(mtmp)));
+                pline("%s尸体最终被埋葬了.", s_suffix(Monnam(mtmp)));
             }
         }
     }
@@ -2466,7 +2466,7 @@ int xkill_flags; /* 1: suppress message, 2: suppress corpse, 4: pacifist */
         && u.ualign.type != A_CHAOTIC) {
         HTelepat &= ~INTRINSIC;
         change_luck(-2);
-        You("murderer!");
+        You("杀人了!");
         if (Blind && !Blind_telepat)
             see_monsters(); /* Can't sense monsters any more. */
     }
@@ -2474,7 +2474,7 @@ int xkill_flags; /* 1: suppress message, 2: suppress corpse, 4: pacifist */
         change_luck(-1);
     if (is_unicorn(mdat) && sgn(u.ualign.type) == sgn(mdat->maligntyp)) {
         change_luck(-5);
-        You_feel("guilty...");
+        You_feel("有罪的...");
     }
 
     /* give experience points */
@@ -2485,14 +2485,14 @@ int xkill_flags; /* 1: suppress message, 2: suppress corpse, 4: pacifist */
     /* adjust alignment points */
     if (mtmp->m_id == quest_status.leader_m_id) { /* REAL BAD! */
         adjalign(-(u.ualign.record + (int) ALIGNLIM / 2));
-        pline("That was %sa bad idea...",
-              u.uevent.qcompleted ? "probably " : "");
+        pline("那%s是一个坏主意...",
+              u.uevent.qcompleted ? "大概 " : "");
     } else if (mdat->msound == MS_NEMESIS) { /* Real good! */
         adjalign((int) (ALIGNLIM / 4));
     } else if (mdat->msound == MS_GUARDIAN) { /* Bad */
         adjalign(-(int) (ALIGNLIM / 8));
         if (!Hallucination)
-            pline("That was probably a bad idea...");
+            pline("那大概是一个坏主意...");
         else
             pline("Whoopsie-daisy!");
     } else if (mtmp->ispriest) {
@@ -2506,9 +2506,9 @@ int xkill_flags; /* 1: suppress message, 2: suppress corpse, 4: pacifist */
         adjalign(-15); /* bad!! */
         /* your god is mighty displeased... */
         if (!Hallucination)
-            You_hear("the rumble of distant thunder...");
+            You_hear("远处的隆隆雷声...");
         else
-            You_hear("the studio audience applaud!");
+            You_hear("演播室观众在鼓掌!");
     } else if (mtmp->mpeaceful)
         adjalign(-5);
 
@@ -2525,13 +2525,13 @@ struct monst *mtmp;
     if (mtmp->data->mlet == S_GOLEM) {
         /* it's a golem, and not a stone golem */
         if (canseemon(mtmp))
-            pline("%s solidifies...", Monnam(mtmp));
+            pline("%s 凝固了...", Monnam(mtmp));
         if (newcham(mtmp, &mons[PM_STONE_GOLEM], FALSE, FALSE)) {
             if (canseemon(mtmp))
-                pline("Now it's %s.", an(mtmp->data->mname));
+                pline("现在它是一个%s.", mtmp->data->mname);
         } else {
             if (canseemon(mtmp))
-                pline("... and returns to normal.");
+                pline("... 并恢复正常.");
         }
     } else
         impossible("Can't polystone %s!", a_monnam(mtmp));
@@ -2553,13 +2553,13 @@ struct monst *mtmp;
                                && closed_door(mtmp->mx, mtmp->my));
 
             /* construct a format string before transformation */
-            Sprintf(buf, "The lapidifying %s %s %s",
+            Sprintf(buf, "轻快的%s%s%s上",
                     x_monnam(mtmp, ARTICLE_NONE, (char *) 0,
                              (SUPPRESS_SADDLE | SUPPRESS_HALLUCINATION
                               | SUPPRESS_INVISIBLE | SUPPRESS_IT), FALSE),
-                    amorphous(mtmp->data) ? "coalesces on the"
-                       : is_flyer(mtmp->data) ? "drops to the"
-                          : "writhes on the",
+                    amorphous(mtmp->data) ? "联结到"
+                       : is_flyer(mtmp->data) ? "落到"
+                          : "滚到",
                     surface(x,y));
             mtmp->mcanmove = 1;
             mtmp->mfrozen = 0;
@@ -2586,7 +2586,7 @@ struct monst *mtmp;
             else
                 mtmp->cham = mndx;
             if (canspotmon(mtmp)) {
-                pline("%s rises from the %s with renewed agility!",
+                pline("%s带着新的敏捷性从%s上死而复生!",
                       Amonnam(mtmp), surface(mtmp->mx, mtmp->my));
             }
             newsym(mtmp->mx, mtmp->my);
@@ -2657,7 +2657,7 @@ struct monst *mon;
         m1 = m2 = m3 = m4 = m5 = zm = (struct monst *) 0;
         if (!msgmv || (moves - msgmv) > 200L) {
             if (!msgmv || rn2(2))
-                You_feel("besieged.");
+                You_feel("被包围了.");
             msgmv = moves;
         }
         /*
@@ -2745,8 +2745,8 @@ struct monst *mtmp;
     if (!in_mklev && (mtmp->mstrategy & STRAT_APPEARMSG)) {
         mtmp->mstrategy &= ~STRAT_APPEARMSG; /* one chance only */
         if (!couldspot && canspotmon(mtmp))
-            pline("%s suddenly %s!", Amonnam(mtmp),
-                  !Blind ? "appears" : "arrives");
+            pline("%s 突然 %s!", Amonnam(mtmp),
+                  !Blind ? "出现" : "到达");
     }
     return;
 }
@@ -2860,7 +2860,7 @@ struct monst *mtmp;
 {
     if (mtmp->data->msound == MS_SHRIEK) {
         if (!Deaf) {
-            pline("%s shrieks.", Monnam(mtmp));
+            pline("%s 尖叫.", Monnam(mtmp));
             stop_occupation();
         }
         if (!rn2(10)) {
@@ -2896,7 +2896,7 @@ boolean via_attack;
         /* only hypocritical if monster is vulnerable to Elbereth (or
            peaceful--not vulnerable but attacking it is hypocritical) */
         && (onscary(u.ux, u.uy, mtmp) || mtmp->mpeaceful)) {
-        You_feel("like a hypocrite.");
+        You_feel("像是一个伪君子.");
         /* AIS: Yes, I know alignment penalties and bonuses aren't balanced
            at the moment. This is about correct relative to other "small"
            penalties; it should be fairly large, as attacking while standing
@@ -2908,7 +2908,7 @@ boolean via_attack;
         adjalign((u.ualign.record > 5) ? -5 : -rnd(5));
 
         if (!Blind)
-            pline("The engraving beneath you fades.");
+            pline("下面刻写的文字渐渐消失.");
         del_engr_at(u.ux, u.uy);
     }
 
@@ -2928,7 +2928,7 @@ boolean via_attack;
         adjalign(-1); /* attacking peaceful monsters is bad */
     if (couldsee(mtmp->mx, mtmp->my)) {
         if (humanoid(mtmp->data) || mtmp->isshk || mtmp->isgd)
-            pline("%s gets angry!", Monnam(mtmp));
+            pline("%s 生气了!", Monnam(mtmp));
         else if (flags.verbose && !Deaf)
             growl(mtmp);
     }
@@ -2955,15 +2955,15 @@ boolean via_attack;
 
             if (got_mad > 1)
                 who = makeplural(who);
-            pline_The("%s %s to be angry too...",
-                      who, vtense(who, "appear"));
+            pline_The("%s 也生气地%s...",
+                      who, vtense(who, "出现了"));
         }
     }
 
     /* make other peaceful monsters react */
     if (!context.mon_moving) {
         static const char *const Exclam[] = {
-            "Gasp!", "Uh-oh.", "Oh my!", "What?", "Why?",
+            "呼!", "噢喔.", "天哪!", "什么?", "为什么?",
         };
         struct monst *mon;
         int mndx = monsndx(mtmp->data);
@@ -2981,7 +2981,7 @@ boolean via_attack;
 
                 if (humanoid(mon->data) || mon->isshk || mon->ispriest) {
                     if (is_watch(mon->data)) {
-                        verbalize("Halt!  You're under arrest!");
+                        verbalize("停下!  你被捕了!");
                         (void) angry_guards(!!Deaf);
                     } else {
                         if (!rn2(5)) {
@@ -3004,7 +3004,7 @@ boolean via_attack;
                             mon->mpeaceful = 0;
                             adjalign(-1);
                             if (!exclaimed)
-                                pline("%s gets angry!", Monnam(mon));
+                                pline("%s 生气了!", Monnam(mon));
                         }
                     }
                 } else if (mon->data->mlet == mtmp->data->mlet
@@ -3788,19 +3788,19 @@ boolean msg;      /* "The oldmon turns into a newmon!" */
                     char msgtrail[BUFSZ];
 
                     if (is_vampshifter(mtmp)) {
-                        Sprintf(msgtrail, " which was a shapeshifted %s",
+                        Sprintf(msgtrail, "是变形的%s",
                                 noname_monnam(mtmp, ARTICLE_NONE));
                     } else if (is_animal(mdat)) {
-                        Strcpy(msgtrail, "'s stomach");
+                        Strcpy(msgtrail, "的胃");
                     } else {
                         msgtrail[0] = '\0';
                     }
 
                     /* Do this even if msg is FALSE */
-                    You("%s %s%s!",
-                        (amorphous(olddata) || is_whirly(olddata))
-                            ? "emerge from" : "break out of",
-                        l_oldname, msgtrail);
+                    You("从%s%s%s出来!",
+                        l_oldname, msgtrail,
+                        (amorphous(olddata) || is_whirly(olddata)) ?
+                            "露" : "逃");
                     msg = FALSE; /* message has been given */
                     mtmp->mhp = 1; /* almost dead */
                 }
@@ -3832,15 +3832,15 @@ boolean msg;      /* "The oldmon turns into a newmon!" */
     if (msg) {
         Strcpy(newname, noname_monnam(mtmp, ARTICLE_A));
         /* oldname was capitalized above; newname will be lower case */
-        if (!strcmpi(newname, "it")) { /* can't see or sense it now */
-            if (!!strcmpi(oldname, "it")) /* could see or sense it before */
-                pline("%s disappears!", oldname);
+        if (!strcmpi(newname, "它")) { /* can't see or sense it now */
+            if (!!strcmpi(oldname, "它")) /* could see or sense it before */
+                pline("%s消失了!", oldname);
             (void) usmellmon(mdat);
         } else { /* can see or sense it now */
-            if (!strcmpi(oldname, "it")) /* couldn't see or sense it before */
-                pline("%s appears!", upstart(newname));
+            if (!strcmpi(oldname, "它")) /* couldn't see or sense it before */
+                pline("%s 出现了!", upstart(newname));
             else
-                pline("%s turns into %s!", oldname, newname);
+                pline("%s 变成了%s!", oldname, newname);
         }
     }
 
@@ -3853,7 +3853,7 @@ boolean msg;      /* "The oldmon turns into a newmon!" */
     possibly_unwield(mtmp, polyspot); /* might lose use of weapon */
     mon_break_armor(mtmp, polyspot);
     if (!(mtmp->misc_worn_check & W_ARMG))
-        mselftouch(mtmp, "No longer petrify-resistant, ",
+        mselftouch(mtmp, "不再有石化抵抗, ",
                    !context.mon_moving);
     m_dowear(mtmp, FALSE);
 
@@ -4058,7 +4058,7 @@ int damtype, dam;
             if (mon->mhp > mon->mhpmax)
                 mon->mhp = mon->mhpmax;
             if (cansee(mon->mx, mon->my))
-                pline("%s seems healthier.", Monnam(mon));
+                pline("%s 似乎更健康了.", Monnam(mon));
         }
     }
 }
@@ -4091,17 +4091,17 @@ boolean silent;
     if (ct) {
         if (!silent) { /* do we want pline msgs? */
             if (slct)
-                pline_The("guard%s wake%s up!", slct > 1 ? "s" : "",
-                          slct == 1 ? "s" : "");
+                pline_The("警卫%s 醒了%s!", slct > 1 ? "们" : "",
+                          slct == 1 ? "" : "");
             if (nct || sct) {
                 if (nct)
-                    pline_The("guard%s get%s angry!", nct == 1 ? "" : "s",
-                              nct == 1 ? "s" : "");
+                    pline_The("警卫%s 生气了%s!", nct == 1 ? "" : "们",
+                              nct == 1 ? "" : "");
                 else if (!Blind)
-                    You_see("%sangry guard%s approaching!",
-                            sct == 1 ? "an " : "", sct > 1 ? "s" : "");
+                    You_see("%s生气的警卫%s在接近!",
+                            sct == 1 ? "一个 " : "", sct > 1 ? "们" : "");
             } else
-                You_hear("the shrill sound of a guard's whistle.");
+                You_hear("一个警卫口哨的尖锐的声音.");
         }
         return TRUE;
     }
@@ -4135,7 +4135,7 @@ short otyp;
         break;
     case M_AP_OBJECT:
         if (otyp == SPE_HEALING || otyp == SPE_EXTRA_HEALING) {
-            pline("%s seems a more vivid %s than before.",
+            pline("%s 似乎有比以前更加逼真的%s.",
                   The(simple_typename(ap)),
                   c_obj_colors[objects[ap].oc_color]);
         }
@@ -4158,14 +4158,14 @@ struct permonst *mdat;
         switch (mndx) {
         case PM_ROTHE:
         case PM_MINOTAUR:
-            You("notice a bovine smell.");
+            You("注意到一种牛的气味.");
             msg_given = TRUE;
             break;
         case PM_CAVEMAN:
         case PM_CAVEWOMAN:
         case PM_BARBARIAN:
         case PM_NEANDERTHAL:
-            You("smell body odor.");
+            You("闻到体臭.");
             msg_given = TRUE;
             break;
         /*
@@ -4188,7 +4188,7 @@ struct permonst *mdat;
         case PM_WERERAT:
         case PM_WEREWOLF:
         case PM_OWLBEAR:
-            You("detect an odor reminiscent of an animal's den.");
+            You("发现了怀旧的一种动物窝巢的气味.");
             msg_given = TRUE;
             break;
         /*
@@ -4196,16 +4196,16 @@ struct permonst *mdat;
             break;
         */
         case PM_STEAM_VORTEX:
-            You("smell steam.");
+            You("闻到蒸汽的气味.");
             msg_given = TRUE;
             break;
         case PM_GREEN_SLIME:
-            pline("%s stinks.", Something);
+            pline("%s 发出恶臭.", Something);
             msg_given = TRUE;
             break;
         case PM_VIOLET_FUNGUS:
         case PM_SHRIEKER:
-            You("smell mushrooms.");
+            You("闻到蘑菇的气味.");
             msg_given = TRUE;
             break;
         /* These are here to avoid triggering the
@@ -4223,35 +4223,35 @@ struct permonst *mdat;
         if (nonspecific)
             switch (mdat->mlet) {
             case S_DOG:
-                You("notice a dog smell.");
+                You("注意到狗的气味.");
                 msg_given = TRUE;
                 break;
             case S_DRAGON:
-                You("smell a dragon!");
+                You("闻到了龙的气味!");
                 msg_given = TRUE;
                 break;
             case S_FUNGUS:
-                pline("%s smells moldy.", Something);
+                pline("%s 闻起来发霉的.", Something);
                 msg_given = TRUE;
                 break;
             case S_UNICORN:
-                You("detect a%s odor reminiscent of a stable.",
-                    (mndx == PM_PONY) ? "n" : " strong");
+                You("发现一种%s怀旧的马厩气味.",
+                    (mndx == PM_PONY) ? "" : " 强烈的");
                 msg_given = TRUE;
                 break;
             case S_ZOMBIE:
-                You("smell rotting flesh.");
+                You("闻到腐肉的臭味.");
                 msg_given = TRUE;
                 break;
             case S_EEL:
-                You("smell fish.");
+                You("闻到鱼的气味.");
                 msg_given = TRUE;
                 break;
             case S_ORC:
                 if (maybe_polyd(is_orc(youmonst.data), Race_if(PM_ORC)))
-                    You("notice an attractive smell.");
+                    You("注意到一种诱人的气味.");
                 else
-                    pline("A foul stench makes you feel a little nauseated.");
+                    pline("恶臭让你觉得有点恶心.");
                 msg_given = TRUE;
                 break;
             default:

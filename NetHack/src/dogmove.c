@@ -274,12 +274,12 @@ boolean devour;
            pet eats visible food. */
         if (sawpet || (seeobj && canspotmon(mtmp))) {
             if (tunnels(mtmp->data))
-                pline("%s digs in.", noit_Monnam(mtmp));
+                pline("%s 挖了进去.", noit_Monnam(mtmp));
             else
-                pline("%s %s %s.", noit_Monnam(mtmp),
-                      devour ? "devours" : "eats", distant_name(obj, doname));
+                pline("%s %s%s.", noit_Monnam(mtmp),
+                      devour ? "吞食" : "吃食", distant_name(obj, doname));
         } else if (seeobj)
-            pline("It %s %s.", devour ? "devours" : "eats",
+            pline("它 %s%s.", devour ? "吞食" : "吃食",
                   distant_name(obj, doname));
     }
     if (obj->unpaid) {
@@ -302,7 +302,7 @@ boolean devour;
         obj->oerodeproof = 0;
         mtmp->mstun = 1;
         if (canseemon(mtmp) && flags.verbose) {
-            pline("%s spits %s out in disgust!", Monnam(mtmp),
+            pline("%s 厌恶地吐出%s!", Monnam(mtmp),
                   distant_name(obj, doname));
         }
     } else if (obj == uball) {
@@ -315,7 +315,7 @@ boolean devour;
             /* edible item owned by shop has been thrown or kicked
                by hero and caught by tame or food-tameable monst */
             oprice = unpaid_cost(obj, TRUE);
-            pline("That %s will cost you %ld %s.", objnambuf, oprice,
+            pline("那个%s 会花费你 %ld %s.", objnambuf, oprice,
                   currency(oprice));
             /* delobj->obfree will handle actual shop billing update */
         }
@@ -373,22 +373,22 @@ struct edog *edog;
             if (DEADMONSTER(mtmp))
                 goto dog_died;
             if (cansee(mtmp->mx, mtmp->my))
-                pline("%s is confused from hunger.", Monnam(mtmp));
+                pline("%s 因饥饿而混乱.", Monnam(mtmp));
             else if (couldsee(mtmp->mx, mtmp->my))
                 beg(mtmp);
             else
-                You_feel("worried about %s.", y_monnam(mtmp));
+                You_feel("担心 %s.", y_monnam(mtmp));
             stop_occupation();
         } else if (monstermoves > edog->hungrytime + 750
                    || DEADMONSTER(mtmp)) {
  dog_died:
             if (mtmp->mleashed && mtmp != u.usteed)
-                Your("leash goes slack.");
+                Your("狗链变松了.");
             else if (cansee(mtmp->mx, mtmp->my))
-                pline("%s starves.", Monnam(mtmp));
+                pline("%s 饿死了.", Monnam(mtmp));
             else
-                You_feel("%s for a moment.",
-                         Hallucination ? "bummed" : "sad");
+                You_feel("%s 了片刻.",
+                         Hallucination ? "厌烦" : "伤心");
             mondied(mtmp);
             return  TRUE;
         }
@@ -451,7 +451,7 @@ int udist;
                         if (carryamt != obj->quan)
                             otmp = splitobj(obj, carryamt);
                         if (cansee(omx, omy) && flags.verbose)
-                            pline("%s picks up %s.", Monnam(mtmp),
+                            pline("%s 捡起%s.", Monnam(mtmp),
                                   distant_name(otmp, doname));
                         obj_extract_self(otmp);
                         newsym(omx, omy);
@@ -1188,7 +1188,7 @@ int after; /* this is extra fast monster movement */
 
         if (info[chi] & ALLOW_U) {
             if (mtmp->mleashed) { /* play it safe */
-                pline("%s breaks loose of %s leash!", Monnam(mtmp),
+                pline("%s 挣脱了%s 狗链!", Monnam(mtmp),
                       mhis(mtmp));
                 m_unleash(mtmp, FALSE);
             }
@@ -1213,8 +1213,8 @@ int after; /* this is extra fast monster movement */
                                ? vobj_at(nix, niy) : 0;
             const char *what = o ? distant_name(o, doname) : something;
 
-            pline("%s %s reluctantly over %s.", noit_Monnam(mtmp),
-                  vtense((char *) 0, locomotion(mtmp->data, "step")), what);
+            pline("%s 不情愿地%s%s.", noit_Monnam(mtmp),
+                  vtense((char *) 0, locomotion(mtmp->data, "跨过")), what);
         }
         for (j = MTSZ - 1; j > 0; j--)
             mtmp->mtrack[j] = mtmp->mtrack[j - 1];
@@ -1411,21 +1411,21 @@ struct monst *mtmp;
            (on the other hand, perhaps you're sensing a brief glimpse
            of its mind as it changes form) */
         newsym(mtmp->mx, mtmp->my);
-        You("%s %s %sappear%s where %s was!",
-            cansee(mtmp->mx, mtmp->my) ? "see" : "sense that",
+        You("%s%s%s出现在%s%s那里!",
+            cansee(mtmp->mx, mtmp->my) ? "看见" : "感觉",
             (M_AP_TYPE(mtmp) == M_AP_FURNITURE)
-                ? an(defsyms[mtmp->mappearance].explanation)
+                ? defsyms[mtmp->mappearance].explanation
                 : (M_AP_TYPE(mtmp) == M_AP_OBJECT
                    && OBJ_DESCR(objects[mtmp->mappearance]))
-                      ? an(OBJ_DESCR(objects[mtmp->mappearance]))
+                      ? OBJ_DESCR(objects[mtmp->mappearance])
                       : (M_AP_TYPE(mtmp) == M_AP_OBJECT
                          && OBJ_NAME(objects[mtmp->mappearance]))
-                            ? an(OBJ_NAME(objects[mtmp->mappearance]))
+                            ? OBJ_NAME(objects[mtmp->mappearance])
                             : (M_AP_TYPE(mtmp) == M_AP_MONSTER)
-                                  ? an(mons[mtmp->mappearance].mname)
+                                  ? mons[mtmp->mappearance].mname
                                   : something,
-            cansee(mtmp->mx, mtmp->my) ? "" : "has ",
-            cansee(mtmp->mx, mtmp->my) ? "" : "ed",
+            cansee(mtmp->mx, mtmp->my) ? "" : "已经",
+            cansee(mtmp->mx, mtmp->my) ? "" : "",
             buf);
         display_nhwindow(WIN_MAP, TRUE);
     }

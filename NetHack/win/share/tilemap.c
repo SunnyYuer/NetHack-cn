@@ -120,7 +120,7 @@ int set, entry;
 
     for (i = 0; i < NUMMONS; i++) {
         if (set == MON_GLYPH && tilenum == entry)
-            return mons[i].mname;
+            return mons[i].ename;
         tilenum++;
         while (conditionals[condnum].sequence == MON_GLYPH
                && conditionals[condnum].predecessor == i) {
@@ -139,12 +139,12 @@ int set, entry;
          * appearance should reveal */
         if (set == OBJ_GLYPH && tilenum == entry) {
             if (!obj_descr[i].oc_descr)
-                return obj_descr[i].oc_name;
-            if (!obj_descr[i].oc_name)
+                return obj_descr[i].oc_ename;
+            if (!obj_descr[i].oc_ename)
                 return obj_descr[i].oc_descr;
 
             Sprintf(buf, "%s / %s", obj_descr[i].oc_descr,
-                    obj_descr[i].oc_name);
+                    obj_descr[i].oc_ename);
             return buf;
         }
 
@@ -162,7 +162,7 @@ int set, entry;
     for (i = 0; i < (MAXPCHARS - MAXEXPCHARS); i++) {
         if (set == OTH_GLYPH && tilenum == entry) {
             if (*defsyms[i].explanation) {
-                return defsyms[i].explanation;
+                return defsyms[i].bexplanation;
             } else {
                 Sprintf(buf, "cmap %d", tilenum);
                 return buf;

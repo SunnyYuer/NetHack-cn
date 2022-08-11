@@ -683,9 +683,9 @@ register struct obj *otmp;
 
 /* alteration types; must match COST_xxx macros in hack.h */
 static const char *const alteration_verbs[] = {
-    "cancel", "drain", "uncharge", "unbless", "uncurse", "disenchant",
-    "degrade", "dilute", "erase", "burn", "neutralize", "destroy", "splatter",
-    "bite", "open", "break the lock on", "rust", "rot", "tarnish"
+    "取消", "喝光", "放电", "取消祝福", "取消诅咒", "解魔",
+    "降级", "稀释", "擦除", "燃烧", "中和", "破坏", "溅泼",
+    "咬", "打开", "打破锁", "腐蚀", "腐烂", "玷污"
 };
 
 /* possibly bill for an object which the player has just modified */
@@ -729,9 +729,9 @@ int alter_type;
     }
 
     if (obj->quan == 1L)
-        those = "that", them = "it";
+        those = "那个", them = "它";
     else
-        those = "those", them = "them";
+        those = "那些", them = "它们";
 
     /* when shopkeeper describes the object as being uncursed or unblessed
        hero will know that it is now uncursed; will also make the feedback
@@ -743,7 +743,7 @@ int alter_type;
     case OBJ_INVENT:
         if (learn_bknown)
             set_bknown(obj, 1);
-        verbalize("You %s %s %s, you pay for %s!",
+        verbalize("你%s了%s%s, 你要为%s付钱!",
                   alteration_verbs[alter_type], those, simpleonames(obj),
                   them);
         bill_dummy_object(obj);
@@ -752,7 +752,7 @@ int alter_type;
         if (learn_bknown)
             obj->bknown = 1; /* ok to bypass set_bknown() here */
         if (costly_spot(u.ux, u.uy) && objroom == *u.ushops) {
-            verbalize("You %s %s, you pay for %s!",
+            verbalize("你 %s了%s, 你要为%s付钱!",
                       alteration_verbs[alter_type], those, them);
             bill_dummy_object(obj);
         } else {
@@ -1243,7 +1243,7 @@ int old_range;
             *buf = '\0';
             if (iflags.last_msg == PLNMSG_OBJ_GLOWS)
                 /* we just saw "The <obj> glows <color>." from dipping */
-                Strcpy(buf, (obj->quan == 1L) ? "It" : "They");
+                Strcpy(buf, (obj->quan == 1L) ? "它" : "它们");
             else if (carried(obj) || cansee(ox, oy))
                 Strcpy(buf, Yname2(obj));
             if (*buf) {
@@ -1252,9 +1252,9 @@ int old_range;
                    when changing intensity, using "less brightly" is
                    straightforward for dimming, but we need "brighter"
                    rather than "more brightly" for brightening; ugh */
-                pline("%s %s %s%s.", buf, otense(obj, "shine"),
-                      (abs(delta) > 1) ? "much " : "",
-                      (delta > 0) ? "brighter" : "less brightly");
+                pline("%s%s得%s%s了.", buf, otense(obj, "照耀"),
+                      (abs(delta) > 1) ? "更加" : "",
+                      (delta > 0) ? "明亮些" : "不明亮");
             }
         }
     }
@@ -2214,15 +2214,15 @@ boolean tipping; /* caller emptying entire contents; affects shop handling */
                 do {
                     obj->otyp = rnd_class(POT_BOOZE, POT_WATER);
                 } while (obj->otyp == POT_SICKNESS);
-            what = (obj->quan > 1L) ? "Some potions" : "A potion";
+            what = (obj->quan > 1L) ? "一些药水" : "一瓶药水";
         } else {
             obj = mkobj(FOOD_CLASS, FALSE);
             if (obj->otyp == FOOD_RATION && !rn2(7))
                 obj->otyp = LUMP_OF_ROYAL_JELLY;
-            what = "Some food";
+            what = "一些食物";
         }
         ++objcount;
-        pline("%s %s out.", what, vtense(what, "spill"));
+        pline("%s %s了出来.", what, vtense(what, "溢"));
         obj->blessed = horn->blessed;
         obj->cursed = horn->cursed;
         obj->owt = weight(obj);
@@ -2236,14 +2236,14 @@ boolean tipping; /* caller emptying entire contents; affects shop handling */
         if (!tipping) {
             obj = hold_another_object(obj,
                                       u.uswallow
-                                        ? "Oops!  %s out of your reach!"
+                                        ? "哎哟!  %s出了你的范围!"
                                         : (Is_airlevel(&u.uz)
                                            || Is_waterlevel(&u.uz)
                                            || levl[u.ux][u.uy].typ < IRONBARS
                                            || levl[u.ux][u.uy].typ >= ICE)
-                                          ? "Oops!  %s away from you!"
-                                          : "Oops!  %s to the floor!",
-                                      The(aobjnam(obj, "slip")), (char *) 0);
+                                          ? "哎哟!  %s远了!"
+                                          : "哎哟!  %s到地板上!",
+                                      The(aobjnam(obj, "滑")), (char *) 0);
             nhUse(obj);
         } else {
             /* assumes this is taking place at hero's location */
@@ -2253,8 +2253,8 @@ boolean tipping; /* caller emptying entire contents; affects shop handling */
                 if (IS_ALTAR(levl[u.ux][u.uy].typ))
                     doaltarobj(obj); /* does its own drop message */
                 else
-                    pline("%s %s to the %s.", Doname2(obj),
-                          otense(obj, "drop"), surface(u.ux, u.uy));
+                    pline("%s %s到%s上.", Doname2(obj),
+                          otense(obj, "掉"), surface(u.ux, u.uy));
                 dropy(obj);
             }
         }
@@ -2945,9 +2945,9 @@ struct obj *otmp2;
     if ((!Blind && visible) || inpack) {
         if (Hallucination) {
             if (onfloor) {
-                You_see("parts of the floor melting!");
+                You_see("地板的一部分融化了!");
             } else if (inpack) {
-                Your("pack reaches out and grabs something!");
+                Your("背包伸出手抓住了什么东西!");
             }
             /* even though we can see where they should be,
              * they'll be out of our view (minvent or container)
@@ -2956,13 +2956,13 @@ struct obj *otmp2;
             boolean adj = ((otmp->ox != u.ux || otmp->oy != u.uy)
                            && (otmp2->ox != u.ux || otmp2->oy != u.uy));
 
-            pline("The %s%s coalesce%s.",
-                  (onfloor && adj) ? "adjacent " : "",
-                  makeplural(obj_typename(otmp->otyp)),
-                  inpack ? " inside your pack" : "");
+            pline("%s%s%s合并了.",
+                  inpack ? "你的背包里的" : "",
+                  (onfloor && adj) ? "相邻的" : "",
+                  makeplural(obj_typename(otmp->otyp)));
         }
     } else {
-        You_hear("a faint sloshing sound.");
+        You_hear("轻微的晃动声.");
     }
 }
 

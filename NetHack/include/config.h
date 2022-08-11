@@ -428,6 +428,9 @@ typedef unsigned char uchar;
 #define BITFIELDS /* Good bitfield handling */
 
 /* #define STRNCMPI */ /* compiler/library has the strncmpi function */
+#define cnstrcmpi(bp, str, l) strncmpi(bp, str, l = strlen(str))
+#define cnstrcmp(bp, str) strncmp(bp, str, strlen(str))
+#define cnbstrcmp(bp, p, str) BSTRCMPI(bp, p - strlen(str), str)
 
 /*
  * There are various choices for the NetHack vision system.  There is a

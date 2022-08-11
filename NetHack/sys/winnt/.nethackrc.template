@@ -66,15 +66,15 @@ OPTIONS=menucolors
 # or
 #    MENUCOLOR="regular expression"=color&attribute
 #  Show all blessed items in green
-MENUCOLOR=" blessed " = green
+MENUCOLOR="受祝福的 " = green
 #  Show all holy water in green
-MENUCOLOR=" holy " = green
+MENUCOLOR="圣水" = green
 #  Show all cursed items in red
-MENUCOLOR=" cursed " = red
+MENUCOLOR="被诅咒的 " = red
 #  Show all unholy water in red
-MENUCOLOR=" unholy " = red
+MENUCOLOR="邪水" = red
 #  Show all cursed worn items in orange and underlined
-MENUCOLOR=" cursed .* (being worn)" = orange&underline
+MENUCOLOR="被诅咒的 .*(穿戴中)" = orange&underline
 
 
 
@@ -144,22 +144,22 @@ OPTIONS=vary_msgcount:4
 # point at must exist.  NetHack will not create them for you.
 #
 # The location that documentation and helps files are placed
-#HACKDIR=c:\User\USERNAME\NetHack\3.6
+#HACKDIR=c:\User\USERNAME\NetHack-cn\3.6
 #
 # The location that level files in progress are stored (writeable)
-#LEVELDIR=c:\User\USERNAME\AppData\Local\NetHack\3.6
+#LEVELDIR=c:\User\USERNAME\AppData\Local\NetHack-cn\3.6
 #
 # The location where saved games are kept (writeable)
-#SAVEDIR=c:\User\USERNAME\AppData\Local\NetHack\3.6
+#SAVEDIR=c:\User\USERNAME\AppData\Local\NetHack-cn\3.6
 #
 # The location that bones files are kept (writeable)
-#BONESDIR=c:\ProgramData\NetHack\3.6
+#BONESDIR=c:\ProgramData\NetHack-cn\3.6
 #
 # The location that score files are kept (writeable)
-#SCOREDIR=c:\ProgramData\NetHack\3.6
+#SCOREDIR=c:\ProgramData\NetHack-cn\3.6
 #
 # The location that file synchronization locks are stored (writeable)
-#LOCKDIR=c:\ProgramData\NetHack\3.6
+#LOCKDIR=c:\ProgramData\NetHack-cn\3.6
 #
 
 # Finnish keyboards might need these modifications uncommented. 
@@ -212,7 +212,7 @@ OPTIONS=hilite_status:power/<50%/orange&normal
 OPTIONS=hilite_status:power/<33%/red&bold
 
 ## Carry
-OPTIONS=hilite_status:cap/burdened/yellow/stressed/orange/strained/red&bold/overtaxed/red&inverse/overloaded/red&inverse&blink
+OPTIONS=hilite_status:cap/负担/yellow/压力/orange/强压/red&bold/过重/red&inverse/超重/red&inverse&blink
 
 ## Hunger
 OPTIONS=hilite_status:hunger/satiated/yellow/hungry/orange/weak/red&bold/fainting/red&inverse/fainted/red&inverse&blink

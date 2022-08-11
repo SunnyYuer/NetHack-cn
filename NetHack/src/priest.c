@@ -128,7 +128,7 @@ pick_move:
 #if 0 /* dead code; maybe someday someone will track down why... */
         if (ib) {
             if (cansee(mtmp->mx, mtmp->my))
-                pline("%s picks up %s.", Monnam(mtmp),
+                pline("%s 捡起了%s.", Monnam(mtmp),
                       distant_name(ib, doname));
             obj_extract_self(ib);
             (void) mpickobj(mtmp, ib);
@@ -204,7 +204,7 @@ register struct monst *priest;
         || (Conflict && !resist(priest, RING_CLASS, 0, 0))) {
         if (monnear(priest, u.ux, u.uy)) {
             if (Displaced)
-                Your("displaced image doesn't fool %s!", mon_nam(priest));
+                Your("位移幻影没有愚弄到%s!", mon_nam(priest));
             (void) mattacku(priest);
             return 0;
         } else if (index(u.urooms, temple)) {
@@ -310,37 +310,39 @@ char *pname; /* caller-supplied output buffer */
 
     *pname = '\0';
     if (!do_hallu || !bogon_is_pname(whatcode))
-        Strcat(pname, "the ");
+        Strcat(pname, "");
     if (mon->minvis)
-        Strcat(pname, "invisible ");
+        Strcat(pname, "隐形的");
     if (mon->isminion && EMIN(mon)->renegade)
-        Strcat(pname, "renegade ");
+        Strcat(pname, "背叛的 ");
+    
+    /* same as distant_monnam(), more or less... */
+    if (do_hallu || !high_priest || !Is_astralevel(&u.uz)
+        || distu(mon->mx, mon->my) <= 2 || program_state.gameover) {
+        Strcat(pname, halu_gname(mon_aligntyp(mon)));
+        Strcat(pname, "的");
+    }
 
     if (mon->ispriest || aligned_priest) { /* high_priest implies ispriest */
         if (!aligned_priest && !high_priest) {
             ; /* polymorphed priest; use ``what'' as is */
         } else {
             if (high_priest)
-                Strcat(pname, "high ");
+                Strcat(pname, "高级");
             if (Hallucination)
-                what = "poohbah";
+                what = "显贵";
             else if (mon->female)
-                what = "priestess";
+                what = "女祭司";
             else
-                what = "priest";
+                what = "祭司";
         }
     } else {
-        if (mon->mtame && !strcmpi(what, "Angel"))
-            Strcat(pname, "guardian ");
+        if (mon->mtame && !strcmpi(what, "天使"))
+            Strcat(pname, "守护 ");
     }
 
     Strcat(pname, what);
-    /* same as distant_monnam(), more or less... */
-    if (do_hallu || !high_priest || !Is_astralevel(&u.uz)
-        || distu(mon->mx, mon->my) <= 2 || program_state.gameover) {
-        Strcat(pname, " of ");
-        Strcat(pname, halu_gname(mon_aligntyp(mon)));
-    }
+    
     return pname;
 }
 
@@ -416,8 +418,8 @@ int roomno;
                Moloch so suppress the "of Moloch" for him here too */
             if (sanctum && !Hallucination)
                 priest->ispriest = 0;
-            pline("%s intones:",
-                  canseemon(priest) ? Monnam(priest) : "A nearby voice");
+            pline("%s 吟诵着:",
+                  canseemon(priest) ? Monnam(priest) : "附近的声音");
             priest->ispriest = save_priest;
             epri_p->intone_time = moves + (long) d(10, 500); /* ~2505 */
             /* make sure that we don't suppress entry message when
@@ -428,18 +430,18 @@ int roomno;
         if (sanctum && Is_sanctum(&u.uz)) {
             if (priest->mpeaceful) {
                 /* first time inside */
-                msg1 = "Infidel, you have entered Moloch's Sanctum!";
-                msg2 = "Be gone!";
+                msg1 = "异教徒, 你进入了摩洛的密室!";
+                msg2 = "离开!";
                 priest->mpeaceful = 0;
                 /* became angry voluntarily; no penalty for attacking him */
                 set_malign(priest);
             } else {
                 /* repeat visit, or attacked priest before entering */
-                msg1 = "You desecrate this place by your presence!";
+                msg1 = "你通过你的存在亵渎了这个地方!";
             }
         } else if (moves >= epri_p->enter_time) {
-            Sprintf(buf, "Pilgrim, you enter a %s place!",
-                    !shrined ? "desecrated" : "sacred");
+            Sprintf(buf, "朝圣者, 你进入了一个%s地方!",
+                    !shrined ? "亵渎的" : "神圣的");
             msg1 = buf;
         }
         if (msg1 && can_speak && !Deaf) {
@@ -451,13 +453,13 @@ int roomno;
         if (!sanctum) {
             if (!shrined || !p_coaligned(priest)
                 || u.ualign.record <= ALGN_SINNED) {
-                msg1 = "have a%s forbidding feeling...";
-                msg2 = (!shrined || !p_coaligned(priest)) ? "" : " strange";
+                msg1 = "有一种%s严峻的感觉...";
+                msg2 = (!shrined || !p_coaligned(priest)) ? "" : " 奇怪的";
                 this_time = &epri_p->hostile_time;
                 other_time = &epri_p->peaceful_time;
             } else {
-                msg1 = "experience %s sense of peace.";
-                msg2 = (u.ualign.record >= ALGN_PIOUS) ? "a" : "an unusual";
+                msg1 = "体验到一种%s和平的感觉.";
+                msg2 = (u.ualign.record >= ALGN_PIOUS) ? "" : "不寻常的";
                 this_time = &epri_p->peaceful_time;
                 other_time = &epri_p->hostile_time;
             }
@@ -481,13 +483,13 @@ int roomno;
 
         switch (rn2(4)) {
         case 0:
-            You("have an eerie feeling...");
+            You("有一种怪异的感觉...");
             break;
         case 1:
-            You_feel("like you are being watched.");
+            You_feel("你像是被监视着.");
             break;
         case 2:
-            pline("A shiver runs down your %s.", body_part(SPINE));
+            pline("战栗向下串到你的%s.", body_part(SPINE));
             break;
         default:
             break; /* no message; unfortunately there's no
@@ -499,18 +501,18 @@ int roomno;
                    != 0) {
             int ngen = mvitals[PM_GHOST].born;
             if (canspotmon(mtmp))
-                pline("A%s ghost appears next to you%c",
-                      ngen < 5 ? "n enormous" : "",
+                pline("一个%s鬼魂出现在你的旁边%c",
+                      ngen < 5 ? "巨大的" : "",
                       ngen < 10 ? '!' : '.');
             else
-                You("sense a presence close by!");
+                You("感觉到近旁的一个存在!");
             mtmp->mpeaceful = 0;
             set_malign(mtmp);
             if (flags.verbose)
-                You("are frightened to death, and unable to move.");
+                You("吓得要死, 不能移动.");
             nomul(-3);
-            multi_reason = "being terrified of a ghost";
-            nomovemsg = "You regain your composure.";
+            multi_reason = "被一个恶魔吓坏了";
+            nomovemsg = "你重获了你的镇静.";
         }
     }
 }
@@ -542,7 +544,7 @@ register struct monst *priest;
     u.uconduct.gnostic++;
 
     if (priest->mflee || (!priest->ispriest && coaligned && strayed)) {
-        pline("%s doesn't want anything to do with you!", Monnam(priest));
+        pline("%s 不能与你做任何事!", Monnam(priest));
         priest->mpeaceful = 0;
         return;
     }
@@ -557,7 +559,7 @@ register struct monst *priest;
         };
 
         if (!priest->mcanmove || priest->msleeping) {
-            pline("%s breaks out of %s reverie!", Monnam(priest),
+            pline("%s 打断了%s幻想!", Monnam(priest),
                   mhis(priest));
             priest->mfrozen = priest->msleeping = 0;
             priest->mcanmove = 1;
@@ -571,7 +573,7 @@ register struct monst *priest;
     if (priest->mpeaceful && *in_rooms(priest->mx, priest->my, TEMPLE)
         && !has_shrine(priest)) {
         verbalize(
-              "Begone!  Thou desecratest this holy place with thy presence.");
+              "走开!  你玷污了这个神圣的地方.");
         priest->mpeaceful = 0;
         return;
     }
@@ -580,38 +582,38 @@ register struct monst *priest;
             long pmoney = money_cnt(priest->minvent);
             if (pmoney > 0L) {
                 /* Note: two bits is actually 25 cents.  Hmm. */
-                pline("%s gives you %s for an ale.", Monnam(priest),
-                      (pmoney == 1L) ? "one bit" : "two bits");
+                pline("%s 给你%s 要一瓶麦芽酒.", Monnam(priest),
+                      (pmoney == 1L) ? "1 bit" : "2 bits");
                 money2u(priest, pmoney > 1L ? 2 : 1);
             } else
-                pline("%s preaches the virtues of poverty.", Monnam(priest));
+                pline("%s 宣扬扶贫的美德.", Monnam(priest));
             exercise(A_WIS, TRUE);
         } else
-            pline("%s is not interested.", Monnam(priest));
+            pline("%s 不感兴趣.", Monnam(priest));
         return;
     } else {
         long offer;
 
-        pline("%s asks you for a contribution for the temple.",
+        pline("%s 请你为教堂捐献.",
               Monnam(priest));
         if ((offer = bribe(priest)) == 0) {
-            verbalize("Thou shalt regret thine action!");
+            verbalize("你将为你的行为后悔!");
             if (coaligned)
                 adjalign(-1);
         } else if (offer < (u.ulevel * 200)) {
             if (money_cnt(invent) > (offer * 2L)) {
-                verbalize("Cheapskate.");
+                verbalize("小气鬼.");
             } else {
-                verbalize("I thank thee for thy contribution.");
+                verbalize("感谢你所作的贡献.");
                 /* give player some token */
                 exercise(A_WIS, TRUE);
             }
         } else if (offer < (u.ulevel * 400)) {
-            verbalize("Thou art indeed a pious individual.");
+            verbalize("你的确是一个虔诚的人.");
             if (money_cnt(invent) < (offer * 2L)) {
                 if (coaligned && u.ualign.record <= ALGN_SINNED)
                     adjalign(1);
-                verbalize("I bestow upon thee a blessing.");
+                verbalize("我赠与你一个祝福.");
                 incr_itimeout(&HClairvoyant, rn1(500, 500));
             }
         } else if (offer < (u.ulevel * 600)
@@ -622,7 +624,7 @@ register struct monst *priest;
                    && (!(HProtection & INTRINSIC)
                        || (u.ublessed < 20
                            && (u.ublessed < 9 || !rn2(u.ublessed))))) {
-            verbalize("Thy devotion has been rewarded.");
+            verbalize("你的奉献得到了回报.");
             if (!(HProtection & INTRINSIC)) {
                 HProtection |= FROMOUTSIDE;
                 if (!u.ublessed)
@@ -630,7 +632,7 @@ register struct monst *priest;
             } else
                 u.ublessed++;
         } else {
-            verbalize("Thy selfless generosity is deeply appreciated.");
+            verbalize("你的慷慨无私深深地令人欣赏.");
             if (money_cnt(invent) < (offer * 2L) && coaligned) {
                 if (strayed && (moves - u.ucleansed) > 5000L) {
                     u.ualign.record = 0; /* cleanse thee */
@@ -774,15 +776,15 @@ struct monst *priest;
 
     switch (rn2(3)) {
     case 0:
-        pline("%s roars in anger:  \"Thou shalt suffer!\"",
+        pline("%s 愤怒的咆哮:  \" 你将遭受苦难!\"",
               a_gname_at(ax, ay));
         break;
     case 1:
-        pline("%s voice booms:  \"How darest thou harm my servant!\"",
+        pline("%s 声音洪亮:  \" 你竟敢伤害我的仆人!\"",
               s_suffix(a_gname_at(ax, ay)));
         break;
     default:
-        pline("%s roars:  \"Thou dost profane my shrine!\"",
+        pline("%s 怒吼:  \" 你在亵渎我的圣地!\"",
               a_gname_at(ax, ay));
         break;
     }
@@ -877,13 +879,13 @@ aligntyp alignment;
 {
     switch ((int) alignment) {
     case A_CHAOTIC:
-        return "chaotic";
+        return "混沌";
     case A_NEUTRAL:
-        return "neutral";
+        return "中立";
     case A_LAWFUL:
-        return "lawful";
+        return "秩序";
     case A_NONE:
-        return "unaligned";
+        return "无阵营";
     }
     return "unknown";
 }
@@ -899,27 +901,27 @@ const char *suffix;
 
     /* note: piousness 20 matches MIN_QUEST_ALIGN (quest.h) */
     if (u.ualign.record >= 20)
-        pio = "piously";
+        pio = "虔诚的";
     else if (u.ualign.record > 13)
-        pio = "devoutly";
+        pio = "虔敬的";
     else if (u.ualign.record > 8)
-        pio = "fervently";
+        pio = "热诚的";
     else if (u.ualign.record > 3)
-        pio = "stridently";
+        pio = "简诚的";
     else if (u.ualign.record == 3)
         pio = "";
     else if (u.ualign.record > 0)
-        pio = "haltingly";
+        pio = "犹豫的";
     else if (u.ualign.record == 0)
-        pio = "nominally";
+        pio = "名义上的";
     else if (!showneg)
-        pio = "insufficiently";
+        pio = "不够的";
     else if (u.ualign.record >= -3)
-        pio = "strayed";
+        pio = "堕落的";
     else if (u.ualign.record >= -8)
-        pio = "sinned";
+        pio = "有罪的";
     else
-        pio = "transgressed";
+        pio = "违法的";
 
     Sprintf(buf, "%s", pio);
     if (suffix && (!showneg || u.ualign.record >= 0)) {
@@ -940,16 +942,16 @@ struct monst *mtmp;
 
     info[0] = 0;
     if (mtmp->mtame) {
-        Strcat(info, ", tame");
+        Strcat(info, ", 驯服");
         if (wizard) {
             Sprintf(eos(info), " (%d", mtmp->mtame);
             if (!mtmp->isminion)
-                Sprintf(eos(info), "; hungry %ld; apport %d",
+                Sprintf(eos(info), "; 饥饿度 %ld; 叼取值 %d",
                         EDOG(mtmp)->hungrytime, EDOG(mtmp)->apport);
             Strcat(info, ")");
         }
     } else if (mtmp->mpeaceful)
-        Strcat(info, ", peaceful");
+        Strcat(info, ", 和平的");
 
     if (mtmp->data == &mons[PM_LONG_WORM]) {
         int segndx, nsegs = count_wsegs(mtmp);
@@ -958,72 +960,72 @@ struct monst *mtmp;
            the worm's segments, but we count it as such when presenting
            worm feedback to the player */
         if (!nsegs) {
-            Strcat(info, ", single segment");
+            Strcat(info, ", 单节");
         } else {
             ++nsegs; /* include head in the segment count */
             segndx = wseg_at(mtmp, bhitpos.x, bhitpos.y);
-            Sprintf(eos(info), ", %d%s of %d segments",
-                    segndx, ordin(segndx), nsegs);
+            Sprintf(eos(info), ", %d 节的%d%s",
+                    nsegs, segndx, ordin(segndx));
         }
     }
     if (mtmp->cham >= LOW_PM && mtmp->data != &mons[mtmp->cham])
         /* don't reveal the innate form (chameleon, vampire, &c),
            just expose the fact that this current form isn't it */
-        Strcat(info, ", shapechanger");
+        Strcat(info, ", 变形生物");
     /* pets eating mimic corpses mimic while eating, so this comes first */
     if (mtmp->meating)
-        Strcat(info, ", eating");
+        Strcat(info, ", 在吃");
     /* a stethoscope exposes mimic before getting here so this
        won't be relevant for it, but wand of probing doesn't */
     if (mtmp->mundetected || mtmp->m_ap_type)
         mhidden_description(mtmp, TRUE, eos(info));
     if (mtmp->mcan)
-        Strcat(info, ", cancelled");
+        Strcat(info, ", 被取消");
     if (mtmp->mconf)
-        Strcat(info, ", confused");
+        Strcat(info, ", 混乱");
     if (mtmp->mblinded || !mtmp->mcansee)
-        Strcat(info, ", blind");
+        Strcat(info, ", 失明");
     if (mtmp->mstun)
-        Strcat(info, ", stunned");
+        Strcat(info, ", 眩晕");
     if (mtmp->msleeping)
-        Strcat(info, ", asleep");
+        Strcat(info, ", 睡着");
 #if 0 /* unfortunately mfrozen covers temporary sleep and being busy \
          (donning armor, for instance) as well as paralysis */
     else if (mtmp->mfrozen)
         Strcat(info, ", paralyzed");
 #else
     else if (mtmp->mfrozen || !mtmp->mcanmove)
-        Strcat(info, ", can't move");
+        Strcat(info, ", 不能移动");
 #endif
     /* [arbitrary reason why it isn't moving] */
     else if (mtmp->mstrategy & STRAT_WAITMASK)
-        Strcat(info, ", meditating");
+        Strcat(info, ", 沉思");
     if (mtmp->mflee)
-        Strcat(info, ", scared");
+        Strcat(info, ", 害怕");
     if (mtmp->mtrapped)
-        Strcat(info, ", trapped");
+        Strcat(info, ", 受困");
     if (mtmp->mspeed)
-        Strcat(info, (mtmp->mspeed == MFAST) ? ", fast"
-                      : (mtmp->mspeed == MSLOW) ? ", slow"
-                         : ", [? speed]");
+        Strcat(info, (mtmp->mspeed == MFAST) ? ", 快"
+                      : (mtmp->mspeed == MSLOW) ? ", 慢"
+                         : ", [? 速度]");
     if (mtmp->minvis)
-        Strcat(info, ", invisible");
+        Strcat(info, ", 隐身");
     if (mtmp == u.ustuck)
-        Strcat(info, sticks(youmonst.data) ? ", held by you"
-                      : !u.uswallow ? ", holding you"
+        Strcat(info, sticks(youmonst.data) ? ", 被你牵制着"
+                      : !u.uswallow ? ", 牵制着你"
                          : attacktype_fordmg(u.ustuck->data, AT_ENGL, AD_DGST)
-                            ? ", digesting you"
-                            : is_animal(u.ustuck->data) ? ", swallowing you"
-                               : ", engulfing you");
+                            ? ", 消化着你"
+                            : is_animal(u.ustuck->data) ? ", 吞咽着你"
+                               : ", 吞噬着你");
     if (mtmp == u.usteed)
-        Strcat(info, ", carrying you");
+        Strcat(info, ", 带着你");
 
     /* avoid "Status of the invisible newt ..., invisible" */
     /* and unlike a normal mon_nam, use "saddled" even if it has a name */
     Strcpy(monnambuf, x_monnam(mtmp, ARTICLE_THE, (char *) 0,
                                (SUPPRESS_IT | SUPPRESS_INVISIBLE), FALSE));
 
-    pline("Status of %s (%s):  Level %d  HP %d(%d)  AC %d%s.", monnambuf,
+    pline("%s ( %s) 状态:  等级 %d  HP %d(%d)  AC %d%s.", monnambuf,
           align_str(alignment), mtmp->m_lev, mtmp->mhp, mtmp->mhpmax,
           find_mac(mtmp), info);
 }
@@ -1036,61 +1038,61 @@ ustatusline()
 
     info[0] = '\0';
     if (Sick) {
-        Strcat(info, ", dying from");
+        Strcat(info, ", 垂死于");
         if (u.usick_type & SICK_VOMITABLE)
-            Strcat(info, " food poisoning");
+            Strcat(info, "食物中毒");
         if (u.usick_type & SICK_NONVOMITABLE) {
             if (u.usick_type & SICK_VOMITABLE)
-                Strcat(info, " and");
-            Strcat(info, " illness");
+                Strcat(info, "和");
+            Strcat(info, "疾病");
         }
     }
     if (Stoned)
-        Strcat(info, ", solidifying");
+        Strcat(info, ", 固化");
     if (Slimed)
-        Strcat(info, ", becoming slimy");
+        Strcat(info, ", 黏液化");
     if (Strangled)
-        Strcat(info, ", being strangled");
+        Strcat(info, ", 被窒息");
     if (Vomiting)
-        Strcat(info, ", nauseated"); /* !"nauseous" */
+        Strcat(info, ", 作呕"); /* !"nauseous" */
     if (Confusion)
-        Strcat(info, ", confused");
+        Strcat(info, ", 混乱");
     if (Blind) {
-        Strcat(info, ", blind");
+        Strcat(info, ", 失明");
         if (u.ucreamed) {
             if ((long) u.ucreamed < Blinded || Blindfolded
                 || !haseyes(youmonst.data))
-                Strcat(info, ", cover");
-            Strcat(info, "ed by sticky goop");
+                Strcat(info, ", 满身都是");
+            Strcat(info, "黏糊糊的东西");
         } /* note: "goop" == "glop"; variation is intentional */
     }
     if (Stunned)
-        Strcat(info, ", stunned");
+        Strcat(info, ", 眩晕");
     if (!u.usteed && Wounded_legs) {
         const char *what = body_part(LEG);
         if ((Wounded_legs & BOTH_SIDES) == BOTH_SIDES)
             what = makeplural(what);
-        Sprintf(eos(info), ", injured %s", what);
+        Sprintf(eos(info), ", %s受伤了", what);
     }
     if (Glib)
-        Sprintf(eos(info), ", slippery %s", makeplural(body_part(HAND)));
+        Sprintf(eos(info), ", 很滑的%s", makeplural(body_part(HAND)));
     if (u.utrap)
-        Strcat(info, ", trapped");
+        Strcat(info, ", 受困");
     if (Fast)
-        Strcat(info, Very_fast ? ", very fast" : ", fast");
+        Strcat(info, Very_fast ? ", 非常快" : ", 快");
     if (u.uundetected)
-        Strcat(info, ", concealed");
+        Strcat(info, ", 隐蔽的");
     if (Invis)
-        Strcat(info, ", invisible");
+        Strcat(info, ", 隐形的");
     if (u.ustuck) {
         if (sticks(youmonst.data))
-            Strcat(info, ", holding ");
+            Strcat(info, ", 牵制着");
         else
-            Strcat(info, ", held by ");
+            Strcat(info, ", 受牵制于");
         Strcat(info, mon_nam(u.ustuck));
     }
 
-    pline("Status of %s (%s):  Level %d  HP %d(%d)  AC %d%s.", plname,
+    pline("%s ( %s) 状态:  等级 %d  HP %d(%d)  AC %d%s.", plname,
           piousness(FALSE, align_str(u.ualign.type)),
           Upolyd ? mons[u.umonnum].mlevel : u.ulevel, Upolyd ? u.mh : u.uhp,
           Upolyd ? u.mhmax : u.uhpmax, u.uac, info);

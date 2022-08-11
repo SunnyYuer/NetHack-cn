@@ -468,7 +468,7 @@ MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             bail((char *) 0);
         } else {
             /* prompt user for action */
-            switch (NHMessageBox(hWnd, TEXT("Save?"),
+            switch (NHMessageBox(hWnd, TEXT("保存?"),
                                  MB_YESNOCANCEL | MB_ICONQUESTION)) {
             case IDYES:
 #ifdef SAFERHANGUP

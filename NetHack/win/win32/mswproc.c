@@ -685,7 +685,7 @@ mswin_askname(void)
 {
     logDebug("mswin_askname()\n");
 
-    if (mswin_getlin_window("Who are you?", plname, PL_NSIZ) == IDCANCEL) {
+    if (mswin_getlin_window("你叫什么?", plname, PL_NSIZ) == IDCANCEL) {
         bail("bye-bye");
         /* not reached */
     }
@@ -994,7 +994,19 @@ mswin_putstr(winid wid, int attr, const char *text)
 {
     logDebug("mswin_putstr(%d, %d, %s)\n", wid, attr, text);
 
-    mswin_putstr_ex(wid, attr, text, 0);
+    int i = 0, j = 0, l;
+    char cntext[3 * BUFSZ] = "";
+    l = strlen(text);
+    while(i < l-1)
+    {
+        if(text[i]==32 && text[i+1]<0) i++;
+        cntext[j] = text[i];
+        j++;
+        i++;
+    }
+    if(l > 0) cntext[j] = text[i];
+    
+    mswin_putstr_ex(wid, attr, cntext, 0);
 }
 
 void
@@ -2800,19 +2812,19 @@ static mswin_status_string _condition_strings[BL_MASK_BITS];
 static mswin_status_field _status_fields[MAXBLSTATS];
 
 static mswin_condition_field _condition_fields[BL_MASK_BITS] = {
-    { BL_MASK_STONE, "Stone" },
-    { BL_MASK_SLIME, "Slime" },
-    { BL_MASK_STRNGL, "Strngl" },
-    { BL_MASK_FOODPOIS, "FoodPois" },
-    { BL_MASK_TERMILL, "TermIll" },
-    { BL_MASK_BLIND, "Blind" },
-    { BL_MASK_DEAF, "Deaf" },
-    { BL_MASK_STUN, "Stun" },
-    { BL_MASK_CONF, "Conf" },
-    { BL_MASK_HALLU, "Hallu" },
-    { BL_MASK_LEV, "Lev" },
-    { BL_MASK_FLY, "Fly" },
-    { BL_MASK_RIDE, "Ride" }
+    { BL_MASK_STONE, "石化" },
+    { BL_MASK_SLIME, "污秽" },
+    { BL_MASK_STRNGL, "束缚" },
+    { BL_MASK_FOODPOIS, "食物中毒" },
+    { BL_MASK_TERMILL, "生病" },
+    { BL_MASK_BLIND, "失明" },
+    { BL_MASK_DEAF, "耳聋" },
+    { BL_MASK_STUN, "眩晕" },
+    { BL_MASK_CONF, "混乱" },
+    { BL_MASK_HALLU, "幻觉" },
+    { BL_MASK_LEV, "飘浮" },
+    { BL_MASK_FLY, "飞行" },
+    { BL_MASK_RIDE, "乘骑" }
 };
 
 

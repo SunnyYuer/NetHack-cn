@@ -20,6 +20,9 @@ struct flag {
     boolean autodig;    /* MRKR: Automatically dig */
     boolean autoquiver; /* Automatically fill quiver */
     boolean autoopen;   /* open doors by walking into them */
+#ifdef ANDROID
+	boolean  autokick;	/* Automatically kick doors and force locks */
+#endif
     boolean beginner;
     boolean biff;      /* enable checking for mail */
     boolean bones;     /* allow saving/loading bones */
@@ -441,6 +444,9 @@ struct instance_flags {
     short mines_prize_type;     /* luckstone */
     short soko_prize_type1;     /* bag of holding or    */
     short soko_prize_type2;     /* amulet of reflection */
+#ifdef ANDROID
+	boolean dumplog; /* enable/disable dump logs */
+#endif
     struct debug_flags debug;
     boolean windowtype_locked;  /* windowtype can't change from configfile */
     boolean windowtype_deferred; /* pick a windowport and store it in

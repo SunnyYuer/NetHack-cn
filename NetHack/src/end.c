@@ -65,7 +65,7 @@ STATIC_DCL void NDECL(dump_plines);
 STATIC_DCL void FDECL(dump_everything, (int, time_t));
 STATIC_DCL int NDECL(num_extinct);
 
-#if defined(__BEOS__) || defined(MICRO) || defined(OS2)
+#if defined(__BEOS__) || defined(MICRO) || defined(OS2) || defined(ANDROID)
 extern void FDECL(nethack_exit, (int));
 #else
 #define nethack_exit exit
@@ -1126,6 +1126,12 @@ int how;
         context.botlx = TRUE;
         bot();
     }
+
+#ifdef ANDROID
+	if(how != TRICKED && how != QUIT && how != PANICKED && how != ESCAPED) {
+		and_you_die();
+	}
+#endif
 
     if (iflags.debug_fuzzer) {
         if (!(program_state.panicking || how == PANICKED)) {

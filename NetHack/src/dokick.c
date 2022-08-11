@@ -767,9 +767,42 @@ const char *kickobjnam;
     return strcat(strcpy(buf, "踢"), what);
 }
 
-int
-dokick()
+#ifdef ANDROID
+void
+autokick()
 {
+	if (nolimbs(youmonst.data) || slithy(youmonst.data))
+		return;
+	if (verysmall(youmonst.data))
+		return;
+	if (u.usteed)
+		return;
+	if (Wounded_legs)
+		return;
+	if (near_capacity() > SLT_ENCUMBER)
+		return;
+	if (youmonst.data->mlet == S_LIZARD)
+		return;
+	if (u.utrap)
+		return;
+
+	if( yn("踢开它?") == 'y')
+		dokick_indir(TRUE);
+}
+
+int
+dokick() {
+	return dokick_indir(FALSE);
+}
+
+int
+dokick_indir(has_dir)
+boolean has_dir;
+{
+#else
+int
+dokick() {
+#endif
     int x, y;
     int avrg_attrib;
     int dmg = 0, glyph, oldglyph = -1;
@@ -836,10 +869,16 @@ dokick()
         return 0;
     }
 
-    if (!getdir((char *) 0))
-        return 0;
-    if (!u.dx && !u.dy)
-        return 0;
+	if (
+#ifdef ANDROID
+		!has_dir &&
+#endif
+		!getdir((char *)0)
+	)
+		return(0);
+
+	if (!u.dx && !u.dy)
+	    return(0);
 
     x = u.ux + u.dx;
     y = u.uy + u.dy;

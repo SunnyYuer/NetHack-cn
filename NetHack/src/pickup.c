@@ -1734,6 +1734,10 @@ int cindex, ccount; /* index of this container (1..N), number of them (N) */
         else
             pline("嗯, %s原来是锁着的.", the(xname(cobj)));
         cobj->lknown = 1;
+#ifdef ANDROID
+		if (flags.autokick && can_try_force())
+			doforce();
+#endif
         return 0;
     }
     cobj->lknown = 1; /* floor container, so no need for update_inventory() */

@@ -3645,27 +3645,27 @@ commands_init()
         if (extcmd->key)
             Cmd.commands[extcmd->key] = extcmd;
 
-    (void) bind_key(C('l'), "redraw"); /* if number_pad is set */
+    (void) bind_key(C('l'), "刷新"); /* if number_pad is set */
     /*       'b', 'B' : go sw */
     /*       'F' : fight (one time) */
     /*       'g', 'G' : multiple go */
     /*       'h', 'H' : go west */
-    (void) bind_key('h',    "help"); /* if number_pad is set */
-    (void) bind_key('j',    "jump"); /* if number_pad is on */
+    (void) bind_key('h',    "帮助"); /* if number_pad is set */
+    (void) bind_key('j',    "跳"); /* if number_pad is on */
     /*       'j', 'J', 'k', 'K', 'l', 'L', 'm', 'M', 'n', 'N' move commands */
-    (void) bind_key('k',    "kick"); /* if number_pad is on */
-    (void) bind_key('l',    "loot"); /* if number_pad is on */
-    (void) bind_key(C('n'), "annotate"); /* if number_pad is on */
-    (void) bind_key(M('n'), "name");
-    (void) bind_key(M('N'), "name");
-    (void) bind_key('u',    "untrap"); /* if number_pad is on */
+    (void) bind_key('k',    "踢"); /* if number_pad is on */
+    (void) bind_key('l',    "搜刮"); /* if number_pad is on */
+    (void) bind_key(C('n'), "备注"); /* if number_pad is on */
+    (void) bind_key(M('n'), "命名");
+    (void) bind_key(M('N'), "命名");
+    (void) bind_key('u',    "解除陷阱"); /* if number_pad is on */
 
     /* alt keys: */
-    (void) bind_key(M('O'), "overview");
-    (void) bind_key(M('2'), "twoweapon");
+    (void) bind_key(M('O'), "概述");
+    (void) bind_key(M('2'), "双持");
 
     /* wait_on_space */
-    (void) bind_key('.',    "wait");
+    (void) bind_key('.',    "休息");
 }
 
 int

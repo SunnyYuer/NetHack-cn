@@ -4892,10 +4892,10 @@ boolean disarm;
             exercise(A_STR, FALSE);
             if (costly && loss) {
                 if (insider)
-                    You("破坏了价值%ld %s 的东西.", loss,
+                    You("破坏了价值%ld %s的东西.", loss,
                         currency(loss));
                 else {
-                    You("造成了%ld %s 价值的损害!", loss,
+                    You("造成了%ld %s价值的损害!", loss,
                         currency(loss));
                     make_angry_shk(shkp, ox, oy);
                 }

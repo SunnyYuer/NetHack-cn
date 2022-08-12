@@ -3717,7 +3717,7 @@ doprgold()
     if (!umoney)
         Your("钱包是空的.");
     else
-        Your("钱包里有 %ld %s.", umoney, currency(umoney));
+        Your("钱包里有%ld %s.", umoney, currency(umoney));
     shopper_financial_report();
     return 0;
 }

@@ -1436,7 +1436,7 @@ dopay()
         char sbuf[BUFSZ];
 
         umoney = money_cnt(invent);
-        Sprintf(sbuf, "你欠%s %ld %s ", shkname(shkp), dtmp,
+        Sprintf(sbuf, "你欠%s %ld %s", shkname(shkp), dtmp,
                 currency(dtmp));
         if (loan) {
             if (loan == dtmp)
@@ -1619,7 +1619,7 @@ boolean itemize;
     if (itemize) {
         char qbuf[BUFSZ], qsfx[BUFSZ];
 
-        Sprintf(qsfx, "%ld %s.  支付?", ltmp, currency(ltmp));
+        Sprintf(qsfx, " %ld %s.  支付?", ltmp, currency(ltmp));
         (void) safe_qbuf(qbuf, (char *) 0, qsfx, obj,
                          (quan == 1L) ? Doname2 : doname, ansimpleoname,
                          (quan == 1L) ? "那个" : "那些");
@@ -2703,7 +2703,7 @@ boolean ininv, dummy, silent;
                 Strcat(buf, ";");
             }
             obj->quan = 1L; /* fool xname() into giving singular */
-            pline("%s%s%s%s%s%ld %s.\"", buf,
+            pline("%s%s%s%s%s %ld %s.\"", buf,
                   xname(obj),
                   (save_quan > 1L) ? "每个" : (contentscount && !obj->unpaid)
                                                  ? "里面的东西"
@@ -2971,7 +2971,7 @@ boolean peaceful, silent;
                 }
                 still = "仍";
             }
-            Sprintf(buf, "%s欠%s%ld %s", still, shkname(shkp),
+            Sprintf(buf, "%s欠%s %ld %s", still, shkname(shkp),
                     value, currency(value));
             if (u_count) /* u_count > 0 implies Has_contents(obj) */
                 Sprintf(eos(buf), "因为%s%s里面的东西",
@@ -4226,7 +4226,7 @@ boolean cant_mollify;
 
     if (Invis)
         Your("隐形不会愚弄到%s!", shkname(shkp));
-    Sprintf(qbuf, "%s你造成了价值%ld %s 的损害!%s  赔偿?",
+    Sprintf(qbuf, "%s你造成了价值%ld %s的损害!%s  赔偿?",
             !animal ? cad(TRUE) : "", cost_of_damage,
             currency(cost_of_damage), !animal ? "\"" : "");
     if (yn(qbuf) != 'n') {
@@ -4327,8 +4327,8 @@ register struct obj *first_obj;
             Sprintf(price, "%s%ld %s", (otmp->quan) > 1L ? "每个" : "",
                     cost, currency(cost));
         }
-        Sprintf(buf, "%s%s, %s", contentsonly ? the_contents_of : "",
-                doname(otmp), price);
+        Sprintf(buf, "%s%s, %s", doname(otmp),
+                contentsonly ? the_contents_of : "", price);
         putstr(tmpwin, 0, buf), cnt++;
     }
     if (cnt > 1) {
@@ -4340,8 +4340,8 @@ register struct obj *first_obj;
         } else {
             /* print cost in slightly different format, so can't reuse buf;
                cost and contentsonly are already set up */
-            Sprintf(buf, "%s%s", contentsonly ? the_contents_of : "",
-                    doname(first_obj));
+            Sprintf(buf, "%s%s", doname(first_obj),
+                    contentsonly ? the_contents_of : "");
             pline("%s, %s价格为%ld %s%s", upstart(buf), 
                   (first_obj->quan > 1L) ? "每个" : "", cost, currency(cost),
                   contentsonly ? "." : shk_embellish(first_obj, cost));
@@ -4583,7 +4583,7 @@ boolean altusage;
         arg1 = rn2(2) ? buf : "";
         arg2 = ESHK(shkp)->debit > 0L ? "额外的" : "";
     } else if (otmp->otyp == POT_OIL) {
-        fmt = "%s%s那会花费你 %ld %s ( 岩德燃油税).";
+        fmt = "%s%s那会花费你%ld %s (岩德燃油税).";
     } else if (altusage && (otmp->otyp == BAG_OF_TRICKS
                             || otmp->otyp == HORN_OF_PLENTY)) {
         fmt = "%s%s使那个变空会花费你 %ld %s.";
@@ -4640,7 +4640,7 @@ register long amount;
         if (eshkp->credit)
             Your("信用消除了.");
         if (eshkp->debit)
-            Your("欠款增加了 %ld %s.", delta, currency(delta));
+            Your("欠款增加了%ld %s.", delta, currency(delta));
         else
             You("欠%s %ld %s.", shkname(shkp), delta, currency(delta));
         eshkp->debit += delta;

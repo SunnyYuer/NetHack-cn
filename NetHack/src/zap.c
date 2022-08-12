@@ -3948,9 +3948,9 @@ boolean u_caused;
                 cnt += delquan;
                 if (give_feedback) {
                     if (delquan > 1L)
-                        pline("%ld %s 燃烧.", delquan, buf2);
+                        pline("%ld %s燃烧.", delquan, buf2);
                     else
-                        pline("%s 燃烧.", buf1);
+                        pline("%s燃烧.", buf1);
                 }
             }
         }

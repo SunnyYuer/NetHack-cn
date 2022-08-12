@@ -214,7 +214,7 @@ boolean destroyit;
         if (costly)
             loss += stolen_value(box, u.ux, u.uy, peaceful_shk, TRUE);
         if (loss)
-            You("破坏了价值%ld %s 的物品.", loss, currency(loss));
+            You("破坏了价值%ld %s的物品.", loss, currency(loss));
         delobj(box);
     }
 }

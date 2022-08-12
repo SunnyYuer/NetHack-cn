@@ -2711,7 +2711,7 @@ struct monst *mon;
         if (!cost) {
             verbalize("本次免费!");
         } else {
-            pline("%s 拿走%ld %s 作为服务报答!", noit_Monnam(mon),
+            pline("%s拿走%ld %s作为服务报答!", noit_Monnam(mon),
                   cost, currency(cost));
             money2mon(mon, cost);
             context.botl = 1;

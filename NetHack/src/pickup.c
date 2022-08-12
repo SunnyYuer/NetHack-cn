@@ -2567,7 +2567,7 @@ boolean more_containers; /* True iff #loot multiple and this isn't last one */
     if (cursed_mbag
         && (loss = boh_loss(current_container, held)) != 0) {
         used = 1;
-        You("欠%ld %s 商品的损失.", loss, currency(loss));
+        You("欠%ld %s商品的损失.", loss, currency(loss));
         current_container->owt = weight(current_container);
     }
     inokay = (invent != 0
@@ -3259,7 +3259,7 @@ struct obj *box; /* or bag */
                 iflags.suppress_price--; /* reset */
         }
         if (loss) /* magic bag lost some shop goods */
-            You("欠 %ld %s 因损失的商品.", loss, currency(loss));
+            You("欠%ld %s因损失的商品.", loss, currency(loss));
         box->owt = weight(box); /* mbag_item_gone() doesn't update this */
         if (held)
             (void) encumber_msg();

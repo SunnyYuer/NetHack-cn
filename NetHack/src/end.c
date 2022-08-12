@@ -1083,7 +1083,7 @@ winid endwin;
                 discover_object(otmp->otyp, TRUE, FALSE);
                 otmp->known = otmp->dknown = otmp->bknown = otmp->rknown = 1;
                 /* assumes artifacts don't have quan > 1 */
-                Sprintf(pbuf, "%s%s ( 价值%ld %s 和%ld 分数)",
+                Sprintf(pbuf, "%s%s (价值%ld %s和%ld分数)",
                         the_unique_obj(otmp) ? "" : "",
                         otmp->oartifact ? artifact_name(xname(otmp), &dummy)
                                         : OBJ_NAME(objects[otmp->otyp]),

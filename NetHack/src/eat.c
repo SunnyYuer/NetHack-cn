@@ -1710,7 +1710,7 @@ struct obj *otmp;
 
         if (!strncmpi(pmxnam, "the ", 4))
             pmxnam += 4;
-        pline("%s%s %s %s%c",
+        pline("%s%s%s%s%c",
               type_is_pname(&mons[mnum])
                  ? "" : the_unique_pm(&mons[mnum]) ? "" : "这个",
               pmxnam,

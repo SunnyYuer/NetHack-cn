@@ -497,10 +497,10 @@ xchar x, y;
         if ((is_pit(trap->ttyp) && !Passes_walls) || trap->ttyp == WEB) {
             if (!trap->tseen)
                 find_trap(trap);
-            You_cant("在%s中踢%s!",
+            You_cant("踢%s的%s!",
                      Hallucination ? "慌乱"
-                         : (trap->ttyp == WEB) ? "网"
-                             : "坑", something);
+                         : (trap->ttyp == WEB) ? "网里"
+                             : "坑里", something);
             return 1;
         }
         if (trap->ttyp == STATUE_TRAP) {

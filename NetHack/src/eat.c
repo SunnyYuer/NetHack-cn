@@ -705,7 +705,7 @@ register int pm;
     case PM_LARGE_CAT:
         /* cannibals are allowed to eat domestic animals without penalty */
         if (!CANNIBAL_ALLOWED()) {
-            You_feel("吃%s个很糟糕的主意.", mons[pm].mname);
+            You_feel("吃%s是个很糟糕的主意.", mons[pm].mname);
             HAggravate_monster |= FROMOUTSIDE;
         }
         break;

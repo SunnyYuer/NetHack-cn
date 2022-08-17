@@ -1243,22 +1243,22 @@ struct trap *desttrap; /* nonnull if another trap at <x,y> */
             if (flags.verbose) {
                 predicament = "卡在网中";
                 if (u.usteed)
-                    Norep("%s %s.", upstart(steedname), predicament);
+                    Norep("%s%s.", upstart(steedname), predicament);
                 else
                     Norep("你%s.", predicament);
             }
         } else {
             if (u.usteed)
-                pline("%s 逃出了网.", upstart(steedname));
+                pline("%s逃出了网.", upstart(steedname));
             else
-                You("解开了自己.");
+                You("挣脱出来.");
         }
         break;
     case TT_LAVA:
         if (flags.verbose) {
             predicament = "卡在熔岩里";
             if (u.usteed)
-                Norep("%s %s.", upstart(steedname), predicament);
+                Norep("%s%s.", upstart(steedname), predicament);
             else
                 Norep("你%s.", predicament);
         }

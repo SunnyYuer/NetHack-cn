@@ -54,12 +54,13 @@ lock_action()
         "解锁盒子",    /* [2] */
         "撬锁"      /* [3] */
     };
+    int cn = strlen("解");
 
     /* if the target is currently unlocked, we're trying to lock it now */
     if (xlock.door && !(xlock.door->doormask & D_LOCKED))
-        return actions[0] + 3; /* "locking the door" */
+        return actions[0] + cn; /* "locking the door" */
     else if (xlock.box && !xlock.box->olocked)
-        return xlock.box->otyp == CHEST ? actions[1] + 3 : actions[2] + 3;
+        return xlock.box->otyp == CHEST ? actions[1] + cn : actions[2] + cn;
     /* otherwise we're trying to unlock it */
     else if (xlock.picktyp == LOCK_PICK)
         return actions[3]; /* "picking the lock" */

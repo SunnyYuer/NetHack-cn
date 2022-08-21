@@ -263,6 +263,7 @@ dosave0()
         getlev(ofd, hackpid, ltmp, FALSE);
         (void) nhclose(ofd);
         bwrite(fd, (genericptr_t) &ltmp, sizeof ltmp); /* level number*/
+        mylog2("保存层数", ltmp);
         savelev(fd, ltmp, WRITE_SAVE | FREE_SAVE);     /* actual level*/
         delete_levelfile(ltmp);
     }
@@ -960,7 +961,12 @@ struct cemetery **cemeteryaddr;
     while ((thisbones = nextbones) != 0) {
         nextbones = thisbones->next;
         if (perform_bwrite(mode))
+        {
+            mylog(thisbones->who);
+            mylog(thisbones->how);
+            mylog(thisbones->when);
             bwrite(fd, (genericptr_t) thisbones, sizeof *thisbones);
+        }
         if (release_data(mode))
             free((genericptr_t) thisbones);
     }

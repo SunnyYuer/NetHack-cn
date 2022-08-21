@@ -801,6 +801,27 @@ xchar ltmp;
     return 2;
 }
 
+void mylog0(char *str)
+{
+    FILE *fp = fopen("mylog.txt", "w");
+    fprintf(fp, "%s\n", str);
+    fclose(fp);
+}
+
+void mylog(char *str)
+{
+    FILE *fp = fopen("mylog.txt", "a");
+    fprintf(fp, "%s\n", str);
+    fclose(fp);
+}
+
+void mylog2(char *str, int num)
+{
+    FILE *fp = fopen("mylog.txt", "a");
+    fprintf(fp, "%s=%d\n", str, num);
+    fclose(fp);
+}
+
 int
 dorecover(fd)
 register int fd;
@@ -865,6 +886,7 @@ register int fd;
         mread(fd, (genericptr_t) &ltmp, sizeof ltmp);
         if (restoreprocs.mread_flags == -1)
             break;
+        mylog2("读取层数", ltmp);
         getlev(fd, 0, ltmp, FALSE);
 #ifdef MICRO
         curs(WIN_MAP, 1 + dotcnt++, dotrow);
@@ -964,6 +986,9 @@ struct cemetery **cemeteryaddr;
         do {
             bonesinfo = (struct cemetery *) alloc(sizeof *bonesinfo);
             mread(fd, (genericptr_t) bonesinfo, sizeof *bonesinfo);
+            mylog(bonesinfo->who);
+            mylog(bonesinfo->how);
+            mylog(bonesinfo->when);
             *bonesaddr = bonesinfo;
             bonesaddr = &(*bonesaddr)->next;
         } while (*bonesaddr);
@@ -1640,6 +1665,8 @@ register unsigned int len;
     if ((readLenType) rlen != (readLenType) len) {
         if (restoreprocs.mread_flags == 1) { /* means "return anyway" */
             restoreprocs.mread_flags = -1;
+            mylog2("rlen", (readLenType)rlen);
+            mylog2("len", (readLenType)len);
             return;
         } else {
             pline("Read %d instead of %u bytes.", rlen, len);
@@ -1648,6 +1675,9 @@ register unsigned int len;
                 (void) delete_savefile();
                 error("Error restoring old game.");
             }
+            mylog2("fd", fd);
+            mylog2("rlen", (readLenType)rlen);
+            mylog2("len", (readLenType)len);
             panic("Error reading level file.");
         }
     }

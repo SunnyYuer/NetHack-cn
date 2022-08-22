@@ -516,7 +516,7 @@ xchar x, y;
 
     if (!uarmf && kickedobj->otyp == CORPSE
         && touch_petrifies(&mons[kickedobj->corpsenm]) && !Stone_resistance) {
-        You("用你的赤%s 踢%s.",
+        You("用你的赤%s踢%s.",
             makeplural(body_part(FOOT)),
             corpse_xname(kickedobj, (const char *) 0, CXN_PFX_THE));
         if (poly_when_stoned(youmonst.data) && polymon(PM_STONE_GOLEM)) {
@@ -582,18 +582,18 @@ xchar x, y;
         if ((!martial() && rn2(20) > ACURR(A_DEX))
             || IS_ROCK(levl[u.ux][u.uy].typ) || closed_door(u.ux, u.uy)) {
             if (Blind)
-                pline("它没有松散.");
+                pline("它没有松动.");
             else
-                pline("%s %s松散.",
+                pline("%s%s松动.",
                       The(distant_name(kickedobj, xname)),
                       otense(kickedobj, "没有"));
             return (!rn2(3) || martial());
         }
         if (Blind)
-            pline("它松散了.");
+            pline("它松动了.");
         else
             pline("%s %s了.", The(distant_name(kickedobj, xname)),
-                  otense(kickedobj, "松散"));
+                  otense(kickedobj, "松动"));
         obj_extract_self(kickedobj);
         newsym(x, y);
         if (costly && (!costly_spot(u.ux, u.uy)
@@ -1037,9 +1037,9 @@ dokick()
                         rnd_class(DILITHIUM_CRYSTAL, LUCKSTONE - 1), x, y,
                         FALSE, TRUE);
                 if (Blind)
-                    You("把%s踢松散了!", something);
+                    You("把%s踢散了!", something);
                 else {
-                    You("把一些装饰性的钱币和宝石踢松散了!");
+                    You("把一些装饰性的钱币和宝石踢散了!");
                     newsym(x, y);
                 }
                 /* prevent endless milking */

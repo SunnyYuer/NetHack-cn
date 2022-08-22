@@ -1480,7 +1480,7 @@ struct obj *obj;
         Sprintf(qbuf, "称一股%s液体为:",
                 OBJ_DESCR(objects[obj->otyp]));
     else
-        (void) safe_qbuf(qbuf, "称作什么给", ":", obj,
+        (void) safe_qbuf(qbuf, "给", "称作什么:", obj,
                          docall_xname, simpleonames, "thing");
     /* pointer to old name */
     str1 = &(objects[obj->otyp].oc_uname);

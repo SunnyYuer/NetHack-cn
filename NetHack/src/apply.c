@@ -2129,7 +2129,7 @@ long timeout;
         struct obj *mshelter = level.objects[mtmp->mx][mtmp->my];
 
         /* [m_monnam() yields accurate mon type, overriding hallucination] */
-        Sprintf(monnambuf, "%s", an(m_monnam(mtmp)));
+        Sprintf(monnambuf, "%s", m_monnam(mtmp));
         and_vanish[0] = '\0';
         if ((mtmp->minvis && !See_invisible)
             || (mtmp->data->mlet == S_MIMIC
@@ -2138,7 +2138,7 @@ long timeout;
 
         if (mtmp->mundetected) {
             if (hides_under(mtmp->data) && mshelter) {
-                Sprintf(and_vanish, "并%s在%s 下",
+                Sprintf(and_vanish, "并%s在%s下",
                         locomotion(mtmp->data, "爬行"), doname(mshelter));
             } else if (mtmp->data->mlet == S_MIMIC
                        || mtmp->data->mlet == S_EEL) {
@@ -2150,17 +2150,17 @@ long timeout;
         switch (figurine->where) {
         case OBJ_INVENT:
             if (Blind || suppress_see)
-                You_feel("%s 从你的背包中%s!", something,
-                         locomotion(mtmp->data, "掉落"));
+                You_feel("%s从你的背包%s出!", something,
+                         locomotion(mtmp->data, "掉"));
             else
-                You_see("%s %s出你的背包%s!", monnambuf,
-                        locomotion(mtmp->data, "掉落"), and_vanish);
+                You_see("%s从你的背包%s出来%s!", monnambuf,
+                        locomotion(mtmp->data, "掉"), and_vanish);
             break;
 
         case OBJ_FLOOR:
             if (cansee_spot && !silent) {
                 if (suppress_see)
-                    pline("%s 突然消失了!", xname(figurine));
+                    pline("%s突然消失了!", xname(figurine));
                 else
                     You_see("一个小雕像变成%s%s!", monnambuf,
                             and_vanish);
@@ -2181,8 +2181,8 @@ long timeout;
                     Strcpy(carriedby, "空水");
                 else
                     Strcpy(carriedby, "稀薄的空气");
-                You_see("%s 从%s里%s%s!", monnambuf, carriedby,
-                        locomotion(mtmp->data, "掉出来"),
+                You_see("%s从%s%s出来%s!", monnambuf, carriedby,
+                        locomotion(mtmp->data, "掉"),
                         and_vanish);
             }
             break;

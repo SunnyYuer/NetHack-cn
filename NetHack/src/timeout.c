@@ -882,7 +882,7 @@ long timeout;
             /* [bug?  m_monnam() yields accurate monster type
                regardless of hallucination] */
             Sprintf(monnambuf, "%s%s", siblings ? "一些" : "",
-                    siblings ? makeplural(m_monnam(mon)) : an(m_monnam(mon)));
+                    siblings ? makeplural(m_monnam(mon)) : m_monnam(mon));
             /* we don't learn the egg type here because learning
                an egg type requires either seeing the egg hatch
                or being familiar with the egg already,
@@ -894,13 +894,13 @@ long timeout;
         case OBJ_INVENT:
             knows_egg = TRUE; /* true even if you are blind */
             if (!cansee_hatchspot)
-                You_feel("%s从你的背包%s!", something,
-                         locomotion(mon->data, "掉落"));
+                You_feel("%s从你的背包%s出!", something,
+                         locomotion(mon->data, "掉"));
             else
-                You_see("%s %s出你的背包!", monnambuf,
-                        locomotion(mon->data, "掉落"));
+                You_see("%s从你的背包%s出来!", monnambuf,
+                        locomotion(mon->data, "掉"));
             if (yours) {
-                pline("%s哭声听起来像在叫 \" %s%s\"",
+                pline("%s哭声听起来像在叫\"%s%s\"",
                       siblings ? "它们的" : "它的",
                       flags.female ? "妈咪" : "爸爸", egg->spe ? "." : "?");
             } else if (mon->data->mlet == S_DRAGON && !Deaf) {
@@ -911,7 +911,7 @@ long timeout;
         case OBJ_FLOOR:
             if (cansee_hatchspot) {
                 knows_egg = TRUE;
-                You_see("%s 孵化.", monnambuf);
+                You_see("%s孵化了.", monnambuf);
                 redraw = TRUE; /* update egg's map location */
             }
             break;
@@ -930,8 +930,8 @@ long timeout;
                 } else {
                     Strcpy(carriedby, "稀薄的空气");
                 }
-                You_see("%s %s出%s!", monnambuf,
-                        locomotion(mon->data, "掉落"), carriedby);
+                You_see("%s从%s%s出来!", monnambuf, carriedby,
+                        locomotion(mon->data, "掉"));
             }
             break;
 #if 0

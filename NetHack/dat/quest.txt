@@ -2707,9 +2707,9 @@ The have returned to %ns lair.
 %l并准许你安全通过。"
 %E
 %Cc Tou 00035
-只有你对%d的信念使你不颤抖.  你%x
-%ns henchlings 工艺品到处都是.
-%E [你%x%ns henchlings 工艺品.]
+只有你对%d的信念使你不颤抖.  你到处都能
+%x%ns手下的手笔.
+%E [你到处都能%x%ns手下的手笔.]
 %Cp Tou 00036
 你知道这个时候你必须找到并消灭%n.
 %E

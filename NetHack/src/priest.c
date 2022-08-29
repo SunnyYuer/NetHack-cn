@@ -926,7 +926,7 @@ const char *suffix;
     Sprintf(buf, "%s", pio);
     if (suffix && (!showneg || u.ualign.record >= 0)) {
         if (u.ualign.record != 3)
-            Strcat(buf, " ");
+            Strcat(buf, "");
         Strcat(buf, suffix);
     }
     return buf;

@@ -1622,8 +1622,8 @@ static const char have_been[] = "一直是", have_never[] = "从来没有",
 
 #define enl_msg(prefix, present, past, suffix, ps) \
     enlght_line(prefix, final ? past : present, suffix, ps)
-#define you_are(attr, ps) enl_msg("", "", "", attr, ps)
-#define you_have(attr, ps) enl_msg(You_, "", "", attr, ps)
+#define you_are(attr, ps) enl_msg(You_, "", "", attr, ps)
+#define you_have(attr, ps) enl_msg(You_, have, had, attr, ps)
 #define you_can(attr, ps) enl_msg(You_, can, could, attr, ps)
 #define you_have_been(goodthing) enl_msg(You_, have_been, were, goodthing, "")
 #define you_have_never(badthing) \
@@ -1650,7 +1650,7 @@ const char *start, *middle, *end, *ps;
 {
     char buf[BUFSZ];
 
-    Sprintf(buf, " %s%s%s%s.", start, middle, end, ps);
+    Sprintf(buf, "  %s%s%s%s.", start, middle, end, ps);
     enlght_out(buf);
 }
 
@@ -1686,7 +1686,7 @@ char *outbuf;
     /* "bonus <foo>" (to hit) vs "<bar> bonus" (damage, defense) */
     invrt = TRUE;
 
-    Sprintf(outbuf, "有%s %s %s", modif, invrt ? inctyp : bonus,
+    Sprintf(outbuf, "%s%s%s", modif, invrt ? inctyp : bonus,
             invrt ? bonus : inctyp);
     if (final || wizard)
         Sprintf(eos(outbuf), " (%s%d)", (incamt > 0) ? "+" : "", incamt);
@@ -1714,7 +1714,7 @@ int final;
         category_name = "未知";
         break;
     }
-    Sprintf(buf, " %s %s 伤害", (final || wizard) ? "一半的" : "减少的",
+    Sprintf(buf, "%s%s伤害", (final || wizard) ? "一半的" : "减少的",
             category_name);
     enl_msg(You_, "受到", "受到", buf, from_what(category));
 }
@@ -1858,7 +1858,7 @@ int final;
         /* here we always use current gender, not saved role gender */
         if (!is_male(uasmon) && !is_female(uasmon) && !is_neuter(uasmon))
             Sprintf(tmpbuf, "%s ", genders[flags.female ? 1 : 0].adj);
-        Sprintf(buf, "你%s是 %s%s 的外貌", !final ? "当前 " : "", tmpbuf,
+        Sprintf(buf, "%s是%s%s的外貌", !final ? "当前" : "", tmpbuf,
                 uasmon->mname);
         you_are(buf, "");
     }
@@ -1868,17 +1868,16 @@ int final;
     if (!urole.name.f
         && ((urole.allow & ROLE_GENDMASK) == (ROLE_MALE | ROLE_FEMALE)
             || innategend != flags.initgend))
-        Sprintf(tmpbuf, "%s ", genders[innategend].adj);
+        Sprintf(tmpbuf, "%s", genders[innategend].adj);
     buf[0] = '\0';
-    Strcpy(buf,"你");
     if (Upolyd)
-        Strcat(buf, "实际上 "); /* "You are actually a ..." */
+        Strcat(buf, "实际上"); /* "You are actually a ..." */
     if (!strcmpi(rank_titl, role_titl)) {
         /* omit role when rank title matches it */
-        Sprintf(eos(buf), "%s, 等级%d %s%s", rank_titl, u.ulevel,
+        Sprintf(eos(buf), "是一位%s, 等级%d %s%s", rank_titl, u.ulevel,
                 tmpbuf, urace.noun);
     } else {
-        Sprintf(eos(buf), "是一位%s, 等级%d  %s%s %s", rank_titl, u.ulevel,
+        Sprintf(eos(buf), "是一位%s, 等级%d  %s%s%s", rank_titl, u.ulevel,
                 tmpbuf, urace.adj, role_titl);
     }
     you_are(buf, "");
@@ -1886,7 +1885,7 @@ int final;
     /* report alignment (bypass you_are() in order to omit ending period);
        adverb is used to distinguish between temporary change (helm of opp.
        alignment), permanent change (one-time conversion), and original */
-    Sprintf(buf, " %s%s%s阵营, %s肩负着%s 的使命",
+    Sprintf(buf, "  %s%s%s阵营, %s肩负着%s的使命",
             You_, !final ? are : were,
             align_str(u.ualign.type),
             /* helm of opposite alignment (might hide conversion) */
@@ -1910,16 +1909,16 @@ int final;
     /* show the rest of this game's pantheon (finishes previous sentence)
        [appending "also Moloch" at the end would allow for straightforward
        trailing "and" on all three aligned entries but looks too verbose] */
-    Sprintf(buf, " %s敌对的是", !final ? "" : "");
+    Sprintf(buf, "  %s敌对的是", !final ? "" : "");
     if (u.ualign.type != A_LAWFUL)
-        Sprintf(eos(buf), " %s(%s) 和", align_gname(A_LAWFUL),
+        Sprintf(eos(buf), "%s(%s)和", align_gname(A_LAWFUL),
                 align_str(A_LAWFUL));
     if (u.ualign.type != A_NEUTRAL)
-        Sprintf(eos(buf), " %s(%s)%s", align_gname(A_NEUTRAL),
+        Sprintf(eos(buf), "%s(%s)%s", align_gname(A_NEUTRAL),
                 align_str(A_NEUTRAL),
-                (u.ualign.type != A_CHAOTIC) ? " 和" : "");
+                (u.ualign.type != A_CHAOTIC) ? "和" : "");
     if (u.ualign.type != A_CHAOTIC)
-        Sprintf(eos(buf), " %s(%s)", align_gname(A_CHAOTIC),
+        Sprintf(eos(buf), "%s(%s)", align_gname(A_CHAOTIC),
                 align_str(A_CHAOTIC));
     Strcat(buf, "."); /* terminate sentence */
     enlght_out(buf);
@@ -1933,14 +1932,14 @@ int final;
                + ((u.ualignbase[A_CURRENT] != u.ualignbase[A_ORIGINAL])
                   ? 2 : 0));
     if (difalgn & 1) { /* have temporary alignment so report permanent one */
-        Sprintf(buf, "你实际上是 %s阵营", align_str(u.ualignbase[A_CURRENT]));
+        Sprintf(buf, "实际上是%s阵营", align_str(u.ualignbase[A_CURRENT]));
         you_are(buf, "");
         difalgn &= ~1; /* suppress helm from "started out <foo>" message */
     }
     if (difgend || difalgn) { /* sex change or perm align change or both */
-        Sprintf(buf, " 你最开始是 %s%s%s.",
+        Sprintf(buf, "  你最开始是%s%s%s.",
                 difgend ? genders[flags.initgend].adj : "",
-                (difgend && difalgn) ? " 和 " : "",
+                (difgend && difalgn) ? "和" : "",
                 difalgn ? align_str(u.ualignbase[A_ORIGINAL]) : "");
         enlght_out(buf);
     }
@@ -1982,7 +1981,7 @@ int final;
 
     /* this is shown even if the 'time' option is off */
     if (moves == 1L) {
-        you_have("才刚刚开始了你的冒险", "");
+        you_are("才刚刚开始了你的冒险", "");
     } else {
         /* 'turns' grates on the nerves in this context... */
         Sprintf(buf, "%ld回合之前进入的地牢", moves);
@@ -2025,7 +2024,7 @@ int final;
            the start of the session and it might be past midnight (or
            days later if the game has been paused without save/restore),
            so phrase this similar to the start up message */
-        Sprintf(buf, " 坏的事情%s13号星期五.",
+        Sprintf(buf, "  坏的事情%s13号星期五.",
                 !final ? "会发生在"
                 : (final == ENL_GAMEOVERALIVE) ? "会发生在"
                   /* there's no may to tell whether -1 Luck made a
@@ -2039,7 +2038,7 @@ int final;
         /* [flags.showexp currently does not matter; should it?] */
 
         /* experience level is already shown above */
-        Sprintf(buf, "有%-1ld经验值", u.uexp);
+        Sprintf(buf, "%-1ld经验值", u.uexp);
         /* TODO?
          *  Remove wizard-mode restriction since patient players can
          *  determine the numbers needed without resorting to spoilers
@@ -2051,7 +2050,7 @@ int final;
         if (ulvl < 30 && (final || wizard)) {
             long nxtlvl = newuexp(ulvl), delta = nxtlvl - u.uexp;
 
-            Sprintf(eos(buf), ", %s需要%ld%s%s等级%d",
+            Sprintf(eos(buf), ", %s需要%ld点%s%s等级%d",
                     (u.uexp > 0) ? "还" : "", delta,
                     /* present tense=="needed", past tense=="were needed" */
                     !final ? "" : (delta == 1L) ? "" : "",
@@ -2091,31 +2090,35 @@ int final;
         hp = 0;
     /* "1 out of 1" rather than "all" if max is only 1; should never happen */
     if (hp == hpmax && hpmax > 1)
-        Sprintf(buf, "有%d HP", hpmax);
+        Sprintf(buf, "%d HP", hpmax);
     else
-        Sprintf(buf, "有%d HP, 上限%d HP", hp, hpmax);
+        Sprintf(buf, "%d HP, 上限%d HP", hp, hpmax);
     you_have(buf, "");
 
     /* low max energy is feasible, so handle couple of extra special cases */
-    if (pwmax == 0 || (pw == pwmax && pwmax == 2)) /* both: "all 2" is silly */
+    if (pwmax == 0 || (pw == pwmax && pwmax == 2)) { /* both: "all 2" is silly */
         Sprintf(buf, "%s %s", !pwmax ? "没有" : "有2", Power);
-    else if (pw == pwmax && pwmax > 2)
-        Sprintf(buf, "有%d %s", pwmax, Power);
-    else
-        Sprintf(buf, "有%d %s, 上限%d %s", pw, Power, pwmax, Power);
-    you_have(buf, "");
+        you_are(buf, "");
+    }
+    else {
+        if (pw == pwmax && pwmax > 2)
+            Sprintf(buf, "%d %s", pwmax, Power);
+        else
+            Sprintf(buf, "%d %s, 上限%d %s", pw, Power, pwmax, Power);
+        you_have(buf, "");
+    }
 
     if (Upolyd) {
         switch (mons[u.umonnum].mlevel) {
         case 0:
             /* status line currently being explained shows "HD:0" */
-            Strcpy(buf, "有0 生命骰 (实际1/2)");
+            Strcpy(buf, "0 生命骰 (实际1/2)");
             break;
         case 1:
-            Strcpy(buf, "有1 生命骰");
+            Strcpy(buf, "1 生命骰");
             break;
         default:
-            Sprintf(buf, "有%d 生命骰", mons[u.umonnum].mlevel);
+            Sprintf(buf, "%d 生命骰", mons[u.umonnum].mlevel);
             break;
         }
         you_have(buf, "");
@@ -2229,7 +2232,7 @@ int mode, final, attrindx;
 
     acurrent = ACURR(attrindx);
     (void) attrval(attrindx, acurrent, valubuf); /* Sprintf(valubuf,"%d",) */
-    Sprintf(subjbuf, "你的%s ", attrname[attrindx]);
+    Sprintf(subjbuf, "你的%s", attrname[attrindx]);
 
     if (!hide_innate_value) {
         /* show abase, amax, and/or attrmax if acurr doesn't match abase
@@ -2302,7 +2305,7 @@ int final;
     /* not a traditional status but inherently obvious to player; more
        detail given below (attributes section) for magic enlightenment */
     if (Upolyd) {
-        Strcpy(buf, "变形");
+        Strcpy(buf, "变形了");
         if (ugenocided())
             Sprintf(eos(buf), "且%s内心%s",
                     final ? "感觉" : "感觉", udeadinside());
@@ -2311,9 +2314,9 @@ int final;
     /* not a trouble, but we want to display riding status before maybe
        reporting steed as trapped or hero stuck to cursed saddle */
     if (Riding) {
-        Sprintf(buf, "骑着 %s", steedname);
+        Sprintf(buf, "骑着%s", steedname);
         you_are(buf, "");
-        Sprintf(eos(youtoo), "和 %s ", steedname);
+        Sprintf(eos(youtoo), "和%s", steedname);
     }
     /* other movement situations that hero should always know */
     if (Levitation) {
@@ -2327,10 +2330,10 @@ int final;
     if (Underwater) {
         you_are("在水下", "");
     } else if (u.uinwater) {
-        you_are(Swimming ? "游泳" : "在水中", from_what(SWIMMING));
+        you_are(Swimming ? "在游泳" : "在水中", from_what(SWIMMING));
     } else if (walking_on_water()) {
         /* show active Wwalking here, potential Wwalking elsewhere */
-        Sprintf(buf, "走在 %s上",
+        Sprintf(buf, "走在%s上",
                 is_pool(u.ux, u.uy) ? "水面"
                 : is_lava(u.ux, u.uy) ? "熔岩"
                   : surface(u.ux, u.uy)); /* catchall; shouldn't happen */
@@ -2342,13 +2345,13 @@ int final;
     /* internal troubles, mostly in the order that prayer ranks them */
     if (Stoned) {
         if (final && (Stoned & I_SPECIAL))
-            enlght_out(" 你变成了石头.");
+            enlght_out("  你变成了石头.");
         else
             you_are("正在石化", "");
     }
     if (Slimed) {
         if (final && (Slimed & I_SPECIAL))
-            enlght_out(" 你变成了黏液.");
+            enlght_out("  你变成了黏液.");
         else
             you_are("正在污秽化", "");
     }
@@ -2357,7 +2360,7 @@ int final;
             you_are("被埋葬", "");
         } else {
             if (final && (Strangled & I_SPECIAL)) {
-                enlght_out(" 你死于窒息.");
+                enlght_out("  你死于窒息.");
             } else {
                 Strcpy(buf, "被窒息");
                 if (wizard)
@@ -2372,7 +2375,7 @@ int final;
            puts TermIll before FoodPois and death due to timeout reports
            terminal illness if both are in effect, so do the same here */
         if (final && (Sick & I_SPECIAL)) {
-            Sprintf(buf, " %s死于%s.", You_, /* has trailing space */
+            Sprintf(buf, "  %s死于%s.", You_, /* has trailing space */
                     (u.usick_type & SICK_NONVOMITABLE)
                     ? "疾病晚期" : "食物中毒");
             enlght_out(buf);
@@ -2388,11 +2391,11 @@ int final;
     if (Vomiting)
         you_are("作呕", "");
     if (Stunned)
-        you_are("眩晕", "");
+        you_are("眩晕了", "");
     if (Confusion)
-        you_are("混乱", "");
+        you_are("混乱了", "");
     if (Hallucination)
-        you_are("幻觉", "");
+        you_are("出现幻觉", "");
     if (Blind) {
         /* from_what() (currently wizard-mode only) checks !haseyes()
            before u.uroleplay.blind, so we should too */
@@ -2409,12 +2412,12 @@ int final;
         you_are(buf, !haseyes(youmonst.data) ? "" : from_what(BLINDED));
     }
     if (Deaf)
-        you_are("聋的", from_what(DEAF));
+        you_are("是聋的", from_what(DEAF));
 
     /* external troubles, more or less */
     if (Punished) {
         if (uball) {
-            Sprintf(buf, "被拴着 %s", simpleonames(uball));
+            Sprintf(buf, "被拴着%s", simpleonames(uball));
         } else {
             impossible("Punished without uball?");
             Strcpy(buf, "punished");
@@ -2439,8 +2442,8 @@ int final;
         if (u.usteed) { /* not `Riding' here */
             Sprintf(buf, "%s%s ", anchored ? "你和" : "", steedname);
             *buf = highc(*buf);
-            enl_msg(buf, (anchored ? "是" : "是"),
-                    (anchored ? "是" : "是"), predicament, "");
+            enl_msg(buf, (anchored ? "" : ""),
+                    (anchored ? "" : ""), predicament, "");
         } else
             you_are(predicament, "");
     } /* (u.utrap) */
@@ -2471,35 +2474,35 @@ int final;
             if (wizard && steedname) {
                 Strcpy(buf, steedname);
                 *buf = highc(*buf);
-                enl_msg(buf, " 有", " 有", " 受伤的腿", "");
+                enl_msg(buf, "有", "有", "受伤的腿", "");
             }
         } else {
-            Sprintf(buf, "有受伤的%s", makeplural(body_part(LEG)));
+            Sprintf(buf, "受伤的%s", makeplural(body_part(LEG)));
             you_have(buf, "");
         }
     }
     if (Glib) {
-        Sprintf(buf, "有光滑的%s", fingers_or_gloves(TRUE));
+        Sprintf(buf, "光滑的%s", fingers_or_gloves(TRUE));
         if (wizard)
             Sprintf(eos(buf), " (%ld)", (Glib & TIMEOUT));
         you_have(buf, "");
     }
     if (Fumbling) {
         if (magic || cause_known(FUMBLING))
-            enl_msg(You_, "笨拙", "笨拙", "", from_what(FUMBLING));
+            enl_msg(You_, "很笨拙", "很笨拙", "", from_what(FUMBLING));
     }
     if (Sleepy) {
         if (magic || cause_known(SLEEPY)) {
             Strcpy(buf, from_what(SLEEPY));
             if (wizard)
                 Sprintf(eos(buf), " (%ld)", (HSleepy & TIMEOUT));
-            enl_msg("你失控地 ", "陷入", "陷入", " 沉睡", buf);
+            enl_msg("你", "陷入了", "陷入了", "沉睡", buf);
         }
     }
     /* hunger/nutrition */
     if (Hunger) {
         if (magic || cause_known(HUNGER))
-            enl_msg(You_, "饥饿", "饥饿", " 得很迅速",
+            enl_msg(You_, "饿", "饿", "得很快",
                     from_what(HUNGER));
     }
     Strcpy(buf, hu_stat[u.uhs]); /* hunger status; omitted if "normal" */
@@ -2535,9 +2538,9 @@ int final;
             adj = "not possible";
             break;
         }
-        Sprintf(eos(buf), "; 移动速度 %s%s",  adj,
-                (cap < OVERLOADED) ? " 慢" : "");
-        you_are(buf, "");
+        Sprintf(eos(buf), "; 移动速度%s%s",  adj,
+                (cap < OVERLOADED) ? "慢" : "");
+        you_have(buf, "");
     } else {
         /* last resort entry, guarantees Status section is non-empty
            (no longer needed for that purpose since weapon status added;
@@ -2550,7 +2553,7 @@ int final;
         you_are(uarmg ? "空手" /* gloves imply hands */
                       : humanoid(youmonst.data)
                          /* hands but no weapon and no gloves */
-                         ? "光着手"
+                         ? "赤着手"
                          /* alternate phrasing for paws or lack of hands */
                          : "没有拿着任何东西",
                 "");
@@ -2564,7 +2567,7 @@ int final;
     } else {
         const char *what = weapon_descr(uwep);
 
-        Sprintf(buf, "拿着 %s", what);
+        Sprintf(buf, "拿着%s", what);
         you_are(buf, "");
     }
     /*
@@ -2590,7 +2593,7 @@ int final;
             Sprintf(eos(buf), ", 而且%s",
                     !final ? "可以提升" : "本可以提升");
         if (hav)
-            you_have(buf, "");
+            you_are(buf, "");
         else
             you_are(buf, "");
     }
@@ -2621,9 +2624,9 @@ int final;
     enlght_out(final ? "最终属性:" : "当前属性:");
 
     if (u.uevent.uhand_of_elbereth) {
-        static const char *const hofe_titles[3] = { "伊尔碧绿丝之手",
-                                                    "平衡使者",
-                                                    "亚略的荣耀" };
+        static const char *const hofe_titles[3] = { "是伊尔碧绿丝之手",
+                                                    "是平衡使者",
+                                                    "是亚略的荣耀" };
         you_are(hofe_titles[u.uevent.uhand_of_elbereth - 1], "");
     }
 
@@ -2635,34 +2638,34 @@ int final;
 
     if (wizard) {
         Sprintf(buf, " %d", u.ualign.record);
-        enl_msg("你的阵营信仰值 ", "为", "为", buf, "");
+        enl_msg("你的阵营值", "为", "为", buf, "");
     }
 
     /*** Resistances to troubles ***/
     if (Invulnerable)
-        you_are("绝对防御", from_what(INVULNERABLE));
+        you_have("绝对防御", from_what(INVULNERABLE));
     if (Antimagic)
         you_are("受魔法的保护", from_what(ANTIMAGIC));
     if (Fire_resistance)
-        you_are("火焰抵抗", from_what(FIRE_RES));
+        you_have("火焰抵抗", from_what(FIRE_RES));
     if (Cold_resistance)
-        you_are("冰霜抵抗", from_what(COLD_RES));
+        you_have("冰霜抵抗", from_what(COLD_RES));
     if (Sleep_resistance)
-        you_are("沉睡抵抗", from_what(SLEEP_RES));
+        you_have("沉睡抵抗", from_what(SLEEP_RES));
     if (Disint_resistance)
-        you_are("分解抵抗", from_what(DISINT_RES));
+        you_have("分解抵抗", from_what(DISINT_RES));
     if (Shock_resistance)
-        you_are("电击抵抗", from_what(SHOCK_RES));
+        you_have("电击抵抗", from_what(SHOCK_RES));
     if (Poison_resistance)
-        you_are("毒性抵抗", from_what(POISON_RES));
+        you_have("毒性抵抗", from_what(POISON_RES));
     if (Acid_resistance)
-        you_are("酸性抵抗", from_what(ACID_RES));
+        you_have("酸性抵抗", from_what(ACID_RES));
     if (Drain_resistance)
-        you_are("降级抵抗", from_what(DRAIN_RES));
+        you_have("降级抵抗", from_what(DRAIN_RES));
     if (Sick_resistance)
-        you_are("免疫疾病", from_what(SICK_RES));
+        you_have("免疫疾病", from_what(SICK_RES));
     if (Stone_resistance)
-        you_are("石化抵抗", from_what(STONE_RES));
+        you_have("石化抵抗", from_what(STONE_RES));
     if (Halluc_resistance)
         enl_msg(You_, "抵抗", "抵抗", " 幻觉",
                 from_what(HALLUC_RES));
@@ -2674,24 +2677,24 @@ int final;
         you_can("看见", from_what(-BLINDED)); /* Eyes of the Overworld */
     if (See_invisible) {
         if (!Blind)
-            enl_msg(You_, "能看见", "能看见", " 隐形的怪物", from_what(SEE_INVIS));
+            enl_msg(You_, "能看见", "能看见", "隐形的怪物", from_what(SEE_INVIS));
         else
             enl_msg(You_, "将看见", "将看见",
-                    " 隐形的怪物当没有失明的时候", from_what(SEE_INVIS));
+                    "隐形的怪物当你没有失明时", from_what(SEE_INVIS));
     }
     if (Blind_telepat)
-        you_are("能感知怪物", from_what(TELEPAT));
+        you_can("感知怪物", from_what(TELEPAT));
     if (Warning)
         you_are("会警报怪物", from_what(WARNING));
     if (Warn_of_mon && context.warntype.obj) {
-        Sprintf(buf, "能察觉到%s 的存在",
+        Sprintf(buf, "察觉到%s的存在",
                 (context.warntype.obj & M2_ORC) ? "兽人"
                 : (context.warntype.obj & M2_ELF) ? "精灵"
                 : (context.warntype.obj & M2_DEMON) ? "恶魔" : something);
-        you_are(buf, from_what(WARN_OF_MON));
+        you_can(buf, from_what(WARN_OF_MON));
     }
     if (Warn_of_mon && context.warntype.polyd) {
-        Sprintf(buf, "能察觉到%s 的存在",
+        Sprintf(buf, "察觉到%s的存在",
                 ((context.warntype.polyd & (M2_HUMAN | M2_ELF))
                  == (M2_HUMAN | M2_ELF))
                     ? "人类和精灵"
@@ -2704,30 +2707,30 @@ int final;
                                       : (context.warntype.polyd & M2_DEMON)
                                             ? "恶魔"
                                             : "某些怪物");
-        you_are(buf, "");
+        you_can(buf, "");
     }
     if (Warn_of_mon && context.warntype.speciesidx >= LOW_PM) {
-        Sprintf(buf, "能察觉到%s 的存在",
+        Sprintf(buf, "察觉到%s的存在",
                 makeplural(mons[context.warntype.speciesidx].mname));
-        you_are(buf, from_what(WARN_OF_MON));
+        you_can(buf, from_what(WARN_OF_MON));
     }
     if (Undead_warning)
         you_are("会警报亡灵", from_what(WARN_UNDEAD));
     if (Searching)
-        you_have("会自动搜索", from_what(SEARCHING));
+        you_are("会自动搜索", from_what(SEARCHING));
     if (Clairvoyant)
-        you_are("千里眼", from_what(CLAIRVOYANT));
+        you_have("千里眼", from_what(CLAIRVOYANT));
     else if ((HClairvoyant || EClairvoyant) && BClairvoyant) {
         Strcpy(buf, from_what(-CLAIRVOYANT));
         if (!cnstrcmp(buf, "是因为"))
             /* overwrite substring; strncpy doesn't add terminator */
             (void) strncpy(buf, "要不是", strlen("要不是"));
-        enl_msg(You_, "可以有", "可以有", " 千里眼", buf);
+        enl_msg(You_, "可以有", "可以有", "千里眼", buf);
     }
     if (Infravision)
-        you_have("有夜视能力", from_what(INFRAVISION));
+        you_have("夜视能力", from_what(INFRAVISION));
     if (Detect_monsters)
-        you_are("察觉到怪物的存在", "");
+        you_can("察觉到怪物的存在", "");
     if (u.umconf)
         you_are("会混乱怪物", "");
 
@@ -2742,27 +2745,27 @@ int final;
         /* the sum might be 0 (+0 ring or two which negate each other);
            that yields "you are charismatic" (which isn't pointless
            because it potentially impacts seduction attacks) */
-        Sprintf(buf, "你具有%s魅力",
-                (adorn > 0) ? "更多的 " : (adorn < 0) ? "更少的 " : "");
+        Sprintf(buf, "具有%s魅力",
+                (adorn > 0) ? "更多的" : (adorn < 0) ? "更少的" : "");
         you_are(buf, from_what(ADORNED));
     }
     if (Invisible)
-        you_are("隐形的", from_what(INVIS));
+        you_are("是隐形的", from_what(INVIS));
     else if (Invis)
         you_are("对别人来说是隐形的", from_what(INVIS));
     /* ordinarily "visible" is redundant; this is a special case for
        the situation when invisibility would be an expected attribute */
     else if ((HInvis || EInvis) && BInvis)
-        you_are("可见的", from_what(-INVIS));
+        you_are("是可见的", from_what(-INVIS));
     if (Displaced)
-        you_are("位移", from_what(DISPLACED));
+        you_have("位移幻影", from_what(DISPLACED));
     if (Stealth)
-        you_are("潜行", from_what(STEALTH));
+        you_have("潜行", from_what(STEALTH));
     if (Aggravate_monster)
-        enl_msg("你会触怒", "", "", " 怪物",
+        enl_msg("你会触怒", "", "", "怪物",
                 from_what(AGGRAVATE_MONSTER));
     if (Conflict)
-        enl_msg("你会引起", "", "", " 冲突", from_what(CONFLICT));
+        enl_msg("你会引起", "", "", "冲突", from_what(CONFLICT));
 
     /*** Transportation ***/
     if (Jumping)
@@ -2770,7 +2773,7 @@ int final;
     if (Teleportation)
         you_can("传送", from_what(TELEPORT));
     if (Teleport_control)
-        you_have("有传送控制", from_what(TELEPORT_CONTROL));
+        you_have("传送控制", from_what(TELEPORT_CONTROL));
     /* actively levitating handled earlier as a status condition */
     if (BLevitation) { /* levitation is blocked */
         long save_BLev = BLevitation;
@@ -2870,13 +2873,13 @@ int final;
         enlght_halfdmg(HALF_SPDAM, final);
     /* polymorph and other shape change */
     if (Protection_from_shape_changers)
-        you_are("变形保护",
+        you_have("变形保护",
                 from_what(PROT_FROM_SHAPE_CHANGERS));
     if (Unchanging) {
         const char *what = 0;
 
         if (!Upolyd) /* Upolyd handled below after current form */
-            you_have("不能改变你当前的外貌",
+            you_are("不能改变你当前的外貌",
                     from_what(UNCHANGING));
         /* blocked shape changes */
         if (Polymorph)
@@ -2890,10 +2893,10 @@ int final;
                     "");
         }
     } else if (Polymorph) {
-        you_are("周期性地变形", from_what(POLYMORPH));
+        you_are("会周期性地变形", from_what(POLYMORPH));
     }
     if (Polymorph_control)
-        you_have("有变形控制", from_what(POLYMORPH_CONTROL));
+        you_have("变形控制", from_what(POLYMORPH_CONTROL));
     if (Upolyd && u.umonnum != u.ulycn
         /* if we've died from turning into slime, we're polymorphed
            right now but don't want to list it as a temporary attribute
@@ -2901,7 +2904,7 @@ int final;
         && !(final == ENL_GAMEOVERDEAD
              && u.umonnum == PM_GREEN_SLIME && !Unchanging)) {
         /* foreign shape (except were-form which is handled below) */
-        Sprintf(buf, "已变形为 %s", youmonst.data->mname);
+        Sprintf(buf, "已变形为%s", youmonst.data->mname);
         if (wizard)
             Sprintf(eos(buf), " (%d)", u.mtimedone);
         you_are(buf, "");
@@ -2912,54 +2915,54 @@ int final;
         /* "you are a werecreature [in beast form]" */
         Strcpy(buf, mons[u.ulycn].mname);
         if (u.umonnum == u.ulycn) {
-            Strcat(buf, " 野兽形态");
+            Strcat(buf, "是野兽形态");
             if (wizard)
                 Sprintf(eos(buf), " (%d)", u.mtimedone);
         }
         you_are(buf, "");
     }
     if (Unchanging && Upolyd) /* !Upolyd handled above */
-        you_have("不能改变你当前的外貌", from_what(UNCHANGING));
+        you_are("不能改变你当前的外貌", from_what(UNCHANGING));
     if (Hate_silver)
         you_are("会受到银制品的伤害", "");
     /* movement and non-armor-based protection */
     if (Fast)
         you_are(Very_fast ? "速度非常快" : "速度快", from_what(FAST));
     if (Reflecting)
-        you_have("有反射的能力", from_what(REFLECTING));
+        you_have("反射", from_what(REFLECTING));
     if (Free_action)
-        you_have("有自由行动的能力", from_what(FREE_ACTION));
+        you_have("自由行动", from_what(FREE_ACTION));
     if (Fixed_abil)
-        you_have("能固定能力", from_what(FIXED_ABIL));
+        you_have("固定的能力", from_what(FIXED_ABIL));
     if (Lifesaved)
-        enl_msg("你 ", "能", "能", " 复活", "");
+        enl_msg("你", "能", "能", "复活", "");
 
     /*** Miscellany ***/
     if (Luck) {
         ltmp = abs((int) Luck);
         Sprintf(buf, "%s%s幸运",
-                ltmp >= 10 ? "极其 " : ltmp >= 5 ? "非常 " : "",
+                ltmp >= 10 ? "极其" : ltmp >= 5 ? "非常" : "",
                 Luck < 0 ? "不" : "");
         if (wizard)
             Sprintf(eos(buf), " (%d)", Luck);
         you_are(buf, "");
     } else if (wizard)
-        enl_msg("你的幸运值 ", "为", "为", " 0", "");
+        enl_msg("你的幸运值", "为", "为", " 0", "");
     if (u.moreluck > 0)
-        you_have("有额外的幸运", "");
+        you_have("额外的幸运", "");
     else if (u.moreluck < 0)
-        you_have("被减少了幸运", "");
+        you_are("被减少了幸运", "");
     if (carrying(LUCKSTONE) || stone_luck(TRUE)) {
         ltmp = stone_luck(FALSE);
         if (ltmp <= 0)
-            enl_msg("坏运气 ", "不会", "不会", " 消失", "");
+            enl_msg("坏运气", "不会", "不会", "消失", "");
         if (ltmp >= 0)
-            enl_msg("好运气 ", "不会", "不会", " 消失", "");
+            enl_msg("好运气", "不会", "不会", "消失", "");
     }
 
     if (u.ugangr) {
         Sprintf(buf, "对你%s生气",
-                u.ugangr > 6 ? "极其 " : u.ugangr > 3 ? "非常 " : "");
+                u.ugangr > 6 ? "极其" : u.ugangr > 3 ? "非常" : "");
         if (wizard)
             Sprintf(eos(buf), " (%d)", u.ugangr);
         enl_msg(u_gname(), " ", " ", buf, "");
@@ -2975,11 +2978,11 @@ int final;
             Sprintf(buf, "%s能%s平安地祈祷%s", can_pray(FALSE) ? "" : "不 ",
                     final ? " " : "", final ? "" : "");
 #else
-            Sprintf(buf, "%s能平安地祈祷", can_pray(FALSE) ? "" : "不 ");
+            Sprintf(buf, "%s能平安地祈祷", can_pray(FALSE) ? "" : "不");
 #endif
             if (wizard)
                 Sprintf(eos(buf), " (%d)", u.ublesscnt);
-            you_have(buf, "");
+            you_are(buf, "");
         }
     }
 
@@ -3008,13 +3011,13 @@ int final;
 
         buf[0] = '\0';
         if (final < 2) { /* still in progress, or quit/escaped/ascended */
-            p = "活着之前被杀死了 ";
+            p = "活着之前被杀死了";
             switch (u.umortality) {
             case 0:
                 p = !final ? (char *) 0 : "活着";
                 break;
             default:
-                Sprintf(buf, "%d 次", u.umortality);
+                Sprintf(buf, "%d次", u.umortality);
                 break;
             }
         } else { /* game ended in character's death */
@@ -3025,7 +3028,7 @@ int final;
             case 1:
                 break; /* just "are dead" */
             default:
-                Sprintf(buf, " (第%d 次!)", u.umortality);
+                Sprintf(buf, " (第%d次!)", u.umortality);
                 break;
             }
         }
@@ -3202,7 +3205,7 @@ int msgflag;          /* for variant message phrasing */
                 struct trap *t = t_at(u.ux, u.uy);
 
                 Sprintf(bp, "在一个%s坑里",
-                        (t && t->ttyp == SPIKED_PIT) ? "有钉子的 " : "");
+                        (t && t->ttyp == SPIKED_PIT) ? "有钉子的" : "");
             } else
                 Sprintf(bp, "在%s上", surface(u.ux, u.uy));
         }
@@ -3242,7 +3245,7 @@ int final;
     putstr(en_win, 0, "自愿挑战:");
 
     if (u.uroleplay.blind)
-        you_have("自生来就失明", "");
+        you_are("自生来就失明", "");
     if (u.uroleplay.nudist)
         you_have_been("忠实的裸体主义者");
 
@@ -3260,7 +3263,7 @@ int final;
     if (!u.uconduct.weaphit) {
         you_have_never("用武器攻击");
     } else if (wizard) {
-        Sprintf(buf, "用武器%ld 次", u.uconduct.weaphit);
+        Sprintf(buf, "用武器%ld次", u.uconduct.weaphit);
         you_have_X(buf);
     }
     if (!u.uconduct.killer)
@@ -3269,7 +3272,7 @@ int final;
     if (!u.uconduct.literate) {
         you_have_been("文盲");
     } else if (wizard) {
-        Sprintf(buf, "阅读物品或雕刻%ld 次", u.uconduct.literate);
+        Sprintf(buf, "阅读物品或雕刻%ld次", u.uconduct.literate);
         you_have_X(buf);
     }
 
@@ -3277,28 +3280,28 @@ int final;
     if (ngenocided == 0) {
         you_have_never("灭绝任何怪物");
     } else {
-        Sprintf(buf, "灭绝%d 种怪", ngenocided);
+        Sprintf(buf, "灭绝%d种怪", ngenocided);
         you_have_X(buf);
     }
 
     if (!u.uconduct.polypiles) {
         you_have_never("给一个对象变形");
     } else if (wizard) {
-        Sprintf(buf, "给别人变形%ld 项", u.uconduct.polypiles);
+        Sprintf(buf, "给别人变形%ld项", u.uconduct.polypiles);
         you_have_X(buf);
     }
 
     if (!u.uconduct.polyselfs) {
         you_have_never("改变过外貌");
     } else if (wizard) {
-        Sprintf(buf, "改变外貌%ld 次", u.uconduct.polyselfs);
+        Sprintf(buf, "改变外貌%ld次", u.uconduct.polyselfs);
         you_have_X(buf);
     }
 
     if (!u.uconduct.wishes) {
-        you_have("未许愿过", "");
+        you_are("未许愿过", "");
     } else {
-        Sprintf(buf, "用过%ld 次许愿", u.uconduct.wishes);
+        Sprintf(buf, "用过%ld次许愿", u.uconduct.wishes);
         if (u.uconduct.wisharti) {
             /* if wisharti == wishes
              *  1 wish (for an artifact)

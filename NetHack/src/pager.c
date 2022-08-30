@@ -590,7 +590,7 @@ char *supplemental_name;
      * that wishing already understands and most of this duplicates
      * stuff already done for wish handling or monster generation.
      */
-    if (!cnstrcmp(eos((char *) dbase_str) - strlen("的内部"), "的内部"))
+    if (str_end_is(dbase_str, "的内部"))
         dbase_str[strlen(dbase_str)-strlen("的内部")] = '\0';
     if (!strncmp(dbase_str, "a ", 2))
         dbase_str += 2;
@@ -629,10 +629,10 @@ char *supplemental_name;
         dbase_str += strlen("部分使用的");
     else if (!cnstrcmp(dbase_str, "部分食用的"))
         dbase_str += strlen("部分食用的");
-    if (!cnstrcmp(dbase_str, "雕像之"))
-        dbase_str[strlen("雕像")] = '\0';
-    else if (!cnstrcmp(dbase_str, "小雕像之"))
-        dbase_str[strlen("小雕像")] = '\0';
+    if (str_end_is(dbase_str, "小雕像"))
+        dbase_str += strlen(dbase_str) - strlen("小雕像");
+    else if (str_end_is(dbase_str, "雕像"))
+        dbase_str += strlen(dbase_str) - strlen("雕像");
     /* remove enchantment ("+0 aklys"); [for 3.6.0 and earlier, this wasn't
        needed because looking at items on the map used xname() rather than
        doname() hence known enchantment was implicitly suppressed] */

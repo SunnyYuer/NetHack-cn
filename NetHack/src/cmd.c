@@ -3178,7 +3178,7 @@ int msgflag;          /* for variant message phrasing */
            for the hypothetical furniture and monster cases */
         bp = eos(strcpy(buf, "在模拟"));
         if (U_AP_TYPE == M_AP_OBJECT) {
-            Sprintf(bp, " %s", simple_typename(youmonst.mappearance));
+            Sprintf(bp, "%s", simple_typename(youmonst.mappearance));
         } else if (U_AP_TYPE == M_AP_FURNITURE) {
             Strcpy(bp, "什么东西");
         } else if (U_AP_TYPE == M_AP_MONSTER) {

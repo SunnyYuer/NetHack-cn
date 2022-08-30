@@ -4135,7 +4135,7 @@ short otyp;
         break;
     case M_AP_OBJECT:
         if (otyp == SPE_HEALING || otyp == SPE_EXTRA_HEALING) {
-            pline("%s 似乎有比以前更加逼真的%s.",
+            pline("%s似乎有比以前更加逼真的%s.",
                   The(simple_typename(ap)),
                   c_obj_colors[objects[ap].oc_color]);
         }

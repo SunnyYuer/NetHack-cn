@@ -173,8 +173,11 @@ register int otyp;
     if (nn) {
         if (ocl->oc_unique)
             Strcpy(buf, actualn); /* avoid spellbook of Book of the Dead */
-        else
-            Sprintf(eos(buf), "之%s", actualn);
+        else {
+            char temp[BUFSZ];
+            strcpy(temp, buf);
+            Sprintf(buf, "%s%s", actualn, temp);
+        }
     }
     if (un)
         Sprintf(eos(buf), "被称为%s", un);
@@ -505,8 +508,9 @@ unsigned cxn_flags; /* bitmask of CXN_xxx values */
             Strcat(buf, dn);
 
         if (typ == FIGURINE && omndx != NON_PM) {
-            Sprintf(eos(buf), "之%s",
-                    mons[omndx].mname);
+            char temp[BUFSZ];
+            strcpy(temp, buf);
+            Sprintf(buf, "%s%s", mons[omndx].mname, temp);
         } else if (is_wet_towel(obj)) {
             if (wizard)
                 Sprintf(eos(buf), " (%d)", obj->spe);
@@ -593,17 +597,17 @@ unsigned cxn_flags; /* bitmask of CXN_xxx values */
         break;
     case ROCK_CLASS:
         if (typ == STATUE && omndx != NON_PM) {
-            Sprintf(buf, "%s%s之%s%s",
+            Sprintf(buf, "%s%s%s%s",
                     (Role_if(PM_ARCHEOLOGIST) && (obj->spe & STATUE_HISTORIC))
                        ? "有历史性的"
                        : "",
-                    actualn,
                     type_is_pname(&mons[omndx])
                        ? ""
                        : the_unique_pm(&mons[omndx])
                           ? "the "
                           : "",
-                    mons[omndx].mname);
+                    mons[omndx].mname,
+                    actualn);
         } else
             Strcpy(buf, actualn);
         break;

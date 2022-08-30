@@ -329,7 +329,7 @@ register struct obj *obj;
     notonhead = u.uswallow;
     if (u.usteed && u.dz > 0) {
         if (interference) {
-            pline("%s 妨碍.", Monnam(u.ustuck));
+            pline("%s妨碍.", Monnam(u.ustuck));
             mstatusline(u.ustuck);
         } else
             mstatusline(u.usteed);
@@ -338,7 +338,7 @@ register struct obj *obj;
         mstatusline(u.ustuck);
         return res;
     } else if (u.uswallow && interference) {
-        pline("%s 妨碍.", Monnam(u.ustuck));
+        pline("%s妨碍.", Monnam(u.ustuck));
         mstatusline(u.ustuck);
         return res;
     } else if (u.dz) {
@@ -379,7 +379,7 @@ register struct obj *obj;
 
         if (mtmp->mundetected) {
             if (!canspotmon(mtmp))
-                There("有%s 藏在那里.", mnm);
+                There("有%s藏在那里.", mnm);
             mtmp->mundetected = 0;
             newsym(mtmp->mx, mtmp->my);
         } else if (mtmp->mappearance) {

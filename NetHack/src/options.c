@@ -6395,7 +6395,7 @@ struct fruit *replace_fruit;
             || !cnstrcmp(pl_fruit, "未诅咒的")
             || !cnstrcmp(pl_fruit, "受祝福的")
             || !cnstrcmp(pl_fruit, "部分食用的")
-            || (!str_end_is(pl_fruit, "罐头")
+            || (str_end_is(pl_fruit, "罐头")
                 && (!cnstrcmp(pl_fruit, "菠菜")
                     || name_to_mon(pl_fruit) >= LOW_PM))
             || !strcmp(pl_fruit, "空罐头")

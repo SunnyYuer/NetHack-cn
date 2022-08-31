@@ -682,6 +682,8 @@ boolean new_game; /* false => restoring an old game */
                    : "%s %s,  %s %s%s,  欢迎回到NetHack!",
           Hello((struct monst *) 0), plname, buf, urace.adj,
           (currentgend && urole.name.f) ? urole.name.f : urole.name.m);
+
+    if (new_game) mylog0("new_game");
 }
 
 #ifdef POSITIONBAR

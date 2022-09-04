@@ -1006,7 +1006,7 @@ int dieroll;
                             pline(obj->otyp == CREAM_PIE ? "啪嗒!"
                                                          : "扑通!");
                         } else if (obj->otyp == BLINDING_VENOM) {
-                            pline_The("毒液使 %s%s失明!", mon_nam(mon),
+                            pline_The("毒液使%s%s失明!", mon_nam(mon),
                                       mon->mcansee ? "" : " 更加");
                         } else {
                             char *whom = mon_nam(mon);
@@ -1043,10 +1043,10 @@ int dieroll;
                     break;
                 case ACID_VENOM: /* thrown (or spit) */
                     if (resists_acid(mon)) {
-                        Your("毒液无害地打了下 %s.", mon_nam(mon));
+                        Your("毒液无害地打了下%s.", mon_nam(mon));
                         tmp = 0;
                     } else {
-                        Your("毒液灼烧 %s!", mon_nam(mon));
+                        Your("毒液灼烧%s!", mon_nam(mon));
                         tmp = dmgval(obj, mon);
                     }
                     if (thrown)
@@ -2614,7 +2614,7 @@ register struct monst *mon;
                         silver_sears(&youmonst, mon, silverhit);
                     sum[i] = damageum(mon, mattk, specialdmg);
                 } else {
-                    Your("%s无害的穿过了%s.",
+                    Your("%s无害地穿过了%s.",
                          verb, mon_nam(mon));
                 }
                 break;
@@ -2655,7 +2655,7 @@ register struct monst *mon;
             if ((dhit = (tmp > rnd(20 + i)))) {
                 wakeup(mon, TRUE);
                 if (mon->data == &mons[PM_SHADE])
-                    Your("试图包围对 %s 无害.", mon_nam(mon));
+                    Your("试图包围对%s无害.", mon_nam(mon));
                 else {
                     sum[i] = gulpum(mon, mattk);
                     if (sum[i] == 2 && (mon->data->mlet == S_ZOMBIE

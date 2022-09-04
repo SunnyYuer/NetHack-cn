@@ -1075,11 +1075,11 @@ register struct attack *mattk;
         }
         if (resists_acid(mdef)) {
             if (vis && canseemon(mdef))
-                pline("%s 满身都是%s, 但是似乎是无害的.",
+                pline("%s满身都是%s, 但是似乎是无害的.",
                       Monnam(mdef), hliquid("酸"));
             tmp = 0;
         } else if (vis && canseemon(mdef)) {
-            pline("%s 满身都是%s!", Monnam(mdef), hliquid("酸"));
+            pline("%s满身都是%s!", Monnam(mdef), hliquid("酸"));
             pline("它烧伤了%s!", mon_nam(mdef));
         }
         if (!rn2(30))
@@ -1092,12 +1092,12 @@ register struct attack *mattk;
             break;
         if (pd == &mons[PM_IRON_GOLEM]) {
             if (vis && canseemon(mdef))
-                pline("%s 碎掉了!", Monnam(mdef));
+                pline("%s碎掉了!", Monnam(mdef));
             mondied(mdef);
             if (!DEADMONSTER(mdef))
                 return 0;
             else if (mdef->mtame && !vis)
-                pline("愿 %s 在平静中生锈.", mon_nam(mdef));
+                pline("愿%s在平静中生锈.", mon_nam(mdef));
             return (MM_DEF_DIED | (grow_up(magr, mdef) ? 0 : MM_AGR_DIED));
         }
         erode_armor(mdef, ERODE_RUST);

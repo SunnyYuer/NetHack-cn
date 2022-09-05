@@ -84,9 +84,9 @@ RNDLEVEL:	"矿坑底层" "E" @ (-1, 0) 3
 #	file.  It will be used for all levels not defined explicitly below.
 #
 DUNGEON:	"任务" "Q" (5, 2)
-LEVEL:	"x- 开始" "none" @ (1, 1)
-LEVEL:	"x- 中心" "L" @ (3, 1)
-LEVEL:	"x- 终点" "none" @ (-1, 0)
+LEVEL:	"x-开始" "none" @ (1, 1)
+LEVEL:	"x-中心" "L" @ (3, 1)
+LEVEL:	"x-终点" "none" @ (-1, 0)
 
 #
 # Sokoban

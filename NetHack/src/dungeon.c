@@ -10,9 +10,9 @@
 
 #define DUNGEON_FILE "dungeon"
 
-#define X_START "x- 开始"
-#define X_LOCATE "x- 中心"
-#define X_GOAL "x- 终点"
+#define X_START "x-开始"
+#define X_LOCATE "x-中心"
+#define X_GOAL "x-终点"
 
 struct proto_dungeon {
     struct tmpdungeon tmpdungeon[MAXDUNGEON];
@@ -1875,7 +1875,7 @@ xchar *rdgn;
         descr = unplaced ? "深度" : "层数";
         nlev = dptr->num_dunlevs;
         if (nlev > 1)
-            Sprintf(buf, "%s:  %s%d 到%d", dptr->dname, makeplural(descr),
+            Sprintf(buf, "%s:  %s%d到%d", dptr->dname, makeplural(descr),
                     dptr->depth_start, dptr->depth_start + nlev - 1);
         else
             Sprintf(buf, "%s:  %s%d", dptr->dname, descr, dptr->depth_start);
@@ -1885,7 +1885,7 @@ xchar *rdgn;
             if (dptr->entry_lev == nlev)
                 Strcat(buf, ",  从下方的入口");
             else
-                Sprintf(eos(buf), ",  入口在 %d",
+                Sprintf(eos(buf), ",  入口在%d",
                         dptr->depth_start + dptr->entry_lev - 1);
         }
         if (bymenu) {
@@ -1911,7 +1911,7 @@ xchar *rdgn;
                     chr_u_on_lvl(&slev->dlevel),
                     slev->proto, depth(&slev->dlevel));
             if (Is_stronghold(&slev->dlevel))
-                Sprintf(eos(buf), " ( 曲调 %s)", tune);
+                Sprintf(eos(buf), " (曲调 %s)", tune);
             if (bymenu)
                 tport_menu(win, buf, &lchoices, &slev->dlevel,
                            unreachable_level(&slev->dlevel, unplaced));
@@ -1952,7 +1952,7 @@ xchar *rdgn;
                 putstr(win, 0, "浮动的分支");
                 first = FALSE;
             }
-            Sprintf(buf, "   %s 到 %s", br_string(br->type),
+            Sprintf(buf, "   %s到%s", br_string(br->type),
                     dungeons[br->end2.dnum].dname);
             putstr(win, 0, buf);
         }
@@ -2883,7 +2883,7 @@ char *outbuf;
             Sprintf(tmp, "音符 \"%s\"", tune);
         else
             Strcpy(tmp, "5- 音符曲调");
-        Sprintf(outbuf, " ( 演奏%s 来打开或关闭吊桥)", tmp);
+        Sprintf(outbuf, " (演奏%s来打开或关闭吊桥)", tmp);
     }
     return outbuf;
 }
@@ -3033,7 +3033,7 @@ boolean printdun;
         Sprintf(buf, "%s一个原始的区域.", PREFIX);
     } else if (on_level(&mptr->lev, &qstart_level)) {
         Sprintf(buf, "%s家乡%s.", PREFIX,
-                mptr->flags.unreachable ? " ( 无路可回...)" : "");
+                mptr->flags.unreachable ? " (无路可回...)" : "");
         if (u.uevent.qcompleted)
             Sprintf(buf, "%s完成了%s的任务.", PREFIX, ldrname());
         else if (mptr->flags.questing)
@@ -3054,13 +3054,13 @@ boolean printdun;
         putstr(win, 0, buf);
     /* quest entrance is not mutually-exclusive with bigroom or rogue level */
     if (mptr->flags.quest_summons) {
-        Sprintf(buf, "%s受%s 的传唤.", PREFIX, ldrname());
+        Sprintf(buf, "%s受%s的传唤.", PREFIX, ldrname());
         putstr(win, 0, buf);
     }
 
     /* print out branches */
     if (mptr->br) {
-        Sprintf(buf, "%s%s 到%s", PREFIX, br_string2(mptr->br),
+        Sprintf(buf, "%s%s到%s", PREFIX, br_string2(mptr->br),
                 dungeons[mptr->br->end2.dnum].dname);
 
         /* Since mapseen objects are printed out in increasing order

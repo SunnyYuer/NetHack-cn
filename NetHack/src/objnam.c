@@ -2119,7 +2119,7 @@ register const char *verb;
                    && index("cs", lowc(*(bspot - 1))))
                || (len == 2 && lowc(*bspot) == 'o')) {
         /* Ends in z, x, s, ch, sh; add an "es" */
-        Strcasecpy(bspot + 1, "");
+        Strcasecpy(bspot + 1, "es");
     } else if (lowc(*bspot) == 'y' && !index(vowels, lowc(*(bspot - 1)))) {
         /* like "y" case in makeplural */
         Strcasecpy(bspot, "ies");

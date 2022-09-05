@@ -1078,12 +1078,12 @@ unsigned trflags;
         feeltrap(trap);
         if (amorphous(youmonst.data) || is_whirly(youmonst.data)
             || unsolid(youmonst.data)) {
-            pline("%s捕兽夹无害地关闭穿过了你.",
+            pline("%s捕兽夹夹起时无害地穿过了你.",
                   A_Your[trap->madeby_u]);
             break;
         }
         if (!u.usteed && youmonst.data->msize <= MZ_SMALL) {
-            pline("%s捕兽夹在你上面无害地关闭.",
+            pline("%s捕兽夹在你上面无害地夹.",
                   A_Your[trap->madeby_u]);
             break;
         }
@@ -1126,7 +1126,7 @@ unsigned trflags;
          */
         switch (rn2(5)) {
         case 0:
-            pline("%s 你的%s!", A_gush_of_water_hits, body_part(HEAD));
+            pline("%s你的%s!", A_gush_of_water_hits, body_part(HEAD));
             (void) water_damage(uarmh, helm_simple_name(uarmh), TRUE);
             break;
         case 1:
@@ -1142,7 +1142,7 @@ unsigned trflags;
              */
             break;
         case 2:
-            pline("%s 你的右%s!", A_gush_of_water_hits, body_part(ARM));
+            pline("%s你的右%s!", A_gush_of_water_hits, body_part(ARM));
             (void) water_damage(uwep, 0, TRUE);
             goto glovecheck;
         default:

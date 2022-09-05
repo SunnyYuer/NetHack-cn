@@ -1380,11 +1380,11 @@ boolean thrown, verbose;
         target = youdef ? "你" : mon_nam(mdef);
         if (!thrown) {
             whose = youagr ? "你的" : s_suffix(Monnam(magr));
-            pline("%s%s%s%s%s.", whose, what,
-                  vtense(what, ""), harmlessly_thru, target);
+            pline("%s%s%s%s.", whose, what,
+                  harmlessly_thru, target);
         } else {
-            pline("%s%s%s%s.", The(what), /* note: not pline_The() */
-                  vtense(what, ""), harmlessly_thru, target);
+            pline("%s%s%s.", The(what), /* note: not pline_The() */
+                  harmlessly_thru, target);
         }
         if (!youdef && !canspotmon(mdef))
             map_invisible(mdef->mx, mdef->my);
@@ -2537,7 +2537,7 @@ register struct monst *mon;
                     if (!strcmp(verb, "打了一下")
                         || (mattk->aatyp == AT_CLAW && humanoid(mon->data)))
                         verb = "攻击";
-                    Your("%s无害的%s%s.",
+                    Your("%s无害地%s%s.",
                          verb, vtense(verb, "穿过了"), mon_nam(mon));
                 } else {
                     if (mattk->aatyp == AT_TENT) {

@@ -431,7 +431,7 @@ typedef genericptr genericptr_t; /* (void *) or (char *) */
 #define NORETURN __attribute__((noreturn))
 /* disable gcc's __attribute__((__warn_unused_result__)) since explicitly
    discarding the result by casting to (void) is not accepted as a 'use' */
-#define __warn_unused_result__ __unused__ 
+#define __warn_unused_result__ /*empty*/
 #define warn_unused_result /*empty*/
 #endif
 #endif

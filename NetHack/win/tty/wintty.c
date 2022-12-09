@@ -148,7 +148,7 @@ static char obuf[BUFSIZ]; /* BUFSIZ is defined in stdio.h */
 #endif
 
 static char winpanicstr[] = "Bad window id %d";
-char defmorestr[] = "--More--";
+char defmorestr[] = "--更多--";
 
 #ifdef CLIPPING
 #if defined(USE_TILES) && defined(MSDOS)
@@ -335,7 +335,7 @@ int sig_unused UNUSED;
                     for (i = WIN_INVEN; i < MAXWIN; i++)
                         if (wins[i] && wins[i]->active) {
                             /* cop-out */
-                            addtopl("Press Return to continue: ");
+                            addtopl("按下回车以继续: ");
                             break;
                         }
                 (void) fflush(stdout);
@@ -584,7 +584,7 @@ tty_player_selection()
                     if (gotrolefilter())
                         role_menu_extra(RS_filter, win, FALSE);
                     role_menu_extra(ROLE_NONE, win, FALSE); /* quit */
-                    Strcpy(pbuf, "Pick a role or profession");
+                    Strcpy(pbuf, "选择职业");
                     end_menu(win, pbuf);
                     n = select_menu(win, PICK_ONE, &selected);
                     /*
@@ -683,7 +683,7 @@ tty_player_selection()
                         if (gotrolefilter())
                             role_menu_extra(RS_filter, win, FALSE);
                         role_menu_extra(ROLE_NONE, win, FALSE); /* quit */
-                        Strcpy(pbuf, "Pick a race or species");
+                        Strcpy(pbuf, "选择种族");
                         end_menu(win, pbuf);
                         n = select_menu(win, PICK_ONE, &selected);
                         if (n > 0) {
@@ -776,7 +776,7 @@ tty_player_selection()
                         if (gotrolefilter())
                             role_menu_extra(RS_filter, win, FALSE);
                         role_menu_extra(ROLE_NONE, win, FALSE); /* quit */
-                        Strcpy(pbuf, "Pick a gender or sex");
+                        Strcpy(pbuf, "选择性别");
                         end_menu(win, pbuf);
                         n = select_menu(win, PICK_ONE, &selected);
                         if (n > 0) {
@@ -865,7 +865,7 @@ tty_player_selection()
                         if (gotrolefilter())
                             role_menu_extra(RS_filter, win, FALSE);
                         role_menu_extra(ROLE_NONE, win, FALSE); /* quit */
-                        Strcpy(pbuf, "Pick an alignment or creed");
+                        Strcpy(pbuf, "选择阵营");
                         end_menu(win, pbuf);
                         n = select_menu(win, PICK_ONE, &selected);
                         if (n > 0) {
@@ -952,20 +952,20 @@ tty_player_selection()
         add_menu(win, NO_GLYPH, &any, 0, 0, ATR_NONE, "", MENU_UNSELECTED);
         /* [ynaq] menu choices */
         any.a_int = 1;
-        add_menu(win, NO_GLYPH, &any, 'y', 0, ATR_NONE, "Yes; start game",
+        add_menu(win, NO_GLYPH, &any, 'y', 0, ATR_NONE, "可以; 开始游戏吧",
                  MENU_SELECTED);
         any.a_int = 2;
         add_menu(win, NO_GLYPH, &any, 'n', 0, ATR_NONE,
-                 "No; choose role again", MENU_UNSELECTED);
+                 "不; 我要重新选择", MENU_UNSELECTED);
         if (iflags.renameallowed) {
             any.a_int = 3;
             add_menu(win, NO_GLYPH, &any, 'a', 0, ATR_NONE,
-                     "Not yet; choose another name", MENU_UNSELECTED);
+                     "还差一点;我想换个名字", MENU_UNSELECTED);
         }
         any.a_int = -1;
-        add_menu(win, NO_GLYPH, &any, 'q', 0, ATR_NONE, "Quit",
+        add_menu(win, NO_GLYPH, &any, 'q', 0, ATR_NONE, "退出",
                  MENU_UNSELECTED);
-        Sprintf(pbuf, "Is this ok? [yn%sq]", iflags.renameallowed ? "a" : "");
+        Sprintf(pbuf, "这个角色可以吗? [yn%sq]", iflags.renameallowed ? "a" : "");
         end_menu(win, pbuf);
         n = select_menu(win, PICK_ONE, &selected);
         /* [pick-one menus with a preselected entry behave oddly...] */
@@ -1117,7 +1117,7 @@ int race, gend, algn; /* all ROLE_NONE for !filtering case */
         }
         /* !filtering implies reset_role_filtering() where we want to
            mark this role as preseleted if current filter excludes it */
-        add_menu(win, NO_GLYPH, &any, thisch, 0, ATR_NONE, an(rolenamebuf),
+        add_menu(win, NO_GLYPH, &any, thisch, 0, ATR_NONE, rolenamebuf,
                  (!filtering && !role_ok) ? MENU_SELECTED : MENU_UNSELECTED);
         lastch = thisch;
     }

@@ -1088,6 +1088,7 @@ int race, gend, algn; /* all ROLE_NONE for !filtering case */
     anything any;
     int i;
     boolean role_ok;
+    char role_choices[]={'a','b','c','h','k','m','p','r','R','s','t','v','w'};
     char thisch, lastch = '\0', rolenamebuf[50];
 
     any = zeroany; /* zero out all bits */
@@ -1099,7 +1100,7 @@ int race, gend, algn; /* all ROLE_NONE for !filtering case */
             any.a_int = i + 1;
         else
             any.a_string = roles[i].name.m;
-        thisch = 'a'+i;
+        thisch = role_choices[i];
         if (thisch == lastch)
             thisch = highc(thisch);
         Strcpy(rolenamebuf, roles[i].name.m);
@@ -1133,6 +1134,7 @@ int role, gend, algn;
     int i;
     char this_ch;
 
+    char race_choices[]={'h','e','d','g','o'};
     any = zeroany;
     for (i = 0; races[i].noun; i++) {
         race_ok = ok_race(role, i, gend, algn);
@@ -1142,7 +1144,7 @@ int role, gend, algn;
             any.a_int = i + 1;
         else
             any.a_string = races[i].noun;
-        this_ch = 'a'+i;
+        this_ch = race_choices[i];
         /* filtering: picking race, so choose by first letter, with
            capital letter as unseen accelerator;
            !filtering: resetting filter rather than picking, choose by
@@ -1166,6 +1168,7 @@ int role, race, algn;
     int i;
     char this_ch;
 
+    char gender_choices[]={'m','f'};
     any = zeroany;
     for (i = 0; i < ROLE_GENDERS; i++) {
         gend_ok = ok_gend(role, race, i, algn);
@@ -1175,7 +1178,7 @@ int role, race, algn;
             any.a_int = i + 1;
         else
             any.a_string = genders[i].adj;
-        this_ch = 'a'+i;
+        this_ch = gender_choices[i];
         /* (see setup_racemenu for explanation of selector letters
            and setup_rolemenu for preselection) */
         add_menu(win, NO_GLYPH, &any,
@@ -1197,6 +1200,7 @@ int role, race, gend;
     int i;
     char this_ch;
 
+    char alignment_choices[]={'l','n','c'};
     any = zeroany;
     for (i = 0; i < ROLE_ALIGNS; i++) {
         algn_ok = ok_align(role, race, gend, i);
@@ -1206,7 +1210,7 @@ int role, race, gend;
             any.a_int = i + 1;
         else
             any.a_string = aligns[i].adj;
-        this_ch = 'a'+i;
+        this_ch = alignment_choices[i];
         /* (see setup_racemenu for explanation of selector letters
            and setup_rolemenu for preselection) */
         add_menu(win, NO_GLYPH, &any,

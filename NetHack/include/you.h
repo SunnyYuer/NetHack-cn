@@ -167,6 +167,7 @@ struct Role {
 };
 
 extern const struct Role roles[]; /* table of available roles */
+extern const char role_choices[];
 extern struct Role urole;
 #define Role_if(X) (urole.malenum == (X))
 #define Role_switch (urole.malenum)
@@ -219,6 +220,7 @@ struct Race {
 };
 
 extern const struct Race races[]; /* Table of available races */
+extern const char race_choices[];
 extern struct Race urace;
 #define Race_if(X) (urace.malenum == (X))
 #define Race_switch (urace.malenum)
@@ -236,6 +238,7 @@ struct Gender {
                              increment to 3 if you allow neuter roles */
 
 extern const struct Gender genders[]; /* table of available genders */
+extern const char gender_choices[];
 /* pronouns for the hero */
 #define uhe()      (genders[flags.female ? 1 : 0].he)
 #define uhim()     (genders[flags.female ? 1 : 0].him)
@@ -260,6 +263,7 @@ struct Align {
 #define ROLE_ALIGNS 3     /* number of permitted player alignments */
 
 extern const struct Align aligns[]; /* table of available alignments */
+extern const char alignment_choices[];
 
 enum utraptypes {
     TT_BEARTRAP   = 0,

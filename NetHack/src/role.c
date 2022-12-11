@@ -596,6 +596,7 @@ const struct Role roles[] = {
     /* Array terminator */
     { { 0, 0 } }
 };
+const char role_choices[] = {'a','b','c','h','k','m','p','r','R','s','t','v','w'};
 
 /* The player's role, created at runtime from initial
  * choices.  This may be munged in role_init().
@@ -736,6 +737,7 @@ const struct Race races[] = {
     /* Array terminator */
     { 0, 0, 0, 0 }
 };
+const char race_choices[] = {'h','e','d','g','o'};
 
 /* The player's race, created at runtime from initial
  * choices.  This may be munged in role_init().
@@ -768,6 +770,7 @@ const struct Gender genders[] = {
     { "女性", "她", "她", "她的", "Fem", ROLE_FEMALE },
     { "无性", "它", "它", "它的", "Ntr", ROLE_NEUTER }
 };
+const char gender_choices[] = {'m','f'};
 
 /* Table of all alignments */
 const struct Align aligns[] = {
@@ -776,6 +779,7 @@ const struct Align aligns[] = {
     { "chaos", "混沌", "Cha", ROLE_CHAOTIC, A_CHAOTIC },
     { "evil", "unaligned", "Una", 0, A_NONE }
 };
+const char alignment_choices[] = {'l','n','c'};
 
 /* Filters */
 static struct {

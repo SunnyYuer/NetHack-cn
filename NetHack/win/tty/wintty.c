@@ -1088,7 +1088,6 @@ int race, gend, algn; /* all ROLE_NONE for !filtering case */
     anything any;
     int i;
     boolean role_ok;
-    char role_choices[]={'a','b','c','h','k','m','p','r','R','s','t','v','w'};
     char thisch, lastch = '\0', rolenamebuf[50];
 
     any = zeroany; /* zero out all bits */
@@ -1134,7 +1133,6 @@ int role, gend, algn;
     int i;
     char this_ch;
 
-    char race_choices[]={'h','e','d','g','o'};
     any = zeroany;
     for (i = 0; races[i].noun; i++) {
         race_ok = ok_race(role, i, gend, algn);
@@ -1168,7 +1166,6 @@ int role, race, algn;
     int i;
     char this_ch;
 
-    char gender_choices[]={'m','f'};
     any = zeroany;
     for (i = 0; i < ROLE_GENDERS; i++) {
         gend_ok = ok_gend(role, race, i, algn);
@@ -1200,7 +1197,6 @@ int role, race, gend;
     int i;
     char this_ch;
 
-    char alignment_choices[]={'l','n','c'};
     any = zeroany;
     for (i = 0; i < ROLE_ALIGNS; i++) {
         algn_ok = ok_align(role, race, gend, i);

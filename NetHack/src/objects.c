@@ -597,7 +597,7 @@ RING("invisibility", "隐身", "金属",  //"wire"
      INVIS,                    150, 1, 0,  5, IRON, HI_METAL),
 RING("see invisible", "看见隐形", "订婚",  //"engagement"
      SEE_INVIS,                150, 1, 0,  5, IRON, HI_METAL),
-RING("protection from shape changers", "变形保护", "闪耀的",  //"shiny"
+RING("protection from shape changers", "怪物现形", "闪耀的",  //"shiny"
      PROT_FROM_SHAPE_CHANGERS, 100, 1, 0,  5, IRON, CLR_BRIGHT_CYAN),
 #undef RING
 

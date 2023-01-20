@@ -1615,7 +1615,7 @@ domove_core()
                 stumble_onto_mimic(mtmp);
             else if (mtmp->mpeaceful && !Hallucination)
                 /* m_monnam(): "dog" or "Fido", no "invisible dog" or "it" */
-                pline("原谅我, %s.", m_monnam(mtmp));
+                pline("借过一下, %s.", m_monnam(mtmp));
             else
                 You("直接移动到了%s.", mon_nam(mtmp));
             return;

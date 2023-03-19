@@ -843,9 +843,13 @@ register struct monst *mon;
             newly_welded = mwelded(obj);
             obj->owornmask &= ~W_WEP;
             if (newly_welded) {
-                pline("%s%s了%s%s上!", Tobjnam(obj, "自动"),
-                      is_plural(obj) ? "粘到" : "粘到",
-                      s_suffix(mon_nam(mon)), mbodypart(mon, HAND));
+                const char *mon_hand = mbodypart(mon, HAND);
+
+                if (bimanual(obj))
+                    mon_hand = makeplural(mon_hand);
+                pline("%s%s了%s%s上!", is_plural(obj) ? "那些" : "",
+                      Tobjnam(obj, "自动粘到"),
+                      s_suffix(mon_nam(mon)), mon_hand);
                 obj->bknown = 1;
             }
         }

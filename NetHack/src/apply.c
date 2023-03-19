@@ -572,8 +572,10 @@ boolean feedback;
             Your("狗链落松了.");
     }
     for (otmp = invent; otmp; otmp = otmp->nobj)
-        if (otmp->otyp == LEASH && otmp->leashmon == (int) mtmp->m_id)
+        if (otmp->otyp == LEASH && otmp->leashmon == (int) mtmp->m_id) {
             otmp->leashmon = 0;
+            update_inventory();
+        }
     mtmp->mleashed = 0;
 }
 

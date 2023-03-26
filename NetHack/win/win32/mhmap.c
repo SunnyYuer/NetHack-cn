@@ -56,6 +56,7 @@ typedef struct mswin_nethack_map_window {
     double backScale;           /* scaling from source to back buffer */
     double frontScale;          /* scaling from back to front */
     double monitorScale;        /* from 96dpi to monitor dpi*/
+    double mwheelScale;
     
     boolean cursorOn;
     int yNoBlinkCursor;         /* non-blinking cursor height inback buffer
@@ -306,8 +307,8 @@ mswin_map_layout(HWND hWnd, LPSIZE map_size)
     }
 
     /* TODO: Should we round instead of clamping? */
-    data->xFrontTile = (int) ((double) data->xBackTile * data->frontScale);
-    data->yFrontTile = (int) ((double) data->yBackTile * data->frontScale);
+    data->xFrontTile = (int) ((double) data->xBackTile * data->frontScale * (1.0 + data->mwheelScale));
+    data->yFrontTile = (int) ((double) data->yBackTile * data->frontScale * (1.0 + data->mwheelScale));
 
     /* ensure tile is at least one pixel in size */
     if (data->xFrontTile < 1) data->xFrontTile = 1;
@@ -566,6 +567,10 @@ MapWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         onMSNH_VScroll(hWnd, wParam, lParam);
         break;
 
+    case WM_MOUSEWHEEL:
+        data->mwheelScale += GET_WHEEL_DELTA_WPARAM(wParam) > 0 ? 0.1 : -0.1;
+        if (data->mwheelScale < 0) data->mwheelScale = 0;
+        if (data->mwheelScale > 3) data->mwheelScale = 3;
     case WM_SIZE: {
         RECT rt;
         SIZE size;
